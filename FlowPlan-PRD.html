@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowPlan PRD - Product Requirements Document</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #1e293b;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 40px;
+            background: #fff;
+            font-size: 11pt;
+        }
+
+        /* Cover Page */
+        .cover-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            page-break-after: always;
+        }
+
+        .logo {
+            font-size: 72px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .cover-subtitle {
+            font-size: 28px;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .cover-title-he {
+            font-size: 22px;
+            color: #334155;
+            margin-bottom: 40px;
+        }
+
+        .cover-meta {
+            margin-top: 60px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .cover-meta p {
+            margin: 8px 0;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        /* Table of Contents */
+        .toc {
+            page-break-after: always;
+            padding: 40px 0;
+        }
+
+        .toc h2 {
+            font-size: 24px;
+            color: #1e40af;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #2563eb;
+        }
+
+        .toc-list {
+            list-style: none;
+            counter-reset: toc-counter;
+        }
+
+        .toc-list li {
+            counter-increment: toc-counter;
+            padding: 12px 0;
+            border-bottom: 1px dotted #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .toc-list li::before {
+            content: counter(toc-counter) ".";
+            font-weight: 600;
+            color: #2563eb;
+            margin-left: 10px;
+        }
+
+        /* Headers */
+        h1 {
+            font-size: 24px;
+            color: #1e40af;
+            margin: 50px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #2563eb;
+            page-break-after: avoid;
+        }
+
+        h1:first-of-type {
+            margin-top: 0;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #2563eb;
+            margin: 30px 0 15px;
+            page-break-after: avoid;
+        }
+
+        h3 {
+            font-size: 14px;
+            color: #3b82f6;
+            margin: 20px 0 10px;
+            page-break-after: avoid;
+        }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 15px 0 15px 25px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+            page-break-inside: avoid;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            text-align: right;
+        }
+
+        th {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        /* Highlight Boxes */
+        .highlight-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-right: 4px solid #2563eb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            page-break-inside: avoid;
+        }
+
+        .highlight-box.vision {
+            background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+            border-right-color: #7c3aed;
+        }
+
+        .highlight-box.warning {
+            background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+            border-right-color: #f59e0b;
+        }
+
+        .highlight-box.success {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-right-color: #22c55e;
+        }
+
+        .highlight-box h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 9pt;
+            overflow-x: auto;
+            margin: 15px 0;
+            direction: ltr;
+            text-align: left;
+            page-break-inside: avoid;
+        }
+
+        /* User Story Box */
+        .user-story {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            page-break-inside: avoid;
+        }
+
+        .user-story-header {
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            page-break-inside: avoid;
+        }
+
+        .feature-card h4 {
+            color: #2563eb;
+            margin-bottom: 8px;
+            font-size: 12pt;
+        }
+
+        /* Phase Timeline */
+        .phase {
+            position: relative;
+            margin-bottom: 25px;
+            padding: 20px;
+            padding-right: 35px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-right: 4px solid #2563eb;
+            page-break-inside: avoid;
+        }
+
+        .phase-number {
+            position: absolute;
+            right: -15px;
+            top: 20px;
+            background: #2563eb;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .phase h3 {
+            margin-top: 0;
+        }
+
+        /* Metrics */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .metric-label {
+            font-size: 10pt;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* Priority Tags */
+        .priority-must {
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+
+        .priority-should {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+
+        .priority-nice {
+            display: inline-block;
+            background: #22c55e;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+
+        /* Page Breaks */
+        .page-break {
+            page-break-before: always;
+        }
+
+        /* Footer */
+        .doc-footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+            font-size: 10pt;
+        }
+
+        /* Document Info Box */
+        .doc-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .doc-info table {
+            margin: 0;
+        }
+
+        .doc-info th {
+            background: #f1f5f9;
+            color: #334155;
+            width: 150px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .cover-page {
+                height: auto;
+                padding: 100px 0;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== COVER PAGE ==================== -->
+    <div class="cover-page">
+        <div class="logo">FlowPlan</div>
+        <div class="cover-subtitle">Product Requirements Document</div>
+        <div class="cover-title-he">מסמך דרישות מוצר</div>
+        <div class="cover-title-he">מערכת ניהול פרויקטים מתקדמת</div>
+
+        <span class="version-badge">Version 1.0</span>
+
+        <div class="cover-meta">
+            <p><strong>תאריך:</strong> ינואר 2026</p>
+            <p><strong>סטטוס:</strong> טיוטה לסקירה</p>
+            <p><strong>מחבר:</strong> צוות המוצר</p>
+        </div>
+    </div>
+
+    <!-- ==================== DOCUMENT INFO ==================== -->
+    <div class="doc-info">
+        <h2 style="margin-top: 0;">פרטי המסמך</h2>
+        <table>
+            <tr>
+                <th>שם המוצר</th>
+                <td>FlowPlan - מערכת ניהול פרויקטים</td>
+            </tr>
+            <tr>
+                <th>גרסת מסמך</th>
+                <td>1.0</td>
+            </tr>
+            <tr>
+                <th>תאריך יצירה</th>
+                <td>ינואר 2026</td>
+            </tr>
+            <tr>
+                <th>סטטוס</th>
+                <td>טיוטה לסקירה</td>
+            </tr>
+            <tr>
+                <th>בעלי עניין</th>
+                <td>צוות מוצר, צוות פיתוח, צוות עיצוב, הנהלה</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>היסטוריית שינויים</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>גרסה</th>
+                <th>תאריך</th>
+                <th>מחבר</th>
+                <th>שינויים</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1.0</td>
+                <td>ינואר 2026</td>
+                <td>צוות המוצר</td>
+                <td>גרסה ראשונית</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== TABLE OF CONTENTS ==================== -->
+    <div class="toc">
+        <h2>תוכן עניינים</h2>
+        <ol class="toc-list">
+            <li><span>סקירה כללית והבעיה</span></li>
+            <li><span>מטרות ומדדי הצלחה</span></li>
+            <li><span>קהל יעד ופרסונות</span></li>
+            <li><span>User Stories</span></li>
+            <li><span>דרישות פונקציונליות</span></li>
+            <li><span>דרישות לא-פונקציונליות</span></li>
+            <li><span>מודל הנתונים</span></li>
+            <li><span>עיצוב וחוויית משתמש</span></li>
+            <li><span>היקף ומגבלות</span></li>
+            <li><span>ארכיטקטורה ו-Tech Stack</span></li>
+            <li><span>לוח זמנים ואבני דרך</span></li>
+            <li><span>אסטרטגיית בדיקות</span></li>
+            <li><span>סיכונים ושאלות פתוחות</span></li>
+        </ol>
+    </div>
+
+    <!-- ==================== SECTION 1: OVERVIEW ==================== -->
+    <h1>1. סקירה כללית והבעיה</h1>
+
+    <div class="highlight-box vision">
+        <h3>חזון המוצר</h3>
+        <p><strong>FlowPlan</strong> היא מערכת ניהול פרויקטים מהדור הבא שמשלבת את היכולות החזקות של Microsoft Project עם עיצוב מודרני, בינה מלאכותית, ושיתוף פעולה בזמן אמת. המטרה שלנו: לדמוקרטיזציה של ניהול פרויקטים ברמה ארגונית - להנגיש כלים מקצועיים לכולם.</p>
+    </div>
+
+    <h2>1.1 הבעיה שאנחנו פותרים</h2>
+    <p>כיום, ארגונים ומנהלי פרויקטים מתמודדים עם מספר אתגרים משמעותיים:</p>
+
+    <ul>
+        <li><strong>עלות גבוהה:</strong> כלים מקצועיים כמו Microsoft Project עולים $30-55 למשתמש לחודש</li>
+        <li><strong>מורכבות:</strong> עקומת למידה תלולה שדורשת ימים עד שבועות של הכשרה</li>
+        <li><strong>פער מתודולוגי:</strong> רוב הכלים תומכים ב-Agile או ב-Waterfall, אך לא בשניהם יחד</li>
+        <li><strong>חוסר שיתוף פעולה:</strong> עריכה בזמן אמת חסרה או מוגבלת</li>
+        <li><strong>חוויית מובייל גרועה:</strong> אפליקציות נלוות לא מספקות</li>
+        <li><strong>חוסר אינטליגנציה:</strong> אין תחזיות או המלצות מבוססות AI</li>
+    </ul>
+
+    <h2>1.2 הפתרון שלנו</h2>
+    <p>FlowPlan מציעה פתרון מקיף שמתמודד עם כל האתגרים הללו:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>בעיה בשוק</th>
+                <th>הפתרון של FlowPlan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>מחיר יקר ($30-55/משתמש)</td>
+                <td>שכבה חינמית + $8-15/משתמש לתוכניות בתשלום</td>
+            </tr>
+            <tr>
+                <td>עקומת למידה תלולה</td>
+                <td>Onboarding מודרך - מפרויקט ראשון ב-5 דקות</td>
+            </tr>
+            <tr>
+                <td>תמיכת Agile חלשה</td>
+                <td>Agile-Native עם תמיכה מלאה גם ב-Waterfall</td>
+            </tr>
+            <tr>
+                <td>ללא שיתוף פעולה בזמן אמת</td>
+                <td>עריכה משותפת מלאה + מחווני נוכחות</td>
+            </tr>
+            <tr>
+                <td>חוויית מובייל גרועה</td>
+                <td>PWA מותאם מובייל עם תמיכת Offline</td>
+            </tr>
+            <tr>
+                <td>ללא יכולות AI</td>
+                <td>תזמון חכם, חיזוי סיכונים, ממשק שפה טבעית</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.3 למה עכשיו?</h2>
+    <ul>
+        <li><strong>מגמת עבודה מרחוק:</strong> עלייה של 300% בעבודה היברידית מחייבת כלי שיתוף פעולה מתקדמים</li>
+        <li><strong>בשלות AI:</strong> מודלים של שפה גדולים (LLMs) מאפשרים תכונות AI שלא היו אפשריות קודם</li>
+        <li><strong>ציפיות משתמשים:</strong> דור חדש של עובדים מצפה לחוויית משתמש ברמת צרכן</li>
+        <li><strong>פער בשוק:</strong> אין פתרון שמשלב עוצמה של Enterprise עם פשטות של Startup</li>
+    </ul>
+
+    <!-- ==================== SECTION 2: GOALS & METRICS ==================== -->
+    <div class="page-break"></div>
+    <h1>2. מטרות ומדדי הצלחה</h1>
+
+    <h2>2.1 מטרות עסקיות (שנה ראשונה)</h2>
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-value">50K</div>
+            <div class="metric-label">משתמשים רשומים</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">2.5K</div>
+            <div class="metric-label">לקוחות משלמים</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">$40K</div>
+            <div class="metric-label">MRR (הכנסה חודשית חוזרת)</div>
+        </div>
+    </div>
+
+    <h2>2.2 מדדי מוצר (KPIs)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מדד</th>
+                <th>יעד</th>
+                <th>אופן מדידה</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>User Activation</td>
+                <td>60% משלימים פרויקט ראשון תוך 24 שעות</td>
+                <td>PostHog Funnel</td>
+            </tr>
+            <tr>
+                <td>WAU (משתמשים פעילים שבועית)</td>
+                <td>70% מהרשומים</td>
+                <td>Analytics</td>
+            </tr>
+            <tr>
+                <td>Task Completion Rate</td>
+                <td>80% מהמשימות שנוצרו</td>
+                <td>Database</td>
+            </tr>
+            <tr>
+                <td>Feature Adoption</td>
+                <td>50% משתמשים ב-Gantt, 40% ב-AI</td>
+                <td>Feature Flags</td>
+            </tr>
+            <tr>
+                <td>NPS Score</td>
+                <td>> 50</td>
+                <td>In-app Survey</td>
+            </tr>
+            <tr>
+                <td>Churn Rate</td>
+                <td>< 5% חודשי</td>
+                <td>Billing System</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2.3 מדדים טכניים</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מדד</th>
+                <th>יעד</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>API Response Time (p95)</td>
+                <td>< 200ms</td>
+            </tr>
+            <tr>
+                <td>Page Load (LCP)</td>
+                <td>< 2.5 שניות</td>
+            </tr>
+            <tr>
+                <td>Error Rate</td>
+                <td>< 0.1%</td>
+            </tr>
+            <tr>
+                <td>Uptime</td>
+                <td>99.9%</td>
+            </tr>
+            <tr>
+                <td>Real-time Latency</td>
+                <td>< 100ms</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== SECTION 3: TARGET AUDIENCE ==================== -->
+    <div class="page-break"></div>
+    <h1>3. קהל יעד ופרסונות</h1>
+
+    <h2>3.1 פרסונה ראשית: שרה - מנהלת פרויקטים (Enterprise)</h2>
+    <div class="highlight-box">
+        <p><strong>תפקיד:</strong> Project Manager בכירה בחברת טכנולוגיה (50-500 עובדים)</p>
+        <p><strong>גיל:</strong> 32-45</p>
+        <p><strong>רמה טכנית:</strong> בינונית-גבוהה</p>
+        <p><strong>כאבים:</strong></p>
+        <ul>
+            <li>מעבר מתמיד בין MS Project ו-Jira</li>
+            <li>דוחות סטטוס ידניים שלוקחים שעות</li>
+            <li>קונפליקטים בהקצאת משאבים בין פרויקטים</li>
+            <li>חוסר נראות לצוותים אחרים</li>
+        </ul>
+        <p><strong>מטרות:</strong></p>
+        <ul>
+            <li>מקור אמת אחד לכל הפרויקטים</li>
+            <li>דוחות אוטומטיים להנהלה</li>
+            <li>ראות cross-team לניהול תלויות</li>
+        </ul>
+    </div>
+
+    <h2>3.2 פרסונה שנייה: מרקוס - מייסד Startup</h2>
+    <div class="highlight-box">
+        <p><strong>תפקיד:</strong> מייסד טכני שמנהל צוות של 5-10 אנשים</p>
+        <p><strong>גיל:</strong> 25-35</p>
+        <p><strong>רמה טכנית:</strong> גבוהה</p>
+        <p><strong>כאבים:</strong></p>
+        <ul>
+            <li>כלים יקרים מדי לתקציב של Startup</li>
+            <li>פיצ'רים מסובכים שלא נחוצים</li>
+            <li>חוויית מובייל גרועה לעבודה מהשטח</li>
+        </ul>
+        <p><strong>מטרות:</strong></p>
+        <ul>
+            <li>ניהול משימות פשוט ואינטואיטיבי</li>
+            <li>מעקב תקציב פשוט</li>
+            <li>נראות ללקוחות חיצוניים</li>
+        </ul>
+    </div>
+
+    <h2>3.3 פרסונה שלישית: ליסה - Agile Coach</h2>
+    <div class="highlight-box">
+        <p><strong>תפקיד:</strong> מאמנת Agile / Scrum Master שמנהלת מספר צוותים</p>
+        <p><strong>גיל:</strong> 28-40</p>
+        <p><strong>רמה טכנית:</strong> בינונית</p>
+        <p><strong>כאבים:</strong></p>
+        <ul>
+            <li>כלים שלא תומכים באמת ב-Agile</li>
+            <li>מעקב Velocity לא מדויק</li>
+            <li>קושי בניהול מספר צוותים במקביל</li>
+        </ul>
+        <p><strong>מטרות:</strong></p>
+        <ul>
+            <li>תכנון ספרינטים יעיל</li>
+            <li>Burndown Charts אמינים</li>
+            <li>תמיכה ברטרוספקטיבות</li>
+        </ul>
+    </div>
+
+    <h2>3.4 תפקידים והרשאות במערכת</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>תפקיד</th>
+                <th>הרשאות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Owner</strong> (בעלים)</td>
+                <td>גישה מלאה, ניהול חיוב, מחיקת Workspace</td>
+            </tr>
+            <tr>
+                <td><strong>Admin</strong> (מנהל)</td>
+                <td>כל פעולות הפרויקט, הזמנת משתמשים, ניהול תפקידים</td>
+            </tr>
+            <tr>
+                <td><strong>Project Manager</strong></td>
+                <td>יצירה/עריכת פרויקטים, הקצאת משימות, ניהול משאבים</td>
+            </tr>
+            <tr>
+                <td><strong>Team Member</strong></td>
+                <td>צפייה בפרויקטים, עדכון משימות מוקצות, רישום זמן</td>
+            </tr>
+            <tr>
+                <td><strong>Viewer</strong></td>
+                <td>גישה לקריאה בלבד</td>
+            </tr>
+            <tr>
+                <td><strong>Client</strong> (לקוח)</td>
+                <td>צפייה מוגבלת בפרויקטים ספציפיים</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== SECTION 4: USER STORIES ==================== -->
+    <div class="page-break"></div>
+    <h1>4. User Stories</h1>
+
+    <h2>4.1 ניהול פרויקטים</h2>
+
+    <div class="user-story">
+        <div class="user-story-header">US-001: יצירת פרויקט <span class="priority-must">Must Have</span></div>
+        <p><strong>כ</strong>מנהל פרויקטים, <strong>אני רוצה</strong> ליצור פרויקט חדש עם שם, תיאור ומתודולוגיה, <strong>כדי ש</strong>אוכל להתחיל לנהל את העבודה של הצוות.</p>
+        <p><em>קריטריוני קבלה:</em> יכולת לבחור Agile/Waterfall/Hybrid, הגדרת תאריכי התחלה וסיום, בחירת צבע ואייקון.</p>
+    </div>
+
+    <div class="user-story">
+        <div class="user-story-header">US-002: שימוש בתבנית <span class="priority-should">Should Have</span></div>
+        <p><strong>כ</strong>מנהל פרויקטים, <strong>אני רוצה</strong> ליצור פרויקט מתבנית מוכנה, <strong>כדי ש</strong>אחסוך זמן בהגדרות ראשוניות.</p>
+    </div>
+
+    <h2>4.2 ניהול משימות</h2>
+
+    <div class="user-story">
+        <div class="user-story-header">US-010: יצירת משימה <span class="priority-must">Must Have</span></div>
+        <p><strong>כ</strong>חבר צוות, <strong>אני רוצה</strong> ליצור משימה עם כותרת, תיאור ותאריך יעד, <strong>כדי ש</strong>אוכל לתעד את העבודה שלי.</p>
+    </div>
+
+    <div class="user-story">
+        <div class="user-story-header">US-011: הקצאת משימה <span class="priority-must">Must Have</span></div>
+        <p><strong>כ</strong>מנהל פרויקטים, <strong>אני רוצה</strong> להקצות משימה לחבר צוות, <strong>כדי ש</strong>יהיה ברור מי אחראי על כל משימה.</p>
+    </div>
+
+    <div class="user-story">
+        <div class="user-story-header">US-012: גרירת משימה בלוח <span class="priority-must">Must Have</span></div>
+        <p><strong>כ</strong>חבר צוות, <strong>אני רוצה</strong> לגרור משימה בין עמודות בלוח Kanban, <strong>כדי ש</strong>אוכל לעדכן את הסטטוס במהירות.</p>
+    </div>
+
+    <div class="user-story">
+        <div class="user-story-header">US-013: הגדרת תלויות <span class="priority-must">Must Have</span></div>
+        <p><strong>כ</strong>מנהל פרויקטים, <strong>אני רוצה</strong> להגדיר תלות בין משימות, <strong>כדי ש</strong>המערכת תחשב את לוח הזמנים בצורה נכונה.</p>
+    </div>
+
+    <h2>4.3 Agile / ספרינטים</h2>
+
+    <div class="user-story">
+        <div class="user-story-header">US-020: יצירת ספרינט <span class="priority-must">Must Have</span></div>
+        <p><strong>כ</strong>Scrum Master, <strong>אני רוצה</strong> ליצור ספרינט עם תאריכים ומטרה, <strong>כדי ש</strong>אוכל לתכנן את העבודה לשבועיים הקרובים.</p>
+    </div>
+
+    <div class="user-story">
+        <div class="user-story-header">US-021: Planning Poker <span class="priority-nice">Nice to Have</span></div>
+        <p><strong>כ</strong>חבר צוות, <strong>אני רוצה</strong> להשתתף ב-Planning Poker, <strong>כדי ש</strong>נוכל להעריך משימות ביחד.</p>
+    </div>
+
+    <h2>4.4 AI ואוטומציה</h2>
+
+    <div class="user-story">
+        <div class="user-story-header">US-030: יצירת משימה מטקסט <span class="priority-should">Should Have</span></div>
+        <p><strong>כ</strong>מנהל פרויקטים, <strong>אני רוצה</strong> לכתוב "צור משימה לעדכון הממשק עד יום שני" ושהמערכת תבין, <strong>כדי ש</strong>אחסוך זמן ביצירת משימות.</p>
+    </div>
+
+    <div class="user-story">
+        <div class="user-story-header">US-031: התראת סיכון <span class="priority-should">Should Have</span></div>
+        <p><strong>כ</strong>מנהל פרויקטים, <strong>אני רוצה</strong> לקבל התראה כשהמערכת מזהה סיכון לאיחור, <strong>כדי ש</strong>אוכל לפעול מראש.</p>
+    </div>
+
+    <!-- ==================== SECTION 5: FUNCTIONAL REQUIREMENTS ==================== -->
+    <div class="page-break"></div>
+    <h1>5. דרישות פונקציונליות</h1>
+
+    <h2>5.1 מודול: ניהול פרויקטים</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>עדיפות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FR-001</td>
+                <td>יצירת פרויקט עם שם, תיאור, תאריכים, מתודולוגיה</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-002</td>
+                <td>תמיכה בתבניות: Agile, Waterfall, Hybrid, Custom</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-003</td>
+                <td>הגדרת ימי עבודה, חגים, שעות ברירת מחדל</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-004</td>
+                <td>שכפול פרויקט קיים כתבנית</td>
+                <td><span class="priority-nice">Nice</span></td>
+            </tr>
+            <tr>
+                <td>FR-005</td>
+                <td>ארכיון ושחזור פרויקטים</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>5.2 מודול: ניהול משימות</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>עדיפות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FR-010</td>
+                <td>יצירה, עריכה, מחיקת משימות עם תיאור Rich Text</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-011</td>
+                <td>היררכיה: Projects > Epics > Features > Tasks > Subtasks</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-012</td>
+                <td>תלויות: FS, SS, FF, SF עם Lag/Lead</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-013</td>
+                <td>אילוצי זמן (Must Start On, Must Finish On, וכו')</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-014</td>
+                <td>משימות חוזרות</td>
+                <td><span class="priority-nice">Nice</span></td>
+            </tr>
+            <tr>
+                <td>FR-015</td>
+                <td>פעולות Bulk (העברה, מחיקה, הקצאה)</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-016</td>
+                <td>תגובות עם @mentions</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-017</td>
+                <td>קבצים מצורפים (עד 50MB, Drag & Drop)</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-018</td>
+                <td>שדות מותאמים (טקסט, מספר, תאריך, dropdown)</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-019</td>
+                <td>מעקב זמן (הזנה ידנית + טיימר)</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>5.3 מודול: Agile</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>עדיפות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FR-030</td>
+                <td>יצירה וניהול ספרינטים</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-031</td>
+                <td>ניהול Backlog עם Drag & Drop</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-032</td>
+                <td>הערכת Story Points</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-033</td>
+                <td>לוח Kanban עם עמודות מותאמות</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-034</td>
+                <td>תרשימי Burndown ו-Burnup</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-035</td>
+                <td>מעקב Velocity וחיזוי</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-036</td>
+                <td>Planning Poker</td>
+                <td><span class="priority-nice">Nice</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>5.4 מודול: Waterfall / Gantt</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>עדיפות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FR-040</td>
+                <td>Work Breakdown Structure (WBS) עם מספור</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-041</td>
+                <td>חישוב Critical Path</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-042</td>
+                <td>תרשים Gantt אינטראקטיבי (Drag & Drop)</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-043</td>
+                <td>אבני דרך (Milestones)</td>
+                <td><span class="priority-must">Must</span></td>
+            </tr>
+            <tr>
+                <td>FR-044</td>
+                <td>השוואת Baseline (מתוכנן מול בפועל)</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-045</td>
+                <td>ייצוא Gantt ל-PDF/PNG</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>5.5 מודול: AI ואוטומציה</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>עדיפות</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>FR-070</td>
+                <td>הערכת משך משימות מבוססת היסטוריה</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-071</td>
+                <td>הצעות הקצאת משאבים אופטימלית</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-072</td>
+                <td>זיהוי סיכונים אוטומטי והתראות</td>
+                <td><span class="priority-should">Should</span></td>
+            </tr>
+            <tr>
+                <td>FR-073</td>
+                <td>חיזוי הסתברות להחמצת מועד</td>
+                <td><span class="priority-nice">Nice</span></td>
+            </tr>
+            <tr>
+                <td>FR-074</td>
+                <td>יצירת משימות משפה טבעית</td>
+                <td><span class="priority-nice">Nice</span></td>
+            </tr>
+            <tr>
+                <td>FR-075</td>
+                <td>סיכום מנהלים אוטומטי</td>
+                <td><span class="priority-nice">Nice</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== SECTION 6: NON-FUNCTIONAL REQUIREMENTS ==================== -->
+    <div class="page-break"></div>
+    <h1>6. דרישות לא-פונקציונליות</h1>
+
+    <h2>6.1 ביצועים (Performance)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>יעד</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>NFR-001</td>
+                <td>זמן תגובה API (p95)</td>
+                <td>< 200ms</td>
+            </tr>
+            <tr>
+                <td>NFR-002</td>
+                <td>זמן טעינת דף (LCP)</td>
+                <td>< 2.5 שניות</td>
+            </tr>
+            <tr>
+                <td>NFR-003</td>
+                <td>First Input Delay</td>
+                <td>< 100ms</td>
+            </tr>
+            <tr>
+                <td>NFR-004</td>
+                <td>משתמשים במקביל ללא השפעה על ביצועים</td>
+                <td>1,000</td>
+            </tr>
+            <tr>
+                <td>NFR-005</td>
+                <td>זמן תגובה Real-time</td>
+                <td>< 100ms</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>6.2 אמינות (Reliability)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>מזהה</th>
+                <th>דרישה</th>
+                <th>יעד</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>NFR-010</td>
+                <td>Uptime</td>
+                <td>99.9%</td>
+            </tr>
+            <tr>
+                <td>NFR-011</td>
+                <td>Error Rate</td>
+                <td>< 0.1%</td>
+            </tr>
+            <tr>
+                <td>NFR-012</td>
+                <td>Recovery Time Objective (RTO)</td>
+                <td>< 4 שעות</td>
+            </tr>
+            <tr>
+                <td>NFR-013</td>
+                <td>Recovery Point Objective (RPO)</td>
+                <td>< 1 שעה</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>6.3 אבטחה (Security)</h2>
+    <ul>
+        <li><strong>NFR-020:</strong> הצפנת נתונים בתעבורה (TLS 1.3)</li>
+        <li><strong>NFR-021:</strong> הצפנת נתונים במנוחה (AES-256)</li>
+        <li><strong>NFR-022:</strong> אימות דו-שלבי (2FA) אופציונלי</li>
+        <li><strong>NFR-023:</strong> הגנה מ-OWASP Top 10 (XSS, SQL Injection, CSRF)</li>
+        <li><strong>NFR-024:</strong> Rate Limiting למניעת התקפות</li>
+        <li><strong>NFR-025:</strong> Audit Log לכל פעולות רגישות</li>
+    </ul>
+
+    <h2>6.4 נגישות (Accessibility)</h2>
+    <ul>
+        <li><strong>NFR-030:</strong> עמידה בתקן WCAG 2.1 AA</li>
+        <li><strong>NFR-031:</strong> תאימות לקוראי מסך (VoiceOver, NVDA)</li>
+        <li><strong>NFR-032:</strong> ניווט מקלדת מלא לכל הפיצ'רים</li>
+        <li><strong>NFR-033:</strong> יחסי ניגודיות צבע תקינים</li>
+    </ul>
+
+    <h2>6.5 סקלביליות (Scalability)</h2>
+    <ul>
+        <li><strong>NFR-040:</strong> תמיכה ב-100,000 משתמשים רשומים</li>
+        <li><strong>NFR-041:</strong> תמיכה ב-10,000 פרויקטים פעילים</li>
+        <li><strong>NFR-042:</strong> תמיכה ב-1,000,000 משימות</li>
+        <li><strong>NFR-043:</strong> Horizontal scaling לשרתי API</li>
+    </ul>
+
+    <!-- ==================== SECTION 7: DATA MODEL ==================== -->
+    <div class="page-break"></div>
+    <h1>7. מודל הנתונים</h1>
+
+    <h2>7.1 ישויות עיקריות</h2>
+
+    <h3>Organization (ארגון)</h3>
+    <div class="code-block">
+{
+  id: string              // UUID
+  name: string            // שם הארגון (עד 100 תווים)
+  slug: string            // URL-safe identifier
+  plan: 'free' | 'starter' | 'business' | 'enterprise'
+  timezone: string        // e.g., 'Asia/Jerusalem'
+  working_days: number[]  // [0,1,2,3,4] = Sun-Thu
+  default_work_hours: number
+  created_at: timestamp
+  updated_at: timestamp
+}
+    </div>
+
+    <h3>Project (פרויקט)</h3>
+    <div class="code-block">
+{
+  id: string
+  organization_id: string
+  name: string                    // עד 200 תווים
+  description: string | null      // Rich text
+  key: string                     // e.g., 'PROJ' - לזיהוי משימות
+  status: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled'
+  methodology: 'agile' | 'waterfall' | 'hybrid' | 'kanban'
+  start_date: date | null
+  target_end_date: date | null
+  budget_amount: number | null    // באגורות
+  budget_currency: string         // ISO 4217
+  enable_sprints: boolean
+  owner_id: string
+  created_at: timestamp
+  updated_at: timestamp
+}
+    </div>
+
+    <h3>Task (משימה)</h3>
+    <div class="code-block">
+{
+  id: string
+  project_id: string
+  task_number: number             // Auto-increment per project
+  key: string                     // e.g., 'PROJ-123'
+  title: string                   // עד 500 תווים
+  description: string | null      // Rich text
+  parent_task_id: string | null   // להיררכיה
+  wbs_number: string | null       // e.g., '1.2.3'
+  task_type: 'epic' | 'feature' | 'story' | 'task' | 'subtask' | 'bug' | 'milestone'
+  status_id: string
+  priority: 'lowest' | 'low' | 'medium' | 'high' | 'highest'
+  start_date: date | null
+  due_date: date | null
+  estimated_hours: number | null
+  actual_hours: number | null
+  sprint_id: string | null
+  story_points: number | null
+  progress_percent: number        // 0-100
+  tags: string[]
+  created_by: string
+  created_at: timestamp
+  updated_at: timestamp
+}
+    </div>
+
+    <h3>TaskDependency (תלות בין משימות)</h3>
+    <div class="code-block">
+{
+  id: string
+  predecessor_id: string          // המשימה הקודמת
+  successor_id: string            // המשימה העוקבת
+  dependency_type: 'finish_to_start' | 'start_to_start' |
+                   'finish_to_finish' | 'start_to_finish'
+  lag_days: number                // יכול להיות שלילי (Lead Time)
+  created_at: timestamp
+}
+    </div>
+
+    <h3>Sprint (ספרינט)</h3>
+    <div class="code-block">
+{
+  id: string
+  project_id: string
+  name: string
+  goal: string | null
+  sprint_number: number
+  status: 'planning' | 'active' | 'completed'
+  start_date: date
+  end_date: date
+  total_story_points: number
+  completed_story_points: number
+  created_at: timestamp
+  updated_at: timestamp
+}
+    </div>
+
+    <h2>7.2 דיאגרמת קשרים (ERD מפושט)</h2>
+    <div class="code-block">
+Organization ──1:N── User (via OrganizationMember)
+     │
+     └──1:N── Project ──1:N── ProjectMember ──N:1── User
+                  │
+                  ├──1:N── TaskStatus
+                  ├──1:N── Sprint
+                  ├──1:N── Risk
+                  │
+                  └──1:N── Task ──1:N── TaskAssignment ──N:1── User
+                              │
+                              ├──1:N── TaskDependency (self-reference)
+                              ├──1:N── TimeEntry
+                              ├──1:N── Comment
+                              └──1:N── Attachment
+    </div>
+
+    <!-- ==================== SECTION 8: UX ==================== -->
+    <div class="page-break"></div>
+    <h1>8. עיצוב וחוויית משתמש</h1>
+
+    <h2>8.1 עקרונות עיצוב</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h4>Mobile-First</h4>
+            <p>עיצוב רספונסיבי שמתחיל מ-breakpoints של מובייל</p>
+        </div>
+        <div class="feature-card">
+            <h4>Dark Mode</h4>
+            <p>תמיכה מלאה ב-Dark Mode מהיום הראשון</p>
+        </div>
+        <div class="feature-card">
+            <h4>נגישות</h4>
+            <p>עמידה ב-WCAG 2.1 AA, ניווט מקלדת מלא</p>
+        </div>
+        <div class="feature-card">
+            <h4>Real-time</h4>
+            <p>עדכוני UI אופטימיסטיים, מחווני נוכחות</p>
+        </div>
+    </div>
+
+    <h2>8.2 מסכים עיקריים</h2>
+
+    <h3>Dashboard (דף הבית)</h3>
+    <ul>
+        <li>Widget "המשימות שלי" - היום, באיחור, קרובות</li>
+        <li>כרטיסי גישה מהירה לפרויקטים אחרונים</li>
+        <li>פיד פעילות צוות</li>
+        <li>גרפי Velocity / התקדמות</li>
+        <li>כפתור יצירה מהירה (FAB במובייל)</li>
+    </ul>
+
+    <h3>Board View (לוח Kanban)</h3>
+    <ul>
+        <li>עמודות סטטוס עם ספירת משימות</li>
+        <li>כרטיסי משימות: כותרת, אווטרים, עדיפות, תאריך</li>
+        <li>גרירה ושחרור בין עמודות</li>
+        <li>פילטרים וחיפוש מהיר</li>
+        <li>WIP Limits (אופציונלי)</li>
+    </ul>
+
+    <h3>Gantt View (תרשים גנט)</h3>
+    <ul>
+        <li>רשימת משימות (שמאל) עם היררכיה</li>
+        <li>ציר זמן (ימין) עם פסים</li>
+        <li>Zoom: יום / שבוע / חודש / רבעון / שנה</li>
+        <li>קו סימון "היום"</li>
+        <li>חיצי תלויות</li>
+        <li>הדגשת Critical Path</li>
+        <li>גרירה לשינוי תאריכים</li>
+    </ul>
+
+    <h3>Sprint Planning</h3>
+    <ul>
+        <li>Backlog (שמאל) - משימות ממוינות</li>
+        <li>Sprint (ימין) - משימות נבחרות</li>
+        <li>מד קיבולת (Story Points)</li>
+        <li>קו Velocity היסטורי</li>
+        <li>שדה Sprint Goal</li>
+    </ul>
+
+    <h2>8.3 מבנה ניווט</h2>
+    <div class="code-block">
+Desktop:
+┌─────────────────────────────────────────────┐
+│ Logo │ Search │ Projects ▼ │ + New │ Avatar│
+├──────┼──────────────────────────────────────┤
+│ Side │                                      │
+│ bar  │         Main Content Area            │
+│      │                                      │
+│ Home │                                      │
+│ Proj │                                      │
+│ Team │                                      │
+│ Rpts │                                      │
+│ ⚙    │                                      │
+└──────┴──────────────────────────────────────┘
+
+Mobile:
+┌──────────────────┐
+│ ☰ │ Project Name │
+├──────────────────┤
+│                  │
+│  Main Content    │
+│                  │
+├──────────────────┤
+│ 🏠│📋│ ➕ │🔔│👤 │
+└──────────────────┘
+    </div>
+
+    <!-- ==================== SECTION 9: SCOPE ==================== -->
+    <div class="page-break"></div>
+    <h1>9. היקף ומגבלות</h1>
+
+    <h2>9.1 בתוך הסקופ (In Scope) - גרסה 1.0</h2>
+    <div class="highlight-box success">
+        <ul>
+            <li>ניהול פרויקטים (CRUD, תבניות, ארכיון)</li>
+            <li>ניהול משימות מלא (היררכיה, תלויות, שדות מותאמים)</li>
+            <li>תצוגות: רשימה, לוח Kanban, Gantt, לוח שנה</li>
+            <li>ניהול ספרינטים (Backlog, Sprint Planning, Burndown)</li>
+            <li>מעקב זמן בסיסי</li>
+            <li>תגובות ו-@mentions</li>
+            <li>קבצים מצורפים</li>
+            <li>התראות (In-app, Email)</li>
+            <li>אימות משתמשים (Email, OAuth)</li>
+            <li>תפקידים והרשאות בסיסיים</li>
+        </ul>
+    </div>
+
+    <h2>9.2 מחוץ לסקופ (Out of Scope) - גרסה 1.0</h2>
+    <div class="highlight-box warning">
+        <ul>
+            <li>SSO (SAML, OIDC) - יידחה לגרסה 2.0</li>
+            <li>אפליקציית מובייל Native - PWA בלבד בגרסה 1.0</li>
+            <li>אינטגרציות מתקדמות (Jira Sync, Zapier) - יידחו</li>
+            <li>Portfolio Management - יידחה</li>
+            <li>Resource Leveling אוטומטי - יידחה</li>
+            <li>Earned Value Management (EVM) - יידחה</li>
+            <li>Multi-language support - אנגלית ועברית בלבד</li>
+            <li>White-label / Self-hosted - SaaS בלבד</li>
+        </ul>
+    </div>
+
+    <h2>9.3 הנחות (Assumptions)</h2>
+    <ul>
+        <li>המשתמשים מכירים מושגי ניהול פרויקטים בסיסיים</li>
+        <li>יש גישה לאינטרנט (Offline mode מוגבל)</li>
+        <li>דפדפנים נתמכים: Chrome, Firefox, Safari, Edge (גרסאות אחרונות)</li>
+        <li>תקציב זמין ל-Cloud Infrastructure</li>
+    </ul>
+
+    <h2>9.4 תלויות (Dependencies)</h2>
+    <ul>
+        <li><strong>Supabase:</strong> Database, Authentication, Storage</li>
+        <li><strong>Vercel:</strong> Frontend hosting</li>
+        <li><strong>Claude API:</strong> תכונות AI</li>
+        <li><strong>Resend/SendGrid:</strong> שליחת אימיילים</li>
+    </ul>
+
+    <!-- ==================== SECTION 10: TECH STACK ==================== -->
+    <div class="page-break"></div>
+    <h1>10. ארכיטקטורה ו-Tech Stack</h1>
+
+    <h2>10.1 Frontend</h2>
+    <table>
+        <tbody>
+            <tr><th>קטגוריה</th><th>טכנולוגיה</th></tr>
+            <tr><td>Framework</td><td>Next.js 15 (App Router)</td></tr>
+            <tr><td>Language</td><td>TypeScript 5.x (strict mode)</td></tr>
+            <tr><td>Styling</td><td>Tailwind CSS + shadcn/ui</td></tr>
+            <tr><td>State Management</td><td>React Query (TanStack) + Zustand</td></tr>
+            <tr><td>Real-time</td><td>Socket.io client</td></tr>
+            <tr><td>Charts</td><td>Recharts + Custom Gantt</td></tr>
+            <tr><td>Forms</td><td>React Hook Form + Zod</td></tr>
+            <tr><td>Animation</td><td>Framer Motion</td></tr>
+        </tbody>
+    </table>
+
+    <h2>10.2 Backend</h2>
+    <table>
+        <tbody>
+            <tr><th>קטגוריה</th><th>טכנולוגיה</th></tr>
+            <tr><td>Framework</td><td>Node.js + Express / Fastify</td></tr>
+            <tr><td>Database</td><td>PostgreSQL 16 (Supabase)</td></tr>
+            <tr><td>Cache</td><td>Redis (Upstash)</td></tr>
+            <tr><td>Search</td><td>PostgreSQL Full-Text + pg_trgm</td></tr>
+            <tr><td>Real-time</td><td>Socket.io / Supabase Realtime</td></tr>
+            <tr><td>AI</td><td>Claude API (Anthropic)</td></tr>
+            <tr><td>Storage</td><td>Supabase Storage / S3</td></tr>
+        </tbody>
+    </table>
+
+    <h2>10.3 Infrastructure</h2>
+    <table>
+        <tbody>
+            <tr><th>קטגוריה</th><th>טכנולוגיה</th></tr>
+            <tr><td>Frontend Hosting</td><td>Vercel</td></tr>
+            <tr><td>Backend Hosting</td><td>Railway / Cloud Run</td></tr>
+            <tr><td>CDN</td><td>Vercel Edge / Cloudflare</td></tr>
+            <tr><td>Monitoring</td><td>Sentry (errors) + PostHog (analytics)</td></tr>
+            <tr><td>CI/CD</td><td>GitHub Actions</td></tr>
+        </tbody>
+    </table>
+
+    <h2>10.4 דיאגרמת ארכיטקטורה</h2>
+    <div class="code-block">
+┌─────────────────────────────────────────────────────────────┐
+│                      Client Layer                           │
+│   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│   │   Web App   │  │  Mobile PWA │  │   Desktop   │        │
+│   │  (Next.js)  │  │             │  │  (Electron) │        │
+│   └─────────────┘  └─────────────┘  └─────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     API Gateway                             │
+│   Authentication │ Rate Limiting │ Request Validation       │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Service Layer                            │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Project  │ │  Task    │ │ Resource │ │   AI     │       │
+│  │ Service  │ │ Service  │ │ Service  │ │ Service  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Data Layer                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                    │
+│  │PostgreSQL│ │  Redis   │ │ Storage  │                    │
+│  │(Primary) │ │ (Cache)  │ │  (S3)    │                    │
+│  └──────────┘ └──────────┘ └──────────┘                    │
+└─────────────────────────────────────────────────────────────┘
+    </div>
+
+    <!-- ==================== SECTION 11: TIMELINE ==================== -->
+    <div class="page-break"></div>
+    <h1>11. לוח זמנים ואבני דרך</h1>
+
+    <div class="phase">
+        <div class="phase-number">1</div>
+        <h3>שלב 1: Foundation (שבועות 1-4)</h3>
+        <p><strong>מטרה:</strong> ניהול בסיסי של פרויקטים ומשימות</p>
+        <ul>
+            <li>אימות משתמשים (Email/Password, OAuth)</li>
+            <li>הקמת ארגון ו-Workspace</li>
+            <li>CRUD פרויקטים</li>
+            <li>CRUD משימות בסיסי</li>
+            <li>תצוגת רשימה ולוח Kanban</li>
+        </ul>
+        <p><strong>אבן דרך:</strong> MVP פנימי לבדיקות</p>
+    </div>
+
+    <div class="phase">
+        <div class="phase-number">2</div>
+        <h3>שלב 2: Core PM (שבועות 5-8)</h3>
+        <p><strong>מטרה:</strong> ניהול משימות מלא ושיתוף פעולה</p>
+        <ul>
+            <li>היררכיית משימות (Epics, Subtasks)</li>
+            <li>תלויות משימות</li>
+            <li>תרשים Gantt (קריאה)</li>
+            <li>ניהול ספרינטים</li>
+            <li>מעקב זמן</li>
+            <li>תגובות ו-@mentions</li>
+        </ul>
+        <p><strong>אבן דרך:</strong> Beta פרטי למשתמשים נבחרים</p>
+    </div>
+
+    <div class="phase">
+        <div class="phase-number">3</div>
+        <h3>שלב 3: Resource & Scheduling (שבועות 9-12)</h3>
+        <p><strong>מטרה:</strong> תזמון מתקדם וניהול משאבים</p>
+        <ul>
+            <li>Gantt אינטראקטיבי (Drag & Drop)</li>
+            <li>חישוב Critical Path</li>
+            <li>הקצאת משאבים</li>
+            <li>תצוגת עומס עבודה</li>
+            <li>יצירת Baseline</li>
+        </ul>
+        <p><strong>אבן דרך:</strong> Beta ציבורי</p>
+    </div>
+
+    <div class="phase">
+        <div class="phase-number">4</div>
+        <h3>שלב 4: Real-time & Collaboration (שבועות 13-16)</h3>
+        <p><strong>מטרה:</strong> שיתוף פעולה בזמן אמת</p>
+        <ul>
+            <li>סנכרון Real-time (CRDT)</li>
+            <li>מחווני נוכחות</li>
+            <li>התראות מלאות</li>
+            <li>PWA + Offline</li>
+        </ul>
+        <p><strong>אבן דרך:</strong> השקה רשמית (GA)</p>
+    </div>
+
+    <div class="phase">
+        <div class="phase-number">5</div>
+        <h3>שלב 5: AI & Analytics (שבועות 17-20)</h3>
+        <p><strong>מטרה:</strong> תכונות AI ודיווח</p>
+        <ul>
+            <li>הצעות תזמון AI</li>
+            <li>חיזוי סיכונים</li>
+            <li>דשבורדים מותאמים</li>
+            <li>דוחות אוטומטיים</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <div class="phase-number">6</div>
+        <h3>שלב 6: Enterprise (שבועות 21-24)</h3>
+        <p><strong>מטרה:</strong> תכונות Enterprise ופוליש</p>
+        <ul>
+            <li>SSO (SAML, OIDC)</li>
+            <li>הרשאות מתקדמות</li>
+            <li>Audit Logs</li>
+            <li>אופטימיזציה ואבטחה</li>
+        </ul>
+    </div>
+
+    <!-- ==================== SECTION 12: TESTING ==================== -->
+    <div class="page-break"></div>
+    <h1>12. אסטרטגיית בדיקות</h1>
+
+    <h2>12.1 פירמידת בדיקות</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>סוג</th>
+                <th>אחוז</th>
+                <th>כלים</th>
+                <th>מה נבדק</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Unit Tests</td>
+                <td>60%</td>
+                <td>Jest, React Testing Library, MSW</td>
+                <td>קומפוננטים, Hooks, Utils</td>
+            </tr>
+            <tr>
+                <td>Integration Tests</td>
+                <td>30%</td>
+                <td>Supertest, TestContainers</td>
+                <td>API, Database, Services</td>
+            </tr>
+            <tr>
+                <td>E2E Tests</td>
+                <td>10%</td>
+                <td>Playwright, Chromatic</td>
+                <td>User Flows קריטיים</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>12.2 כיסוי יעד</h2>
+    <ul>
+        <li><strong>Business Logic:</strong> 80% כיסוי</li>
+        <li><strong>כללי:</strong> 70% כיסוי</li>
+    </ul>
+
+    <h2>12.3 תרחישי E2E קריטיים</h2>
+    <ol>
+        <li>הרשמה ויצירת פרויקט ראשון</li>
+        <li>יצירת משימה עם כל השדות</li>
+        <li>גרירת משימה בלוח Kanban</li>
+        <li>יצירת והתחלת Sprint</li>
+        <li>רישום זמן על משימה</li>
+        <li>יצירת דוח סטטוס</li>
+        <li>הזמנת חבר צוות</li>
+        <li>שיתוף פעולה בזמן אמת (שני משתמשים)</li>
+        <li>יצירת משימה במובייל</li>
+        <li>ייצוא Gantt ל-PDF</li>
+    </ol>
+
+    <h2>12.4 בדיקות נוספות</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>סוג</th>
+                <th>כלי</th>
+                <th>מה נבדק</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Performance</td>
+                <td>k6, Lighthouse</td>
+                <td>זמני תגובה, עומסים</td>
+            </tr>
+            <tr>
+                <td>Accessibility</td>
+                <td>axe-core, Pa11y</td>
+                <td>WCAG 2.1 AA</td>
+            </tr>
+            <tr>
+                <td>Security</td>
+                <td>OWASP ZAP, npm audit</td>
+                <td>XSS, SQL Injection, CSRF</td>
+            </tr>
+            <tr>
+                <td>Visual Regression</td>
+                <td>Chromatic</td>
+                <td>שינויים ויזואליים</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ==================== SECTION 13: RISKS ==================== -->
+    <div class="page-break"></div>
+    <h1>13. סיכונים ושאלות פתוחות</h1>
+
+    <h2>13.1 סיכונים מזוהים</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>סיכון</th>
+                <th>הסתברות</th>
+                <th>השפעה</th>
+                <th>מיטיגציה</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>עיכוב בפיתוח Gantt אינטראקטיבי</td>
+                <td>בינונית</td>
+                <td>גבוהה</td>
+                <td>POC מוקדם, שימוש בספריות קיימות</td>
+            </tr>
+            <tr>
+                <td>עלויות AI גבוהות מהצפוי</td>
+                <td>בינונית</td>
+                <td>בינונית</td>
+                <td>Rate limiting, Caching, מודלים קטנים יותר</td>
+            </tr>
+            <tr>
+                <td>בעיות ביצועים ב-Real-time</td>
+                <td>נמוכה</td>
+                <td>גבוהה</td>
+                <td>Load testing מוקדם, ארכיטקטורה סקלבילית</td>
+            </tr>
+            <tr>
+                <td>תחרות מ-Asana/Monday</td>
+                <td>גבוהה</td>
+                <td>בינונית</td>
+                <td>פוקוס על יתרונות ייחודיים (Hybrid, AI)</td>
+            </tr>
+            <tr>
+                <td>אימוץ נמוך של AI Features</td>
+                <td>בינונית</td>
+                <td>נמוכה</td>
+                <td>A/B testing, Onboarding מודרך</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>13.2 שאלות פתוחות</h2>
+    <div class="highlight-box warning">
+        <ol>
+            <li><strong>מודל תמחור:</strong> האם להציע תוכנית לצוותים קטנים במחיר מוזל?</li>
+            <li><strong>גבולות Free Tier:</strong> כמה פרויקטים/משתמשים לאפשר בחינם?</li>
+            <li><strong>אינטגרציות:</strong> אילו אינטגרציות לפתח ראשונות? Slack, GitHub, Jira?</li>
+            <li><strong>מובייל:</strong> האם PWA מספיק או נדרשת אפליקציה Native?</li>
+            <li><strong>שפות:</strong> האם לתמוך בשפות נוספות מעבר לאנגלית ועברית?</li>
+            <li><strong>Self-hosted:</strong> האם להציע אפשרות On-premise לארגונים?</li>
+        </ol>
+    </div>
+
+    <h2>13.3 החלטות שנדחו</h2>
+    <ul>
+        <li>בחירת Framework לאפליקציית מובייל (React Native vs Flutter)</li>
+        <li>ספק שליחת SMS להתראות</li>
+        <li>אסטרטגיית Multi-tenant vs Single-tenant</li>
+    </ul>
+
+    <!-- ==================== FOOTER ==================== -->
+    <div class="doc-footer">
+        <p><strong>FlowPlan PRD v1.0</strong></p>
+        <p>מסמך זה הוא מסמך חי ויעודכן לאורך מחזור חיי המוצר</p>
+        <p style="margin-top: 20px;">© 2026 FlowPlan. All rights reserved.</p>
+    </div>
+
+</body>
+</html>
