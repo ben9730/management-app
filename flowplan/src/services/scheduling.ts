@@ -1,0 +1,584 @@
+/**
+ * SchedulingService - Critical Path Method (CPM) Implementation
+ *
+ * Based on PRD v2.1 - Lean MVP + Resource-Aware Scheduling
+ *
+ * Features:
+ * - Forward Pass (ES, EF calculation)
+ * - Backward Pass (LS, LF calculation)
+ * - Slack Calculation & Critical Path identification
+ * - Calendar Awareness (weekends, holidays)
+ * - Resource-Aware Scheduling (time off, part-time workers)
+ */
+
+import type {
+  Task,
+  Dependency,
+  TeamMember,
+  EmployeeTimeOff,
+  SchedulingResult,
+} from '@/types/entities'
+
+export class SchedulingService {
+  /**
+   * Check if a given date is a working day
+   */
+  isWorkingDay(date: Date, workDays: number[], holidays: Date[]): boolean {
+    const dayOfWeek = date.getDay()
+
+    // Check if it's a work day
+    if (!workDays.includes(dayOfWeek)) {
+      return false
+    }
+
+    // Check if it's a holiday
+    const dateStr = this.toDateString(date)
+    for (const holiday of holidays) {
+      if (this.toDateString(holiday) === dateStr) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  /**
+   * Add working days to a date, skipping non-working days
+   */
+  addWorkingDays(
+    startDate: Date,
+    daysToAdd: number,
+    workDays: number[],
+    holidays: Date[]
+  ): Date {
+    if (daysToAdd <= 0) {
+      return new Date(startDate)
+    }
+
+    let currentDate = new Date(startDate)
+    let daysAdded = 0
+
+    // First, find the first working day if start is not a working day
+    while (!this.isWorkingDay(currentDate, workDays, holidays)) {
+      currentDate = this.addDays(currentDate, 1)
+    }
+
+    // Duration of 1 means the task completes on the same day it starts
+    if (daysToAdd === 1) {
+      return currentDate
+    }
+
+    // Add remaining days
+    while (daysAdded < daysToAdd - 1) {
+      currentDate = this.addDays(currentDate, 1)
+      if (this.isWorkingDay(currentDate, workDays, holidays)) {
+        daysAdded++
+      }
+    }
+
+    return currentDate
+  }
+
+  /**
+   * Subtract working days from a date, skipping non-working days
+   */
+  subtractWorkingDays(
+    endDate: Date,
+    daysToSubtract: number,
+    workDays: number[],
+    holidays: Date[]
+  ): Date {
+    if (daysToSubtract <= 0) {
+      return new Date(endDate)
+    }
+
+    let currentDate = new Date(endDate)
+    let daysSubtracted = 0
+
+    // First, find a working day if end is not a working day
+    while (!this.isWorkingDay(currentDate, workDays, holidays)) {
+      currentDate = this.addDays(currentDate, -1)
+    }
+
+    // Duration of 1 means start and end are the same day
+    if (daysToSubtract === 1) {
+      return currentDate
+    }
+
+    // Subtract remaining days
+    while (daysSubtracted < daysToSubtract - 1) {
+      currentDate = this.addDays(currentDate, -1)
+      if (this.isWorkingDay(currentDate, workDays, holidays)) {
+        daysSubtracted++
+      }
+    }
+
+    return currentDate
+  }
+
+  /**
+   * Count working days between two dates
+   */
+  workingDaysBetween(
+    start: Date,
+    end: Date,
+    workDays: number[],
+    holidays: Date[]
+  ): number {
+    if (this.toDateString(start) === this.toDateString(end)) {
+      return 0
+    }
+
+    let count = 0
+    let currentDate = new Date(start)
+    const endStr = this.toDateString(end)
+
+    while (this.toDateString(currentDate) !== endStr) {
+      currentDate = this.addDays(currentDate, 1)
+      if (this.isWorkingDay(currentDate, workDays, holidays)) {
+        count++
+      }
+    }
+
+    return count
+  }
+
+  /**
+   * Topologically sort tasks based on dependencies
+   * Uses Kahn's algorithm
+   */
+  topologicalSort(tasks: Task[], dependencies: Dependency[]): Task[] {
+    const taskMap = new Map<string, Task>()
+    const inDegree = new Map<string, number>()
+    const adjacencyList = new Map<string, string[]>()
+
+    // Initialize
+    for (const task of tasks) {
+      taskMap.set(task.id, task)
+      inDegree.set(task.id, 0)
+      adjacencyList.set(task.id, [])
+    }
+
+    // Build graph
+    for (const dep of dependencies) {
+      const successors = adjacencyList.get(dep.predecessor_id)
+      if (successors) {
+        successors.push(dep.successor_id)
+      }
+      inDegree.set(dep.successor_id, (inDegree.get(dep.successor_id) || 0) + 1)
+    }
+
+    // Find all tasks with no incoming edges
+    const queue: string[] = []
+    for (const [taskId, degree] of inDegree) {
+      if (degree === 0) {
+        queue.push(taskId)
+      }
+    }
+
+    const result: Task[] = []
+
+    while (queue.length > 0) {
+      const taskId = queue.shift()!
+      const task = taskMap.get(taskId)
+      if (task) {
+        result.push(task)
+      }
+
+      const successors = adjacencyList.get(taskId) || []
+      for (const successorId of successors) {
+        const newDegree = (inDegree.get(successorId) || 0) - 1
+        inDegree.set(successorId, newDegree)
+        if (newDegree === 0) {
+          queue.push(successorId)
+        }
+      }
+    }
+
+    // Check for circular dependency
+    if (result.length !== tasks.length) {
+      throw new Error('Circular dependency detected')
+    }
+
+    return result
+  }
+
+  /**
+   * Forward Pass - Calculate Early Start (ES) and Early Finish (EF)
+   */
+  forwardPass(
+    tasks: Task[],
+    dependencies: Dependency[],
+    projectStart: Date,
+    workDays: number[],
+    holidays: Date[]
+  ): Task[] {
+    const sortedTasks = this.topologicalSort(tasks, dependencies)
+    const taskMap = new Map<string, Task>()
+
+    // Clone tasks to avoid mutation
+    const resultTasks = sortedTasks.map(t => ({ ...t }))
+    for (const task of resultTasks) {
+      taskMap.set(task.id, task)
+    }
+
+    // Get predecessors for each task
+    const predecessorMap = new Map<string, Dependency[]>()
+    for (const dep of dependencies) {
+      const deps = predecessorMap.get(dep.successor_id) || []
+      deps.push(dep)
+      predecessorMap.set(dep.successor_id, deps)
+    }
+
+    for (const task of resultTasks) {
+      const predecessors = predecessorMap.get(task.id) || []
+
+      if (predecessors.length === 0) {
+        // No predecessors - start at project start
+        task.es = this.findNextWorkingDay(projectStart, workDays, holidays)
+      } else {
+        // ES = max(EF of all predecessors) + lag
+        let maxDate: Date | null = null
+
+        for (const dep of predecessors) {
+          const predTask = taskMap.get(dep.predecessor_id)
+          if (predTask && predTask.ef) {
+            // Add one day after predecessor EF, then add lag
+            let candidateDate = this.addDays(predTask.ef, 1)
+
+            // Add lag days (working days)
+            if (dep.lag_days > 0) {
+              candidateDate = this.addWorkingDays(candidateDate, dep.lag_days, workDays, holidays)
+            }
+
+            // Find next working day
+            candidateDate = this.findNextWorkingDay(candidateDate, workDays, holidays)
+
+            if (!maxDate || candidateDate > maxDate) {
+              maxDate = candidateDate
+            }
+          }
+        }
+
+        task.es = maxDate || this.findNextWorkingDay(projectStart, workDays, holidays)
+      }
+
+      // Calculate EF
+      task.ef = this.addWorkingDays(task.es!, task.duration, workDays, holidays)
+    }
+
+    return resultTasks
+  }
+
+  /**
+   * Backward Pass - Calculate Late Start (LS) and Late Finish (LF)
+   */
+  backwardPass(
+    tasks: Task[],
+    dependencies: Dependency[],
+    projectEnd: Date,
+    workDays: number[],
+    holidays: Date[]
+  ): Task[] {
+    // Sort in reverse order for backward pass
+    const sortedTasks = this.topologicalSort(tasks, dependencies).reverse()
+    const taskMap = new Map<string, Task>()
+
+    // Clone tasks to avoid mutation
+    const resultTasks = sortedTasks.map(t => ({ ...t }))
+    for (const task of resultTasks) {
+      taskMap.set(task.id, task)
+    }
+
+    // Get successors for each task
+    const successorMap = new Map<string, Dependency[]>()
+    for (const dep of dependencies) {
+      const deps = successorMap.get(dep.predecessor_id) || []
+      deps.push(dep)
+      successorMap.set(dep.predecessor_id, deps)
+    }
+
+    for (const task of resultTasks) {
+      const successors = successorMap.get(task.id) || []
+
+      if (successors.length === 0) {
+        // No successors - LF is project end
+        task.lf = new Date(projectEnd)
+      } else {
+        // LF = min(LS of all successors) - lag - 1
+        let minDate: Date | null = null
+
+        for (const dep of successors) {
+          const succTask = taskMap.get(dep.successor_id)
+          if (succTask && succTask.ls) {
+            // Subtract one day before successor LS
+            let candidateDate = this.addDays(succTask.ls, -1)
+
+            // Subtract lag days
+            if (dep.lag_days > 0) {
+              candidateDate = this.subtractWorkingDays(candidateDate, dep.lag_days, workDays, holidays)
+            }
+
+            // Find previous working day
+            candidateDate = this.findPreviousWorkingDay(candidateDate, workDays, holidays)
+
+            if (!minDate || candidateDate < minDate) {
+              minDate = candidateDate
+            }
+          }
+        }
+
+        task.lf = minDate || new Date(projectEnd)
+      }
+
+      // Calculate LS
+      task.ls = this.subtractWorkingDays(task.lf!, task.duration, workDays, holidays)
+    }
+
+    // Return in original order
+    return resultTasks.reverse()
+  }
+
+  /**
+   * Calculate slack and mark critical tasks
+   */
+  calculateSlack(
+    tasks: Task[],
+    workDays: number[],
+    holidays: Date[]
+  ): Task[] {
+    return tasks.map(task => {
+      const newTask = { ...task }
+
+      if (task.es && task.ls) {
+        newTask.slack = this.workingDaysBetween(task.es, task.ls, workDays, holidays)
+        newTask.is_critical = newTask.slack === 0
+      }
+
+      return newTask
+    })
+  }
+
+  /**
+   * Calculate effective duration based on work hours per day
+   */
+  calculateEffectiveDuration(estimatedHours: number, member: TeamMember): number {
+    const daysNeeded = estimatedHours / member.work_hours_per_day
+    return Math.ceil(daysNeeded)
+  }
+
+  /**
+   * Main method: Calculate complete critical path
+   */
+  calculateCriticalPath(
+    tasks: Task[],
+    dependencies: Dependency[],
+    projectStart: Date,
+    workDays: number[],
+    holidays: Date[]
+  ): SchedulingResult {
+    if (tasks.length === 0) {
+      return {
+        tasks: [],
+        criticalPath: [],
+        projectEndDate: null,
+      }
+    }
+
+    // Step 1: Forward Pass
+    let processedTasks = this.forwardPass(tasks, dependencies, projectStart, workDays, holidays)
+
+    // Find project end date (max EF)
+    let projectEnd: Date | null = null
+    for (const task of processedTasks) {
+      if (task.ef && (!projectEnd || task.ef > projectEnd)) {
+        projectEnd = task.ef
+      }
+    }
+
+    if (!projectEnd) {
+      return {
+        tasks: processedTasks,
+        criticalPath: [],
+        projectEndDate: null,
+      }
+    }
+
+    // Step 2: Backward Pass
+    processedTasks = this.backwardPass(processedTasks, dependencies, projectEnd, workDays, holidays)
+
+    // Step 3: Calculate Slack & Mark Critical
+    processedTasks = this.calculateSlack(processedTasks, workDays, holidays)
+
+    // Get critical path (tasks with slack = 0)
+    const criticalPath = processedTasks
+      .filter(t => t.is_critical)
+      .map(t => t.id)
+
+    return {
+      tasks: processedTasks,
+      criticalPath,
+      projectEndDate: projectEnd,
+    }
+  }
+
+  /**
+   * Calculate with resource availability (time off, part-time workers)
+   */
+  calculateWithResources(
+    tasks: Task[],
+    dependencies: Dependency[],
+    projectStart: Date,
+    workDays: number[],
+    holidays: Date[],
+    teamMembers: TeamMember[],
+    timeOff: EmployeeTimeOff[]
+  ): SchedulingResult {
+    // Create a map of user to their unavailable dates
+    const userTimeOff = new Map<string, Date[]>()
+
+    for (const to of timeOff) {
+      if (to.status !== 'approved') continue
+
+      const dates: Date[] = []
+      let current = new Date(to.start_date)
+      const end = new Date(to.end_date)
+
+      while (current <= end) {
+        dates.push(new Date(current))
+        current = this.addDays(current, 1)
+      }
+
+      const existing = userTimeOff.get(to.user_id) || []
+      userTimeOff.set(to.user_id, [...existing, ...dates])
+    }
+
+    // Create user work days map
+    const userWorkDays = new Map<string, number[]>()
+    for (const member of teamMembers) {
+      userWorkDays.set(member.user_id, member.work_days)
+    }
+
+    // Process tasks with resource constraints
+    const sortedTasks = this.topologicalSort(tasks, dependencies)
+    const taskMap = new Map<string, Task>()
+    const resultTasks = sortedTasks.map(t => ({ ...t }))
+
+    for (const task of resultTasks) {
+      taskMap.set(task.id, task)
+    }
+
+    // Get predecessors for each task
+    const predecessorMap = new Map<string, Dependency[]>()
+    for (const dep of dependencies) {
+      const deps = predecessorMap.get(dep.successor_id) || []
+      deps.push(dep)
+      predecessorMap.set(dep.successor_id, deps)
+    }
+
+    // Forward pass with resource constraints
+    for (const task of resultTasks) {
+      const predecessors = predecessorMap.get(task.id) || []
+
+      // Get user-specific constraints
+      const userId = task.assignee_id
+      const memberWorkDays = userId ? (userWorkDays.get(userId) || workDays) : workDays
+      const memberTimeOff = userId ? (userTimeOff.get(userId) || []) : []
+
+      // Combine project holidays with user time off
+      const allHolidays = [...holidays, ...memberTimeOff]
+
+      if (predecessors.length === 0) {
+        task.es = this.findNextWorkingDay(projectStart, memberWorkDays, allHolidays)
+      } else {
+        let maxDate: Date | null = null
+
+        for (const dep of predecessors) {
+          const predTask = taskMap.get(dep.predecessor_id)
+          if (predTask && predTask.ef) {
+            let candidateDate = this.addDays(predTask.ef, 1)
+
+            if (dep.lag_days > 0) {
+              candidateDate = this.addWorkingDays(candidateDate, dep.lag_days, memberWorkDays, allHolidays)
+            }
+
+            candidateDate = this.findNextWorkingDay(candidateDate, memberWorkDays, allHolidays)
+
+            if (!maxDate || candidateDate > maxDate) {
+              maxDate = candidateDate
+            }
+          }
+        }
+
+        task.es = maxDate || this.findNextWorkingDay(projectStart, memberWorkDays, allHolidays)
+      }
+
+      task.ef = this.addWorkingDays(task.es!, task.duration, memberWorkDays, allHolidays)
+    }
+
+    // Find project end date
+    let projectEnd: Date | null = null
+    for (const task of resultTasks) {
+      if (task.ef && (!projectEnd || task.ef > projectEnd)) {
+        projectEnd = task.ef
+      }
+    }
+
+    if (!projectEnd) {
+      return {
+        tasks: resultTasks,
+        criticalPath: [],
+        projectEndDate: null,
+      }
+    }
+
+    // Backward pass (simplified - using project work days)
+    const backwardTasks = this.backwardPass(resultTasks, dependencies, projectEnd, workDays, holidays)
+
+    // Calculate slack
+    const finalTasks = this.calculateSlack(backwardTasks, workDays, holidays)
+
+    const criticalPath = finalTasks
+      .filter(t => t.is_critical)
+      .map(t => t.id)
+
+    return {
+      tasks: finalTasks,
+      criticalPath,
+      projectEndDate: projectEnd,
+    }
+  }
+
+  // ==========================================
+  // Helper Methods
+  // ==========================================
+
+  private addDays(date: Date, days: number): Date {
+    const result = new Date(date)
+    result.setDate(result.getDate() + days)
+    return result
+  }
+
+  private toDateString(date: Date): string {
+    return date.toISOString().split('T')[0]
+  }
+
+  private findNextWorkingDay(date: Date, workDays: number[], holidays: Date[]): Date {
+    let current = new Date(date)
+    while (!this.isWorkingDay(current, workDays, holidays)) {
+      current = this.addDays(current, 1)
+    }
+    return current
+  }
+
+  private findPreviousWorkingDay(date: Date, workDays: number[], holidays: Date[]): Date {
+    let current = new Date(date)
+    while (!this.isWorkingDay(current, workDays, holidays)) {
+      current = this.addDays(current, -1)
+    }
+    return current
+  }
+}
+
+// Export singleton instance for convenience
+export const schedulingService = new SchedulingService()
