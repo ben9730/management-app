@@ -1,7 +1,7 @@
 # FlowPlan - Progress Report
 ## AI-Native Audit Management System
 
-Last Updated: 2026-01-26 (Session 4)
+Last Updated: 2026-01-27 (Session 5)
 
 ---
 
@@ -313,6 +313,40 @@ Last Updated: 2026-01-26 (Session 4)
 - [x] useUpdateAuditFinding - update with cache sync
 - [x] useDeleteAuditFinding - delete with cache cleanup
 
+### 10. CRDT + Offline (Phase 5 - IN PROGRESS)
+
+#### Offline Storage Service (19 tests) - NEW
+- [x] IndexedDB-based offline storage with fallback in-memory implementation
+- [x] Document storage (save, load, delete, loadAll)
+- [x] Sync queue for offline operations (queueOperation, getPendingOperations, removeOperation)
+- [x] Queue management (getQueueCount, clearQueue)
+- [x] Metadata storage (setMetadata, getMetadata)
+- [x] Document versioning (setDocumentVersion, getDocumentVersion)
+- [x] Online/offline status tracking
+- [x] Storage management (clearAll, estimateStorageSize, close)
+- [x] Conflict detection (detectConflicts)
+- [x] Conflict resolution (resolveConflicts with last-write-wins / first-write-wins strategies)
+
+#### Sync Service with Yjs (31 tests) - NEW
+- [x] Yjs document with WebSocket provider
+- [x] Document maps for tasks, projects, team members, audit findings
+- [x] Undo/Redo manager with UndoManager
+- [x] Snapshot creation and restoration
+- [x] Awareness state for multi-user presence (cursor, name, color)
+- [x] Connection status tracking (connected, syncing, pendingChanges)
+- [x] Status change subscriptions
+- [x] Document change subscriptions
+- [x] Transaction support for atomic operations
+
+#### Sync React Hooks (12 tests) - NEW
+- [x] SyncProvider - context provider for sync services
+- [x] useSyncContext - access sync service and offline storage
+- [x] useSyncStatus - subscribe to sync status (connected, syncing, pendingChanges, lastSyncTime)
+- [x] useSyncDocument - document operations (setTask, deleteTask, transaction, undo, redo)
+- [x] useOfflineStatus - offline status (isOnline, queueCount, forceSync)
+- [x] useAwareness - multi-user presence (states, setLocalState, localState)
+- [x] Browser online/offline event handling
+
 ---
 
 ## 📊 TEST SUMMARY
@@ -345,7 +379,10 @@ Last Updated: 2026-01-26 (Session 4)
 | use-phases.test.ts | 18 | ✅ Pass |
 | use-time-off.test.ts | 18 | ✅ Pass |
 | use-audit-findings.test.ts | 18 | ✅ Pass |
-| **TOTAL** | **708** | **✅ All Pass** |
+| offline-storage.test.ts | 19 | ✅ Pass |
+| sync.test.ts | 31 | ✅ Pass |
+| use-sync.test.ts | 12 | ✅ Pass |
+| **TOTAL** | **770** | **✅ All Pass** |
 
 ---
 
