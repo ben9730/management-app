@@ -32,12 +32,10 @@ const priorityVariantMap: Record<Task['priority'], 'critical' | 'high' | 'medium
 const statusDisplayMap: Record<Task['status'], string> = {
   pending: 'Pending',
   in_progress: 'In Progress',
-  completed: 'Completed',
-  blocked: 'Blocked',
-  cancelled: 'Cancelled',
+  done: 'Completed',
 }
 
-function isOverdue(dueDate: string | null): boolean {
+function isOverdue(dueDate: Date | string | null): boolean {
   if (!dueDate) return false
   const due = parseDate(dueDate)
   if (!due) return false
@@ -74,7 +72,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
     const handleStatusToggle = (e: React.MouseEvent) => {
       e.stopPropagation()
       if (onStatusChange) {
-        const newStatus = task.status === 'completed' ? 'pending' : 'completed'
+        const newStatus = task.status === 'done' ? 'pending' : 'done'
         onStatusChange(task.id, newStatus)
       }
     }
@@ -90,7 +88,6 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         className={cn(
           'border-2 border-black bg-white p-3 cursor-pointer transition-all hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]',
           isCriticalPath && 'border-red-500 border-l-4',
-          task.status === 'blocked' && 'opacity-75',
           className
         )}
         onClick={handleCardClick}
@@ -207,15 +204,15 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
           {onStatusChange && (
             <button
               data-testid="status-checkbox"
-              aria-label={`Mark task ${task.status === 'completed' ? 'incomplete' : 'complete'}`}
+              aria-label={`Mark task ${task.status === 'done' ? 'incomplete' : 'complete'}`}
               onClick={handleStatusToggle}
               className={cn(
                 'w-6 h-6 border-2 border-black flex items-center justify-center',
                 'hover:bg-gray-100 transition-colors',
-                task.status === 'completed' && 'bg-black text-white'
+                task.status === 'done' && 'bg-black text-white'
               )}
             >
-              {task.status === 'completed' && '✓'}
+              {task.status === 'done' && '✓'}
             </button>
           )}
         </div>

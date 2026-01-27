@@ -7,22 +7,17 @@
 import { supabase } from '@/lib/supabase'
 import type { Dependency } from '@/types/entities'
 
-const VALID_DEPENDENCY_TYPES = [
-  'finish_to_start',
-  'start_to_start',
-  'finish_to_finish',
-  'start_to_finish',
-] as const
+const VALID_DEPENDENCY_TYPES = ['FS', 'SS', 'FF', 'SF'] as const
 
 export interface CreateDependencyInput {
   predecessor_id: string
   successor_id: string
-  dependency_type?: Dependency['dependency_type']
+  type?: Dependency['type']
   lag_days?: number
 }
 
 export interface UpdateDependencyInput {
-  dependency_type?: Dependency['dependency_type']
+  type?: Dependency['type']
   lag_days?: number
 }
 
@@ -46,10 +41,10 @@ function validateCreateInput(input: CreateDependencyInput): string | null {
   }
 
   if (
-    input.dependency_type &&
-    !VALID_DEPENDENCY_TYPES.includes(input.dependency_type)
+    input.type &&
+    !VALID_DEPENDENCY_TYPES.includes(input.type)
   ) {
-    return `Invalid dependency_type. Must be one of: ${VALID_DEPENDENCY_TYPES.join(', ')}`
+    return `Invalid type. Must be one of: ${VALID_DEPENDENCY_TYPES.join(', ')}`
   }
 
   return null
@@ -57,10 +52,10 @@ function validateCreateInput(input: CreateDependencyInput): string | null {
 
 function validateUpdateInput(input: UpdateDependencyInput): string | null {
   if (
-    input.dependency_type &&
-    !VALID_DEPENDENCY_TYPES.includes(input.dependency_type)
+    input.type &&
+    !VALID_DEPENDENCY_TYPES.includes(input.type)
   ) {
-    return `Invalid dependency_type. Must be one of: ${VALID_DEPENDENCY_TYPES.join(', ')}`
+    return `Invalid type. Must be one of: ${VALID_DEPENDENCY_TYPES.join(', ')}`
   }
 
   return null
@@ -82,13 +77,13 @@ export async function createDependency(
   const dependencyData = {
     predecessor_id: input.predecessor_id,
     successor_id: input.successor_id,
-    dependency_type: input.dependency_type ?? 'finish_to_start',
+    type: input.type ?? 'FS',
     lag_days: input.lag_days ?? 0,
   }
 
   const { data, error } = await supabase
-    .from('task_dependencies')
-    .insert(dependencyData)
+    .from('dependencies')
+    .insert(dependencyData as never)
     .select()
     .single()
 
@@ -106,7 +101,7 @@ export async function getDependency(
   id: string
 ): Promise<ServiceResult<Dependency>> {
   const { data, error } = await supabase
-    .from('task_dependencies')
+    .from('dependencies')
     .select('*')
     .eq('id', id)
     .maybeSingle()
@@ -126,7 +121,7 @@ export async function getDependencies(
 ): Promise<ServiceResult<Dependency[]>> {
   // Get dependencies through a join with tasks
   const { data, error } = await supabase
-    .from('task_dependencies')
+    .from('dependencies')
     .select('*')
     .order('created_at', { ascending: true })
 
@@ -144,7 +139,7 @@ export async function getDependenciesForTask(
   taskId: string
 ): Promise<ServiceResult<Dependency[]>> {
   const { data, error } = await supabase
-    .from('task_dependencies')
+    .from('dependencies')
     .select('*')
     .or(`predecessor_id.eq.${taskId},successor_id.eq.${taskId}`)
     .order('created_at', { ascending: true })
@@ -170,8 +165,8 @@ export async function updateDependency(
   }
 
   const { data, error } = await supabase
-    .from('task_dependencies')
-    .update(updates)
+    .from('dependencies')
+    .update(updates as never)
     .eq('id', id)
     .select()
     .single()
@@ -190,7 +185,7 @@ export async function deleteDependency(
   id: string
 ): Promise<ServiceResult<void>> {
   const { error } = await supabase
-    .from('task_dependencies')
+    .from('dependencies')
     .delete()
     .eq('id', id)
 

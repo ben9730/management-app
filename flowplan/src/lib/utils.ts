@@ -38,11 +38,12 @@ export function formatDateDisplay(date: Date | string | null | undefined): strin
 }
 
 /**
- * Parse ISO date string to Date object
+ * Parse date (string or Date) to Date object
  */
-export function parseDate(dateStr: string | null | undefined): Date | null {
-  if (!dateStr) return null
-  return new Date(dateStr)
+export function parseDate(date: Date | string | null | undefined): Date | null {
+  if (!date) return null
+  if (date instanceof Date) return date
+  return new Date(date)
 }
 
 /**

@@ -35,9 +35,9 @@ describe('SourceCitationsPanel Component', () => {
 
     it('renders all citations', () => {
       const citations = [
-        createMockCitation({ documentName: 'Doc1.pdf' }),
-        createMockCitation({ documentName: 'Doc2.pdf' }),
-        createMockCitation({ documentName: 'Doc3.pdf' }),
+        createMockCitation({ documentId: 'doc-1', documentName: 'Doc1.pdf', chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-2', documentName: 'Doc2.pdf', chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-3', documentName: 'Doc3.pdf', chunkIndex: 0 }),
       ]
 
       render(<SourceCitationsPanel citations={citations} />)
@@ -97,12 +97,16 @@ describe('SourceCitationsPanel Component', () => {
       expect(screen.getByText('92%')).toBeInTheDocument()
     })
 
-    it('displays chunk index', () => {
+    it('displays chunk index', async () => {
+      const user = userEvent.setup()
       render(
         <SourceCitationsPanel
           citations={[createMockCitation({ chunkIndex: 5 })]}
         />
       )
+
+      // Expand the citation to see chunk index
+      await user.click(screen.getByText('Test_Document.pdf'))
 
       expect(screen.getByText(/Chunk #5/i)).toBeInTheDocument()
     })
@@ -179,8 +183,8 @@ describe('SourceCitationsPanel Component', () => {
       render(
         <SourceCitationsPanel
           citations={[
-            createMockCitation({ documentName: 'Doc1.pdf', excerpt: 'Excerpt 1' }),
-            createMockCitation({ documentName: 'Doc2.pdf', excerpt: 'Excerpt 2' }),
+            createMockCitation({ documentId: 'doc-1', documentName: 'Doc1.pdf', excerpt: 'Excerpt 1', chunkIndex: 0 }),
+            createMockCitation({ documentId: 'doc-2', documentName: 'Doc2.pdf', excerpt: 'Excerpt 2', chunkIndex: 0 }),
           ]}
         />
       )
@@ -213,9 +217,9 @@ describe('SourceCitationsPanel Component', () => {
   describe('Sorting', () => {
     it('sorts by relevance score descending by default', () => {
       const citations = [
-        createMockCitation({ documentName: 'Low.pdf', relevanceScore: 0.6 }),
-        createMockCitation({ documentName: 'High.pdf', relevanceScore: 0.95 }),
-        createMockCitation({ documentName: 'Medium.pdf', relevanceScore: 0.8 }),
+        createMockCitation({ documentId: 'doc-1', documentName: 'Low.pdf', relevanceScore: 0.6, chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-2', documentName: 'High.pdf', relevanceScore: 0.95, chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-3', documentName: 'Medium.pdf', relevanceScore: 0.8, chunkIndex: 0 }),
       ]
 
       render(<SourceCitationsPanel citations={citations} />)
@@ -228,9 +232,9 @@ describe('SourceCitationsPanel Component', () => {
 
     it('respects sortBy prop for document name sorting', () => {
       const citations = [
-        createMockCitation({ documentName: 'Zebra.pdf', relevanceScore: 0.95 }),
-        createMockCitation({ documentName: 'Apple.pdf', relevanceScore: 0.6 }),
-        createMockCitation({ documentName: 'Mango.pdf', relevanceScore: 0.8 }),
+        createMockCitation({ documentId: 'doc-1', documentName: 'Zebra.pdf', relevanceScore: 0.95, chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-2', documentName: 'Apple.pdf', relevanceScore: 0.6, chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-3', documentName: 'Mango.pdf', relevanceScore: 0.8, chunkIndex: 0 }),
       ]
 
       render(<SourceCitationsPanel citations={citations} sortBy="name" />)
@@ -254,14 +258,23 @@ describe('SourceCitationsPanel Component', () => {
         />
       )
 
+      // First expand the citation to show the link
+      await user.click(screen.getByText('Test_Document.pdf'))
+
+      // Now click the link
       await user.click(screen.getByRole('link', { name: /צפה במסמך/i }))
 
       expect(onDocumentClick).toHaveBeenCalledWith('doc-456')
     })
 
-    it('hides document link when onDocumentClick not provided', () => {
+    it('hides document link when onDocumentClick not provided', async () => {
+      const user = userEvent.setup()
       render(<SourceCitationsPanel citations={[createMockCitation()]} />)
 
+      // Expand the citation
+      await user.click(screen.getByText('Test_Document.pdf'))
+
+      // Link should not be present when onDocumentClick is not provided
       expect(screen.queryByRole('link', { name: /צפה במסמך/i })).not.toBeInTheDocument()
     })
   })
@@ -282,9 +295,9 @@ describe('SourceCitationsPanel Component', () => {
       render(
         <SourceCitationsPanel
           citations={[
-            createMockCitation({ documentName: 'Doc1.pdf' }),
-            createMockCitation({ documentName: 'Doc2.pdf' }),
-            createMockCitation({ documentName: 'Doc3.pdf' }),
+            createMockCitation({ documentId: 'doc-1', documentName: 'Doc1.pdf', chunkIndex: 0 }),
+            createMockCitation({ documentId: 'doc-2', documentName: 'Doc2.pdf', chunkIndex: 0 }),
+            createMockCitation({ documentId: 'doc-3', documentName: 'Doc3.pdf', chunkIndex: 0 }),
           ]}
           compact
         />
@@ -332,8 +345,8 @@ describe('SourceCitationsPanel Component', () => {
       render(
         <SourceCitationsPanel
           citations={[
-            createMockCitation({ documentName: 'Doc1.pdf' }),
-            createMockCitation({ documentName: 'Doc2.pdf' }),
+            createMockCitation({ documentId: 'doc-1', documentName: 'Doc1.pdf', chunkIndex: 0, relevanceScore: 0.9 }),
+            createMockCitation({ documentId: 'doc-2', documentName: 'Doc2.pdf', chunkIndex: 0, relevanceScore: 0.8 }),
           ]}
         />
       )
@@ -369,15 +382,16 @@ describe('SourceCitationsPanel Component', () => {
   describe('Statistics Display', () => {
     it('shows statistics when showStats is true', () => {
       const citations = [
-        createMockCitation({ relevanceScore: 0.9 }),
-        createMockCitation({ relevanceScore: 0.8 }),
-        createMockCitation({ relevanceScore: 0.7 }),
+        createMockCitation({ documentId: 'doc-1', relevanceScore: 0.9, chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-2', relevanceScore: 0.85, chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-3', relevanceScore: 0.7, chunkIndex: 0 }),
       ]
 
       render(<SourceCitationsPanel citations={citations} showStats />)
 
       expect(screen.getByText(/ממוצע רלוונטיות/i)).toBeInTheDocument()
-      expect(screen.getByText('80%')).toBeInTheDocument() // Average of 90%, 80%, 70%
+      // Average of 90%, 85%, 70% = 82%
+      expect(screen.getByText('82%')).toBeInTheDocument()
     })
 
     it('hides statistics by default', () => {
@@ -388,14 +402,16 @@ describe('SourceCitationsPanel Component', () => {
 
     it('shows document count in stats', () => {
       const citations = [
-        createMockCitation({ documentName: 'Doc1.pdf' }),
-        createMockCitation({ documentName: 'Doc2.pdf' }),
-        createMockCitation({ documentName: 'Doc1.pdf', chunkIndex: 1 }), // Same doc, different chunk
+        createMockCitation({ documentId: 'doc-1', documentName: 'Doc1.pdf', chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-2', documentName: 'Doc2.pdf', chunkIndex: 0 }),
+        createMockCitation({ documentId: 'doc-1', documentName: 'Doc1.pdf', chunkIndex: 1 }), // Same doc, different chunk
       ]
 
       render(<SourceCitationsPanel citations={citations} showStats />)
 
-      expect(screen.getByText(/2 מסמכים/i)).toBeInTheDocument() // 2 unique documents
+      // Text is split across elements, so check for presence of both parts
+      expect(screen.getByText('2')).toBeInTheDocument()
+      expect(screen.getByText(/מסמכים/i)).toBeInTheDocument()
     })
   })
 })

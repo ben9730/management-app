@@ -137,7 +137,7 @@ export async function createTask(
 
   const { data, error } = await supabase
     .from('tasks')
-    .insert(taskData)
+    .insert(taskData as never)
     .select()
     .single()
 
@@ -219,7 +219,7 @@ export async function updateTask(
 
   const { data, error } = await supabase
     .from('tasks')
-    .update(updateData)
+    .update(updateData as never)
     .eq('id', id)
     .select()
     .single()
@@ -260,7 +260,7 @@ export async function reorderTasks(
   for (const order of taskOrders) {
     const { error } = await supabase
       .from('tasks')
-      .update({ order_index: order.order_index, updated_at: new Date().toISOString() })
+      .update({ order_index: order.order_index, updated_at: new Date().toISOString() } as never)
       .eq('id', order.id)
       .select()
       .single()

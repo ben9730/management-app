@@ -35,10 +35,19 @@ export interface BaseEntity {
 
 export interface Project extends BaseEntity {
   name: string
+  organization_id: string
+  methodology: string
   description: string | null
   status: ProjectStatus
   start_date: Date | null
   end_date: Date | null
+  target_end_date: Date | null
+  actual_end_date: Date | null
+  budget_amount: number | null
+  budget_currency: string
+  owner_id: string
+  working_days: number[]
+  default_work_hours: number
   created_by: string
   updated_at: Date
 }
@@ -54,11 +63,14 @@ export interface CreateProjectInput {
 // 2. Task
 // ============================================
 
+export type TaskType = 'task' | 'milestone'
+
 export interface Task extends BaseEntity {
   project_id: string
   phase_id: string | null
   title: string
   description: string | null
+  task_type: TaskType
   status: TaskStatus
   priority: TaskPriority
   assignee_id: string | null
@@ -66,14 +78,21 @@ export interface Task extends BaseEntity {
   // Scheduling fields (CPM)
   duration: number // Duration in working days
   estimated_hours: number | null // Total hours needed
-  start_date: Date | null
-  end_date: Date | null
+  actual_hours: number // Hours actually spent
+  start_date: Date | string | null
+  end_date: Date | string | null
+  due_date: Date | string | null
   es: Date | null // Early Start
   ef: Date | null // Early Finish
   ls: Date | null // Late Start
   lf: Date | null // Late Finish
   slack: number // Slack = LS - ES (in working days)
   is_critical: boolean // On Critical Path?
+
+  // Display fields
+  progress_percent: number
+  wbs_number: string | null
+  order_index: number
 
   updated_at: Date
 }
@@ -156,6 +175,9 @@ export interface CreateCalendarExceptionInput {
 export interface TeamMember extends BaseEntity {
   user_id: string
   project_id: string
+  first_name: string
+  last_name: string
+  email: string
   employment_type: EmploymentType
   work_hours_per_day: number // e.g., 8.0, 4.0
   work_days: number[] // Days of week (1=Sunday, 7=Saturday)
@@ -203,11 +225,15 @@ export interface ProjectPhase extends BaseEntity {
   name: string
   description: string | null
   phase_order: number
+  order_index: number
   status: PhaseStatus
-  start_date: Date | null
-  end_date: Date | null
+  start_date: Date | string | null
+  end_date: Date | string | null
   total_tasks: number
   completed_tasks: number
+  task_count: number
+  completed_task_count: number
+  updated_at: Date | string
 }
 
 export interface CreateProjectPhaseInput {

@@ -96,19 +96,19 @@ export function createInMemoryStorage(): OfflineStorageService {
 
   const service: OfflineStorageService = {
     async save(store: StoreName, key: string, value: unknown): Promise<void> {
-      stores[store].set(key, value)
+      ;(stores[store] as Map<string, unknown>).set(key, value)
     },
 
     async load(store: StoreName, key: string): Promise<unknown> {
-      return stores[store].get(key)
+      return (stores[store] as Map<string, unknown>).get(key)
     },
 
     async delete(store: StoreName, key: string): Promise<void> {
-      stores[store].delete(key)
+      ;(stores[store] as Map<string, unknown>).delete(key)
     },
 
     async loadAll(store: StoreName): Promise<unknown[]> {
-      return Array.from(stores[store].values())
+      return Array.from((stores[store] as Map<string, unknown>).values())
     },
 
     async queueOperation(operation: QueuedOperation): Promise<void> {
@@ -224,7 +224,30 @@ export async function createOfflineStorage(
     return transaction.objectStore(storeName)
   }
 
-  return {
+  const getPendingOps = async (): Promise<QueuedOperation[]> => {
+    const objectStore = getStore('syncQueue', 'readonly')
+    const result = await promisifyRequest(objectStore.getAll())
+    return (result as QueuedOperation[]) || []
+  }
+
+  const loadAllDocs = async (store: StoreName): Promise<unknown[]> => {
+    const objectStore = getStore(store, 'readonly')
+    const result = await promisifyRequest(objectStore.getAll())
+    return result || []
+  }
+
+  const setMeta = async (key: string, value: unknown): Promise<void> => {
+    const objectStore = getStore('metadata', 'readwrite')
+    await promisifyRequest(objectStore.put({ key, value }))
+  }
+
+  const getMeta = async (key: string): Promise<unknown> => {
+    const objectStore = getStore('metadata', 'readonly')
+    const result = await promisifyRequest(objectStore.get(key)) as { value: unknown } | undefined
+    return result?.value
+  }
+
+  const service: OfflineStorageService = {
     async save(store: StoreName, key: string, value: unknown): Promise<void> {
       const objectStore = getStore(store, 'readwrite')
       const data = typeof value === 'object' && value !== null
@@ -245,9 +268,7 @@ export async function createOfflineStorage(
     },
 
     async loadAll(store: StoreName): Promise<unknown[]> {
-      const objectStore = getStore(store, 'readonly')
-      const result = await promisifyRequest(objectStore.getAll())
-      return result || []
+      return loadAllDocs(store)
     },
 
     async queueOperation(operation: QueuedOperation): Promise<void> {
@@ -256,9 +277,7 @@ export async function createOfflineStorage(
     },
 
     async getPendingOperations(): Promise<QueuedOperation[]> {
-      const objectStore = getStore('syncQueue', 'readonly')
-      const result = await promisifyRequest(objectStore.getAll())
-      return (result as QueuedOperation[]) || []
+      return getPendingOps()
     },
 
     async removeOperation(id: string): Promise<void> {
@@ -267,7 +286,7 @@ export async function createOfflineStorage(
     },
 
     async getQueueCount(): Promise<number> {
-      const operations = await this.getPendingOperations()
+      const operations = await getPendingOps()
       return operations.length
     },
 
@@ -277,31 +296,28 @@ export async function createOfflineStorage(
     },
 
     async setMetadata(key: string, value: unknown): Promise<void> {
-      const objectStore = getStore('metadata', 'readwrite')
-      await promisifyRequest(objectStore.put({ key, value }))
+      await setMeta(key, value)
     },
 
     async getMetadata(key: string): Promise<unknown> {
-      const objectStore = getStore('metadata', 'readonly')
-      const result = await promisifyRequest(objectStore.get(key)) as { value: unknown } | undefined
-      return result?.value
+      return getMeta(key)
     },
 
     async setDocumentVersion(docId: string, version: number): Promise<void> {
-      await this.setMetadata(`version:${docId}`, version)
+      await setMeta(`version:${docId}`, version)
     },
 
     async getDocumentVersion(docId: string): Promise<number> {
-      const version = await this.getMetadata(`version:${docId}`)
+      const version = await getMeta(`version:${docId}`)
       return (version as number) || 0
     },
 
     async setOnlineStatus(isOnline: boolean): Promise<void> {
-      await this.setMetadata('onlineStatus', isOnline)
+      await setMeta('onlineStatus', isOnline)
     },
 
     async getOnlineStatus(): Promise<boolean> {
-      const status = await this.getMetadata('onlineStatus')
+      const status = await getMeta('onlineStatus')
       return status !== false // Default to true if not set
     },
 
@@ -316,8 +332,8 @@ export async function createOfflineStorage(
 
     async estimateStorageSize(): Promise<number> {
       // This is a rough estimate based on stringifying data
-      const documents = await this.loadAll('documents')
-      const queue = await this.getPendingOperations()
+      const documents = await loadAllDocs('documents')
+      const queue = await getPendingOps()
 
       const docsSize = JSON.stringify(documents).length
       const queueSize = JSON.stringify(queue).length
@@ -330,7 +346,7 @@ export async function createOfflineStorage(
     },
 
     async detectConflicts(entity: string, entityId: string): Promise<QueuedOperation[]> {
-      const operations = await this.getPendingOperations()
+      const operations = await getPendingOps()
       return operations.filter(
         op => op.entity === entity && op.entityId === entityId
       )
@@ -341,7 +357,7 @@ export async function createOfflineStorage(
       entityId: string,
       strategy: 'last-write-wins' | 'first-write-wins'
     ): Promise<Record<string, unknown>> {
-      const conflicts = await this.detectConflicts(entity, entityId)
+      const conflicts = await service.detectConflicts(entity, entityId)
 
       if (conflicts.length === 0) {
         return {}
@@ -368,4 +384,6 @@ export async function createOfflineStorage(
       return result
     },
   }
+
+  return service
 }

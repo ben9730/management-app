@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import type { Project, ProjectPhase, Task, Dependency, TeamMember } from '@/types/entities'
 
+// Helper to format dates for display
+const formatDate = (date: Date | string | null | undefined): string => {
+  if (!date) return '—'
+  if (date instanceof Date) return date.toLocaleDateString()
+  return date
+}
+
 // Demo data
 const demoProject: Project = {
   id: 'proj-1',
@@ -11,16 +18,18 @@ const demoProject: Project = {
   description: 'Comprehensive annual financial audit for Q1 2026',
   status: 'active',
   methodology: 'waterfall',
-  start_date: '2026-01-15',
-  target_end_date: '2026-03-31',
+  start_date: new Date('2026-01-15'),
+  end_date: new Date('2026-03-31'),
+  target_end_date: new Date('2026-03-31'),
   actual_end_date: null,
   budget_amount: 150000,
   budget_currency: 'ILS',
   owner_id: 'user-1',
+  created_by: 'user-1',
   working_days: [0, 1, 2, 3, 4],
   default_work_hours: 9,
-  created_at: '2026-01-10T00:00:00Z',
-  updated_at: '2026-01-20T00:00:00Z',
+  created_at: new Date('2026-01-10T00:00:00Z'),
+  updated_at: new Date('2026-01-20T00:00:00Z'),
 }
 
 const demoPhases: ProjectPhase[] = [
@@ -29,13 +38,16 @@ const demoPhases: ProjectPhase[] = [
     project_id: 'proj-1',
     name: 'Planning',
     description: 'Initial planning and scoping',
+    phase_order: 0,
     order_index: 0,
     status: 'completed',
     start_date: '2026-01-15',
     end_date: '2026-01-25',
+    total_tasks: 3,
+    completed_tasks: 3,
     task_count: 3,
     completed_task_count: 3,
-    created_at: '2026-01-10T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'),
     updated_at: '2026-01-25T00:00:00Z',
   },
   {
@@ -43,13 +55,16 @@ const demoPhases: ProjectPhase[] = [
     project_id: 'proj-1',
     name: 'Fieldwork',
     description: 'Conducting audit procedures',
+    phase_order: 1,
     order_index: 1,
     status: 'active',
     start_date: '2026-01-26',
     end_date: '2026-02-28',
+    total_tasks: 5,
+    completed_tasks: 2,
     task_count: 5,
     completed_task_count: 2,
-    created_at: '2026-01-10T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'),
     updated_at: '2026-01-27T00:00:00Z',
   },
   {
@@ -57,13 +72,16 @@ const demoPhases: ProjectPhase[] = [
     project_id: 'proj-1',
     name: 'Reporting',
     description: 'Final report preparation',
+    phase_order: 2,
     order_index: 2,
     status: 'pending',
     start_date: '2026-03-01',
     end_date: '2026-03-31',
+    total_tasks: 4,
+    completed_tasks: 0,
     task_count: 4,
     completed_task_count: 0,
-    created_at: '2026-01-10T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'),
     updated_at: '2026-01-10T00:00:00Z',
   },
 ]
@@ -72,74 +90,90 @@ const demoTasks: Task[] = [
   {
     id: 'task-1', project_id: 'proj-1', phase_id: 'phase-1',
     title: 'Define audit scope', description: 'Determine scope and objectives',
-    task_type: 'task', status: 'completed', priority: 'high',
-    start_date: '2026-01-15', due_date: '2026-01-17',
+    task_type: 'task', status: 'done', priority: 'high',
+    assignee_id: 'user-1', duration: 2,
+    start_date: '2026-01-15', end_date: '2026-01-17', due_date: '2026-01-17',
     estimated_hours: 8, actual_hours: 10, progress_percent: 100,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '1.1', order_index: 0,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-17T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-01-17T00:00:00Z'),
   },
   {
     id: 'task-2', project_id: 'proj-1', phase_id: 'phase-1',
     title: 'Risk assessment', description: 'Identify key risk areas',
-    task_type: 'task', status: 'completed', priority: 'critical',
-    start_date: '2026-01-19', due_date: '2026-01-22',
+    task_type: 'task', status: 'done', priority: 'critical',
+    assignee_id: 'user-1', duration: 3,
+    start_date: '2026-01-19', end_date: '2026-01-22', due_date: '2026-01-22',
     estimated_hours: 16, actual_hours: 14, progress_percent: 100,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '1.2', order_index: 1,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-22T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-01-22T00:00:00Z'),
   },
   {
     id: 'task-3', project_id: 'proj-1', phase_id: 'phase-1',
     title: 'Planning complete', description: 'Planning milestone',
-    task_type: 'milestone', status: 'completed', priority: 'high',
-    start_date: '2026-01-25', due_date: '2026-01-25',
+    task_type: 'milestone', status: 'done', priority: 'high',
+    assignee_id: null, duration: 0,
+    start_date: '2026-01-25', end_date: '2026-01-25', due_date: '2026-01-25',
     estimated_hours: 0, actual_hours: 0, progress_percent: 100,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '1.3', order_index: 2,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-25T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-01-25T00:00:00Z'),
   },
   {
     id: 'task-4', project_id: 'proj-1', phase_id: 'phase-2',
     title: 'Document review', description: 'Review financial documents',
-    task_type: 'task', status: 'completed', priority: 'high',
-    start_date: '2026-01-26', due_date: '2026-01-30',
+    task_type: 'task', status: 'done', priority: 'high',
+    assignee_id: 'user-2', duration: 4,
+    start_date: '2026-01-26', end_date: '2026-01-30', due_date: '2026-01-30',
     estimated_hours: 20, actual_hours: 22, progress_percent: 100,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '2.1', order_index: 0,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-30T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-01-30T00:00:00Z'),
   },
   {
     id: 'task-5', project_id: 'proj-1', phase_id: 'phase-2',
     title: 'Controls testing', description: 'Test internal controls',
-    task_type: 'task', status: 'completed', priority: 'critical',
-    start_date: '2026-02-01', due_date: '2026-02-07',
+    task_type: 'task', status: 'done', priority: 'critical',
+    assignee_id: 'user-2', duration: 4,
+    start_date: '2026-02-01', end_date: '2026-02-07', due_date: '2026-02-07',
     estimated_hours: 32, actual_hours: 30, progress_percent: 100,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '2.2', order_index: 1,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-02-07T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-02-07T00:00:00Z'),
   },
   {
     id: 'task-6', project_id: 'proj-1', phase_id: 'phase-2',
     title: 'Substantive testing', description: 'Perform substantive audit procedures',
     task_type: 'task', status: 'in_progress', priority: 'critical',
-    start_date: '2026-02-09', due_date: '2026-02-20',
+    assignee_id: 'user-3', duration: 8,
+    start_date: '2026-02-09', end_date: '2026-02-20', due_date: '2026-02-20',
     estimated_hours: 48, actual_hours: 20, progress_percent: 40,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '2.3', order_index: 2,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-02-15T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-02-15T00:00:00Z'),
   },
   {
     id: 'task-7', project_id: 'proj-1', phase_id: 'phase-2',
     title: 'Sample verification', description: 'Verify sample transactions',
     task_type: 'task', status: 'pending', priority: 'medium',
-    start_date: '2026-02-16', due_date: '2026-02-22',
+    assignee_id: null, duration: 4,
+    start_date: '2026-02-16', end_date: '2026-02-22', due_date: '2026-02-22',
     estimated_hours: 24, actual_hours: 0, progress_percent: 0,
+    es: null, ef: null, ls: null, lf: null, slack: 2, is_critical: false,
     wbs_number: '2.4', order_index: 3,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-10T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-01-10T00:00:00Z'),
   },
   {
     id: 'task-8', project_id: 'proj-1', phase_id: 'phase-2',
     title: 'Fieldwork complete', description: 'Fieldwork milestone',
     task_type: 'milestone', status: 'pending', priority: 'high',
-    start_date: '2026-02-28', due_date: '2026-02-28',
+    assignee_id: null, duration: 0,
+    start_date: '2026-02-28', end_date: '2026-02-28', due_date: '2026-02-28',
     estimated_hours: 0, actual_hours: 0, progress_percent: 0,
+    es: null, ef: null, ls: null, lf: null, slack: 0, is_critical: true,
     wbs_number: '2.5', order_index: 4,
-    created_at: '2026-01-10T00:00:00Z', updated_at: '2026-01-10T00:00:00Z',
+    created_at: new Date('2026-01-10T00:00:00Z'), updated_at: new Date('2026-01-10T00:00:00Z'),
   },
 ]
 
@@ -161,7 +195,7 @@ export default function Dashboard() {
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set(['phase-2']))
 
   const totalTasks = demoTasks.length
-  const completedTasks = demoTasks.filter((t) => t.status === 'completed').length
+  const completedTasks = demoTasks.filter((t) => t.status === 'done').length
   const inProgressTasks = demoTasks.filter((t) => t.status === 'in_progress').length
   const progressPercent = Math.round((completedTasks / totalTasks) * 100)
 
@@ -384,7 +418,7 @@ export default function Dashboard() {
             </h3>
             <div className="space-y-3">
               {demoTasks
-                .filter(t => t.status !== 'completed')
+                .filter(t => t.status !== 'done')
                 .slice(0, 3)
                 .map((task) => (
                   <div key={task.id} className="flex items-center gap-3">
@@ -401,7 +435,7 @@ export default function Dashboard() {
                         {task.title}
                       </div>
                       <div className="text-xs" style={{ color: 'var(--fp-text-tertiary)' }}>
-                        Due: {task.due_date}
+                        Due: {task.due_date instanceof Date ? task.due_date.toLocaleDateString() : task.due_date}
                       </div>
                     </div>
                   </div>
@@ -576,7 +610,7 @@ function PhaseCard({
             </span>
           </div>
           <div className="text-sm" style={{ color: 'var(--fp-text-tertiary)' }}>
-            {phase.completed_task_count} of {phase.task_count} tasks • {phase.start_date} - {phase.end_date}
+            {phase.completed_task_count} of {phase.task_count} tasks • {formatDate(phase.start_date)} - {formatDate(phase.end_date)}
           </div>
         </div>
 
@@ -687,7 +721,7 @@ function TaskRow({
             className="font-medium truncate"
             style={{
               color: 'var(--fp-text-primary)',
-              textDecoration: task.status === 'completed' ? 'line-through' : 'none',
+              textDecoration: task.status === 'done' ? 'line-through' : 'none',
             }}
           >
             {task.title}
@@ -709,7 +743,7 @@ function TaskRow({
         <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--fp-text-tertiary)' }}>
           <span>{task.wbs_number}</span>
           <span>•</span>
-          <span>Due: {task.due_date}</span>
+          <span>Due: {formatDate(task.due_date)}</span>
           {task.progress_percent > 0 && task.progress_percent < 100 && (
             <>
               <span>•</span>
@@ -852,7 +886,7 @@ function TaskDetailSidebar({
                 Status
               </label>
               <div className="mt-1.5">
-                <span className={`fp-badge ${task.status === 'completed' ? 'fp-badge--success' : task.status === 'in_progress' ? 'fp-badge--info' : 'fp-badge--neutral'}`}>
+                <span className={`fp-badge ${task.status === 'done' ? 'fp-badge--success' : task.status === 'in_progress' ? 'fp-badge--info' : 'fp-badge--neutral'}`}>
                   {task.status.replace('_', ' ')}
                 </span>
               </div>
@@ -894,7 +928,7 @@ function TaskDetailSidebar({
                 Start Date
               </label>
               <div className="mt-1.5 text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>
-                {task.start_date || '—'}
+                {formatDate(task.start_date)}
               </div>
             </div>
             <div>
@@ -902,7 +936,7 @@ function TaskDetailSidebar({
                 Due Date
               </label>
               <div className="mt-1.5 text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>
-                {task.due_date || '—'}
+                {formatDate(task.due_date)}
               </div>
             </div>
           </div>
@@ -977,7 +1011,7 @@ function TaskDetailSidebar({
               color: 'white',
             }}
           >
-            {task.status === 'completed' ? 'Reopen' : 'Mark Complete'}
+            {task.status === 'done' ? 'Reopen' : 'Mark Complete'}
           </button>
         </div>
       </div>

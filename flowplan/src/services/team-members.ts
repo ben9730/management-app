@@ -129,7 +129,7 @@ export async function createTeamMember(
 
   const { data, error } = await supabase
     .from('team_members')
-    .insert(memberData)
+    .insert(memberData as never)
     .select()
     .single()
 
@@ -230,7 +230,7 @@ export async function updateTeamMember(
 
   const { data, error } = await supabase
     .from('team_members')
-    .update(updateData)
+    .update(updateData as never)
     .eq('id', id)
     .select()
     .single()

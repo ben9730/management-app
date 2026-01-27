@@ -431,10 +431,9 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                       <div
                         className={cn(
                           'w-full h-full border-2 border-black relative overflow-hidden',
-                          task.status === 'completed' && 'bg-green-200',
+                          task.status === 'done' && 'bg-green-200',
                           task.status === 'in_progress' && 'bg-blue-200',
                           task.status === 'pending' && 'bg-gray-200',
-                          task.status === 'blocked' && 'bg-red-200',
                           isCritical && 'border-red-600 border-3'
                         )}
                       >
@@ -443,10 +442,9 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                           data-testid={`task-progress-${task.id}`}
                           className={cn(
                             'absolute inset-y-0 left-0',
-                            task.status === 'completed' && 'bg-green-500',
+                            task.status === 'done' && 'bg-green-500',
                             task.status === 'in_progress' && 'bg-blue-500',
-                            task.status === 'pending' && 'bg-gray-400',
-                            task.status === 'blocked' && 'bg-red-500'
+                            task.status === 'pending' && 'bg-gray-400'
                           )}
                           style={{ width: `${task.progress_percent}%` }}
                         />

@@ -114,7 +114,7 @@ export async function createTimeOff(
 
   const { data, error } = await supabase
     .from('employee_time_off')
-    .insert(timeOffData)
+    .insert(timeOffData as never)
     .select()
     .single()
 
@@ -217,7 +217,7 @@ export async function updateTimeOff(
 
   const { data, error } = await supabase
     .from('employee_time_off')
-    .update(updates)
+    .update(updates as never)
     .eq('id', id)
     .select()
     .single()

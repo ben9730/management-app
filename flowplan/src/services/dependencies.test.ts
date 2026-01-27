@@ -49,7 +49,7 @@ const mockDependency: Dependency = {
   id: 'dep-1',
   predecessor_id: 'task-1',
   successor_id: 'task-2',
-  dependency_type: 'finish_to_start',
+  type: 'FS',
   lag_days: 0,
   created_at: '2026-01-15T10:00:00Z',
 }
@@ -82,7 +82,7 @@ describe('Dependencies Service', () => {
 
       const result = await createDependency(input)
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('task_dependencies')
+      expect(mockSupabase.from).toHaveBeenCalledWith('dependencies')
       expect(mockSupabase.insert).toHaveBeenCalledWith(
         expect.objectContaining({
           predecessor_id: 'task-1',
@@ -97,7 +97,7 @@ describe('Dependencies Service', () => {
       const input: CreateDependencyInput = {
         predecessor_id: 'task-1',
         successor_id: 'task-3',
-        dependency_type: 'start_to_start',
+        type: 'SS',
         lag_days: 2,
       }
 
@@ -110,11 +110,11 @@ describe('Dependencies Service', () => {
 
       expect(mockSupabase.insert).toHaveBeenCalledWith(
         expect.objectContaining({
-          dependency_type: 'start_to_start',
+          type: 'SS',
           lag_days: 2,
         })
       )
-      expect(result.data?.dependency_type).toBe('start_to_start')
+      expect(result.data?.type).toBe('SS')
     })
 
     it('returns error when creation fails', async () => {
@@ -150,7 +150,7 @@ describe('Dependencies Service', () => {
 
       expect(mockSupabase.insert).toHaveBeenCalledWith(
         expect.objectContaining({
-          dependency_type: 'finish_to_start',
+          type: 'FS',
           lag_days: 0,
         })
       )
@@ -190,17 +190,17 @@ describe('Dependencies Service', () => {
       expect(result.error?.message).toContain('different')
     })
 
-    it('validates dependency_type is valid', async () => {
+    it('validates type is valid', async () => {
       const input: CreateDependencyInput = {
         predecessor_id: 'task-1',
         successor_id: 'task-2',
-        dependency_type: 'invalid_type' as Dependency['dependency_type'],
+        type: 'invalid_type' as Dependency['type'],
       }
 
       const result = await createDependency(input)
 
       expect(result.error).toBeDefined()
-      expect(result.error?.message).toContain('dependency_type')
+      expect(result.error?.message).toContain('type')
     })
   })
 
@@ -213,7 +213,7 @@ describe('Dependencies Service', () => {
 
       const result = await getDependency('dep-1')
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('task_dependencies')
+      expect(mockSupabase.from).toHaveBeenCalledWith('dependencies')
       expect(mockSupabase.select).toHaveBeenCalled()
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', 'dep-1')
       expect(result.data).toEqual(mockDependency)
@@ -257,7 +257,7 @@ describe('Dependencies Service', () => {
 
       const result = await getDependencies('proj-1')
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('task_dependencies')
+      expect(mockSupabase.from).toHaveBeenCalledWith('dependencies')
       expect(result.data).toHaveLength(2)
     })
 
@@ -317,7 +317,7 @@ describe('Dependencies Service', () => {
   describe('updateDependency', () => {
     it('updates dependency fields', async () => {
       const updates: UpdateDependencyInput = {
-        dependency_type: 'finish_to_finish',
+        type: 'FF',
         lag_days: 3,
       }
 
@@ -328,15 +328,15 @@ describe('Dependencies Service', () => {
 
       const result = await updateDependency('dep-1', updates)
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('task_dependencies')
+      expect(mockSupabase.from).toHaveBeenCalledWith('dependencies')
       expect(mockSupabase.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          dependency_type: 'finish_to_finish',
+          type: 'FF',
           lag_days: 3,
         })
       )
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', 'dep-1')
-      expect(result.data?.dependency_type).toBe('finish_to_finish')
+      expect(result.data?.type).toBe('FF')
     })
 
     it('updates only lag_days', async () => {
@@ -365,13 +365,13 @@ describe('Dependencies Service', () => {
       expect(result.error).toBeDefined()
     })
 
-    it('validates dependency_type on update', async () => {
+    it('validates type on update', async () => {
       const result = await updateDependency('dep-1', {
-        dependency_type: 'invalid' as Dependency['dependency_type'],
+        type: 'invalid' as Dependency['type'],
       })
 
       expect(result.error).toBeDefined()
-      expect(result.error?.message).toContain('dependency_type')
+      expect(result.error?.message).toContain('type')
     })
   })
 
@@ -384,7 +384,7 @@ describe('Dependencies Service', () => {
 
       const result = await deleteDependency('dep-1')
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('task_dependencies')
+      expect(mockSupabase.from).toHaveBeenCalledWith('dependencies')
       expect(mockSupabase.delete).toHaveBeenCalled()
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', 'dep-1')
       expect(result.error).toBeNull()

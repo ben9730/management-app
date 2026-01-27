@@ -6,6 +6,7 @@
 
 import { supabase } from '@/lib/supabase'
 import type { AuditFinding, FindingSeverity, FindingStatus } from '@/types/entities'
+import type { InsertTables } from '@/types/database'
 
 const VALID_SEVERITIES: FindingSeverity[] = ['critical', 'high', 'medium', 'low']
 const VALID_STATUSES: FindingStatus[] = ['open', 'in_progress', 'closed']
@@ -84,19 +85,19 @@ export async function createAuditFinding(
   }
 
   // Set defaults
-  const findingData = {
+  const findingData: InsertTables<'audit_findings'> = {
     task_id: input.task_id,
     severity: input.severity,
     finding: input.finding.trim(),
     root_cause: input.root_cause ?? null,
     capa: input.capa ?? null,
     due_date: input.due_date ?? null,
-    status: 'open' as FindingStatus,
+    status: 'open',
   }
 
   const { data, error } = await supabase
     .from('audit_findings')
-    .insert(findingData)
+    .insert(findingData as never)
     .select()
     .single()
 
@@ -190,7 +191,7 @@ export async function updateAuditFinding(
 
   const { data, error } = await supabase
     .from('audit_findings')
-    .update(updates)
+    .update(updates as never)
     .eq('id', id)
     .select()
     .single()

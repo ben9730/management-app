@@ -204,16 +204,10 @@ describe('TaskCard', () => {
       expect(screen.getByText('In Progress')).toBeInTheDocument()
     })
 
-    it('displays completed status', () => {
-      const completedTask = { ...mockTask, status: 'completed' as const }
-      render(<TaskCard task={completedTask} />)
+    it('displays done status', () => {
+      const doneTask = { ...mockTask, status: 'done' as const }
+      render(<TaskCard task={doneTask} />)
       expect(screen.getByText('Completed')).toBeInTheDocument()
-    })
-
-    it('displays blocked status', () => {
-      const blockedTask = { ...mockTask, status: 'blocked' as const }
-      render(<TaskCard task={blockedTask} />)
-      expect(screen.getByText('Blocked')).toBeInTheDocument()
     })
   })
 
@@ -233,17 +227,17 @@ describe('TaskCard', () => {
 
       fireEvent.click(screen.getByTestId('status-checkbox'))
 
-      expect(handleStatusChange).toHaveBeenCalledWith(mockTask.id, 'completed')
+      expect(handleStatusChange).toHaveBeenCalledWith(mockTask.id, 'done')
     })
 
-    it('changes status from completed to pending when checkbox clicked', () => {
-      const completedTask = { ...mockTask, status: 'completed' as const }
+    it('changes status from done to pending when checkbox clicked', () => {
+      const doneTask = { ...mockTask, status: 'done' as const }
       const handleStatusChange = vi.fn()
-      render(<TaskCard task={completedTask} onStatusChange={handleStatusChange} />)
+      render(<TaskCard task={doneTask} onStatusChange={handleStatusChange} />)
 
       fireEvent.click(screen.getByTestId('status-checkbox'))
 
-      expect(handleStatusChange).toHaveBeenCalledWith(completedTask.id, 'pending')
+      expect(handleStatusChange).toHaveBeenCalledWith(doneTask.id, 'pending')
     })
   })
 
@@ -302,10 +296,5 @@ describe('TaskCard', () => {
       expect(screen.getByTestId('task-card')).toHaveClass('border-red-500')
     })
 
-    it('applies blocked styling when status is blocked', () => {
-      const blockedTask = { ...mockTask, status: 'blocked' as const }
-      render(<TaskCard task={blockedTask} />)
-      expect(screen.getByTestId('task-card')).toHaveClass('opacity-75')
-    })
   })
 })

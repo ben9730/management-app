@@ -104,7 +104,7 @@ export async function createPhase(
 
   const { data, error } = await supabase
     .from('project_phases')
-    .insert(phaseData)
+    .insert(phaseData as never)
     .select()
     .single()
 
@@ -177,7 +177,7 @@ export async function updatePhase(
 
   const { data, error } = await supabase
     .from('project_phases')
-    .update(updateData)
+    .update(updateData as never)
     .eq('id', id)
     .select()
     .single()
@@ -222,7 +222,7 @@ export async function reorderPhases(
 
   const { data, error } = await supabase
     .from('project_phases')
-    .upsert(updates, { onConflict: 'id' })
+    .upsert(updates as never, { onConflict: 'id' })
     .select()
 
   if (error) {

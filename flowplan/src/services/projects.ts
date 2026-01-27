@@ -105,7 +105,7 @@ export async function createProject(
 
   const { data, error } = await supabase
     .from('projects')
-    .insert(projectData)
+    .insert(projectData as never)
     .select()
     .single()
 
@@ -176,7 +176,7 @@ export async function updateProject(
 
   const { data, error } = await supabase
     .from('projects')
-    .update(updateData)
+    .update(updateData as never)
     .eq('id', id)
     .select()
     .single()

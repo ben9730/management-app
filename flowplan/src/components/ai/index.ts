@@ -1,2 +1,2 @@
 export { AIChat } from './AIChat'
-export type { } from './AIChat'
+export { SourceCitationsPanel } from './SourceCitationsPanel'
