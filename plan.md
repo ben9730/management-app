@@ -1,78 +1,58 @@
 # FlowPlan Development Plan
 
-Last Updated: 2026-01-27 15:45 (Session 5)
+Last Updated: 2026-01-27 17:14 (Session 5 - Israel Time)
 
 ---
 
-## Current Phase: Phase 5 - CRDT + Offline
+## Current Phase: Phase 6 - Grounded AI 🔄
 
-### Completed Work (98 tests)
+### Phase 5: CRDT + Offline ✅ COMPLETE (116 tests)
 1. **Offline Storage Service** (19 tests) ✅
-   - IndexedDB storage with in-memory fallback
-   - Document CRUD operations
-   - Sync queue for offline operations
-   - Conflict detection and resolution
-
 2. **Sync Service with Yjs** (42 tests) ✅
-   - Yjs document initialization
-   - WebSocket provider integration
-   - Undo/Redo manager
-   - Snapshot support
-   - Awareness for multi-user presence
-   - y-indexeddb persistence integration
-   - Persistence status tracking
-   - waitForPersistence() for sync readiness
-   - clearPersistence() for data cleanup
-
 3. **Sync React Hooks** (12 tests) ✅
-   - SyncProvider context
-   - useSyncStatus, useSyncDocument
-   - useOfflineStatus, useAwareness
-
 4. **OfflineSyncStatus UI Component** (25 tests) ✅
-   - Visual indicator of online/offline status
-   - Pending changes count display
-   - Sync button for manual sync
-   - Last sync time display
-   - Connection status indicator
-   - Compact mode support
-   - Error message display
-   - Accessibility features
-
-### Remaining Phase 5 Work (TDD)
-1. ~~**y-indexeddb Persistence**~~ ✅ COMPLETE (11 new tests)
-
-2. ~~**OfflineSyncStatus UI Component**~~ ✅ COMPLETE (25 tests)
-
-3. **Offline Integration Tests** - NEXT
-   - Test complete offline workflow
-   - Test sync recovery after connectivity restored
-   - Test conflict resolution in UI
+5. **Offline Integration Tests** (18 tests) ✅
 
 ---
 
-## Phase 6: Grounded AI (Next)
+## Phase 6: Grounded AI (Current)
 
-### Planned Work
-1. **Document Upload Service**
+### Completed Work (107 tests)
+1. **Document Upload Service** (28 tests) ✅
    - File upload to Supabase Storage
-   - Document parsing (PDF, Word, Excel)
-   - Metadata extraction
+   - Supported file types: PDF, Word, Excel, TXT, CSV
+   - File size validation (50MB limit)
+   - Metadata extraction and storage
+   - Batch upload support
+   - Progress tracking
 
-2. **Vector Embeddings**
-   - OpenAI embeddings integration
-   - pgvector storage in Supabase
-   - Semantic search functionality
+2. **Document Parser Service** (27 tests) ✅
+   - Plain text and CSV parsing
+   - PDF parsing (mock for MVP)
+   - Word document parsing (.doc, .docx)
+   - Excel parsing (.xls, .xlsx)
+   - Document chunking for RAG
+   - Metadata extraction (word count, character count)
 
-3. **RAG Implementation**
-   - Context retrieval from documents
-   - Source attribution in responses
-   - Grounded AI responses
+3. **Vector Embeddings Service** (23 tests) ✅
+   - OpenAI text-embedding-3-small integration
+   - Supabase pgvector storage
+   - Semantic similarity search
+   - Batch embedding generation
+   - Document embedding lifecycle
 
-4. **AI Chat Interface**
-   - Chat UI component
-   - Message history
-   - Source citations display
+4. **RAG Service** (29 tests) ✅
+   - Retrieval Augmented Generation
+   - Source attribution (FR-032 CRITICAL) ✅
+   - Grounding enforcement (no hallucination)
+   - Hebrew/English language support
+   - Context formatting with citations
+   - Token usage tracking
+
+### Remaining Work
+- [ ] AI Chat Interface UI Component
+- [ ] Message history
+- [ ] Source citations display component
 
 ---
 
@@ -84,10 +64,10 @@ Last Updated: 2026-01-27 15:45 (Session 5)
 | Phase 2: Tasks + CPM | ✅ Complete | 38 |
 | Phase 3: Team + Resources | ✅ Complete | 86 |
 | Phase 4: Audit Findings | ✅ Complete | 19 |
-| Phase 5: CRDT + Offline | 🔄 In Progress | 98 |
-| Phase 6: Grounded AI | 🔲 Pending | - |
+| Phase 5: CRDT + Offline | ✅ Complete | 116 |
+| Phase 6: Grounded AI | 🔄 In Progress | 107 |
 
-**Total Tests: 806 ✅**
+**Total Tests: 931 ✅**
 
 ---
 
@@ -108,5 +88,13 @@ Following `/skills/tdd-workflow.md`:
 - [x] Created plan.md
 - [x] Add y-indexeddb persistence to sync service (11 new tests)
 - [x] Create OfflineSyncStatus UI component with TDD (25 tests)
-- [ ] Create offline integration tests
-- [ ] Verify all tests pass and update progress.txt
+- [x] Create offline integration tests (18 tests)
+- [x] Verify all tests pass (824 total)
+- [x] Phase 5 COMPLETE ✅
+
+### Phase 6 Progress (Current Session)
+- [x] Document Upload Service (28 tests)
+- [x] Document Parser Service (27 tests)
+- [x] Vector Embeddings Service (23 tests)
+- [x] RAG Service with Source Attribution (29 tests)
+- [ ] AI Chat Interface UI Component
