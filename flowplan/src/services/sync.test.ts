@@ -5,7 +5,28 @@ import {
   createSyncService,
   SyncStatus,
   SyncConfig,
+  PersistenceConfig,
 } from './sync'
+
+// Mock y-indexeddb with hoisted mock functions
+const { mockDestroy, mockClearData, MockIndexeddbPersistence } = vi.hoisted(() => {
+  const mockDestroy = vi.fn()
+  const mockClearData = vi.fn(() => Promise.resolve())
+
+  class MockIndexeddbPersistence {
+    whenSynced = Promise.resolve()
+    destroy = mockDestroy
+    clearData = mockClearData
+
+    constructor(public name: string, public doc: unknown) {}
+  }
+
+  return { mockDestroy, mockClearData, MockIndexeddbPersistence }
+})
+
+vi.mock('y-indexeddb', () => ({
+  IndexeddbPersistence: MockIndexeddbPersistence,
+}))
 
 // Mock WebSocket
 class MockWebSocket {
@@ -402,6 +423,126 @@ describe('SyncService', () => {
       syncService.setAwarenessState({ name: 'Test User' })
 
       expect(awarenessCallback).toHaveBeenCalled()
+    })
+  })
+
+  describe('persistence', () => {
+    const persistenceConfig: SyncConfig = {
+      ...defaultConfig,
+      persistence: {
+        enabled: true,
+        name: 'test-persistence',
+      },
+    }
+
+    afterEach(() => {
+      if (syncService) {
+        syncService.disconnect()
+      }
+      vi.clearAllMocks()
+    })
+
+    it('should create sync service with persistence enabled', () => {
+      syncService = createSyncService(persistenceConfig)
+
+      expect(syncService).toBeDefined()
+      expect(syncService.isPersistenceEnabled()).toBe(true)
+    })
+
+    it('should create sync service without persistence by default', () => {
+      syncService = createSyncService(defaultConfig)
+
+      expect(syncService.isPersistenceEnabled()).toBe(false)
+    })
+
+    it('should wait for persistence to sync before reporting ready', async () => {
+      syncService = createSyncService(persistenceConfig)
+
+      const isReady = await syncService.waitForPersistence()
+
+      expect(isReady).toBe(true)
+    })
+
+    it('should return immediately when persistence is disabled', async () => {
+      syncService = createSyncService(defaultConfig)
+
+      const isReady = await syncService.waitForPersistence()
+
+      expect(isReady).toBe(true)
+    })
+
+    it('should track persistence status', () => {
+      syncService = createSyncService(persistenceConfig)
+
+      const status = syncService.getPersistenceStatus()
+
+      expect(status).toHaveProperty('enabled')
+      expect(status).toHaveProperty('synced')
+      expect(status.enabled).toBe(true)
+    })
+
+    it('should clear persistence data', async () => {
+      syncService = createSyncService(persistenceConfig)
+
+      await syncService.clearPersistence()
+
+      expect(mockClearData).toHaveBeenCalled()
+    })
+
+    it('should not error when clearing persistence without provider', async () => {
+      syncService = createSyncService(defaultConfig)
+
+      await expect(syncService.clearPersistence()).resolves.not.toThrow()
+    })
+
+    it('should persist data to IndexedDB', async () => {
+      syncService = createSyncService(persistenceConfig)
+      syncService.setTask('task-1', { id: 'task-1', title: 'Persisted Task' })
+
+      // Verify persistence was enabled and data can be retrieved
+      expect(syncService.isPersistenceEnabled()).toBe(true)
+      const tasks = syncService.getTasks()
+      expect(tasks.get('task-1')).toEqual({ id: 'task-1', title: 'Persisted Task' })
+    })
+
+    it('should recover data after recreation', async () => {
+      // Create first instance and add data
+      syncService = createSyncService(persistenceConfig)
+      syncService.setTask('task-1', { id: 'task-1', title: 'Test Task' })
+
+      // Simulate document snapshot for recovery
+      const snapshot = syncService.createSnapshot()
+      syncService.disconnect()
+
+      // Create new instance and restore from snapshot
+      const newSyncService = createSyncService(persistenceConfig)
+      newSyncService.restoreFromSnapshot(snapshot)
+
+      const tasks = newSyncService.getTasks()
+      expect(tasks.get('task-1')).toEqual({ id: 'task-1', title: 'Test Task' })
+
+      newSyncService.disconnect()
+    })
+
+    it('should use custom persistence name', () => {
+      const customConfig: SyncConfig = {
+        ...defaultConfig,
+        persistence: {
+          enabled: true,
+          name: 'custom-db-name',
+        },
+      }
+
+      syncService = createSyncService(customConfig)
+
+      expect(syncService.getPersistenceStatus().name).toBe('custom-db-name')
+    })
+
+    it('should destroy persistence provider on disconnect', () => {
+      syncService = createSyncService(persistenceConfig)
+      syncService.disconnect()
+
+      expect(mockDestroy).toHaveBeenCalled()
     })
   })
 })

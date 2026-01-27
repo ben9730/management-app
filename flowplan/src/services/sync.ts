@@ -1,5 +1,6 @@
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
+import { IndexeddbPersistence } from 'y-indexeddb'
 
 export interface SyncStatus {
   connected: boolean
@@ -9,11 +10,23 @@ export interface SyncStatus {
   error: string | null
 }
 
+export interface PersistenceConfig {
+  enabled: boolean
+  name: string
+}
+
+export interface PersistenceStatus {
+  enabled: boolean
+  synced: boolean
+  name: string | null
+}
+
 export interface SyncConfig {
   documentId: string
   websocketUrl: string
   document?: Y.Doc
   awareness?: boolean
+  persistence?: PersistenceConfig
 }
 
 export interface ChangeEvent {
@@ -62,11 +75,18 @@ export interface SyncService {
   getLocalAwarenessState(): AwarenessState | null
   getAllAwarenessStates(): Map<number, AwarenessState>
   onAwarenessChange(callback: AwarenessCallback): () => void
+
+  // Persistence methods
+  isPersistenceEnabled(): boolean
+  getPersistenceStatus(): PersistenceStatus
+  waitForPersistence(): Promise<boolean>
+  clearPersistence(): Promise<void>
 }
 
 export function createSyncService(config: SyncConfig): SyncService {
   const doc = config.document ?? new Y.Doc()
   let provider: WebsocketProvider | null = null
+  let persistenceProvider: IndexeddbPersistence | null = null
 
   const statusCallbacks = new Set<StatusCallback>()
   const changeCallbacks = new Set<ChangeCallback>()
@@ -82,6 +102,19 @@ export function createSyncService(config: SyncConfig): SyncService {
 
   let localAwarenessState: AwarenessState | null = null
   const awarenessStates = new Map<number, AwarenessState>()
+
+  // Persistence state
+  let persistenceSynced = false
+  const persistenceEnabled = config.persistence?.enabled ?? false
+  const persistenceName = config.persistence?.name ?? null
+
+  // Initialize persistence provider if enabled
+  if (persistenceEnabled && persistenceName) {
+    persistenceProvider = new IndexeddbPersistence(persistenceName, doc)
+    persistenceProvider.whenSynced.then(() => {
+      persistenceSynced = true
+    })
+  }
 
   // Undo manager for tracking changes
   const tasksMap = doc.getMap('tasks')
@@ -212,6 +245,9 @@ export function createSyncService(config: SyncConfig): SyncService {
         provider.destroy()
         provider = null
       }
+      if (persistenceProvider) {
+        persistenceProvider.destroy()
+      }
       status = {
         ...status,
         connected: false,
@@ -282,6 +318,33 @@ export function createSyncService(config: SyncConfig): SyncService {
       awarenessCallbacks.add(callback)
       return () => {
         awarenessCallbacks.delete(callback)
+      }
+    },
+
+    // Persistence methods
+    isPersistenceEnabled() {
+      return persistenceEnabled
+    },
+
+    getPersistenceStatus(): PersistenceStatus {
+      return {
+        enabled: persistenceEnabled,
+        synced: persistenceSynced,
+        name: persistenceName,
+      }
+    },
+
+    async waitForPersistence(): Promise<boolean> {
+      if (!persistenceProvider) {
+        return true
+      }
+      await persistenceProvider.whenSynced
+      return true
+    },
+
+    async clearPersistence(): Promise<void> {
+      if (persistenceProvider) {
+        await persistenceProvider.clearData()
       }
     },
   }

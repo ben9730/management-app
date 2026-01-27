@@ -1,7 +1,7 @@
 # FlowPlan - Progress Report
 ## AI-Native Audit Management System
 
-Last Updated: 2026-01-27 (Session 5)
+Last Updated: 2026-01-27 16:00 (Session 5)
 
 ---
 
@@ -327,7 +327,7 @@ Last Updated: 2026-01-27 (Session 5)
 - [x] Conflict detection (detectConflicts)
 - [x] Conflict resolution (resolveConflicts with last-write-wins / first-write-wins strategies)
 
-#### Sync Service with Yjs (31 tests) - NEW
+#### Sync Service with Yjs (42 tests) - UPDATED
 - [x] Yjs document with WebSocket provider
 - [x] Document maps for tasks, projects, team members, audit findings
 - [x] Undo/Redo manager with UndoManager
@@ -337,6 +337,11 @@ Last Updated: 2026-01-27 (Session 5)
 - [x] Status change subscriptions
 - [x] Document change subscriptions
 - [x] Transaction support for atomic operations
+- [x] y-indexeddb persistence provider integration
+- [x] Persistence status tracking (enabled, synced, name)
+- [x] waitForPersistence() for sync readiness
+- [x] clearPersistence() for data cleanup
+- [x] Persistence provider cleanup on disconnect
 
 #### Sync React Hooks (12 tests) - NEW
 - [x] SyncProvider - context provider for sync services
@@ -346,6 +351,34 @@ Last Updated: 2026-01-27 (Session 5)
 - [x] useOfflineStatus - offline status (isOnline, queueCount, forceSync)
 - [x] useAwareness - multi-user presence (states, setLocalState, localState)
 - [x] Browser online/offline event handling
+
+#### OfflineSyncStatus Component (25 tests) - NEW
+- [x] Online/Offline status indicator with color coding (green/red/yellow)
+- [x] Connection states: Online, Offline, Syncing, Connecting
+- [x] Pending changes count display
+- [x] Queue count for offline operations
+- [x] Sync button for manual sync with disabled states
+- [x] Last sync time display with relative formatting
+- [x] WebSocket connected/disconnected indicator
+- [x] Error message display
+- [x] Compact mode for minimal UI
+- [x] Accessibility (aria-labels, button labels)
+
+#### Offline Integration Tests (18 tests) - NEW
+- [x] Offline data persistence (local storage while offline)
+- [x] Operation queuing when offline
+- [x] Data preservation across sync service recreation
+- [x] Separation of offline storage from CRDT document
+- [x] Sync recovery after connectivity restored
+- [x] Multiple operations processing in order
+- [x] Delete operations during recovery
+- [x] Sync status change tracking
+- [x] Conflict detection between local and remote operations
+- [x] Last-write-wins conflict resolution strategy
+- [x] First-write-wins conflict resolution strategy
+- [x] CRDT automatic conflict resolution
+- [x] Undo/Redo history preservation
+- [x] Edge cases (empty queue, rapid transitions, large batches)
 
 ---
 
@@ -380,9 +413,11 @@ Last Updated: 2026-01-27 (Session 5)
 | use-time-off.test.ts | 18 | ✅ Pass |
 | use-audit-findings.test.ts | 18 | ✅ Pass |
 | offline-storage.test.ts | 19 | ✅ Pass |
-| sync.test.ts | 31 | ✅ Pass |
+| sync.test.ts | 42 | ✅ Pass |
 | use-sync.test.ts | 12 | ✅ Pass |
-| **TOTAL** | **770** | **✅ All Pass** |
+| OfflineSyncStatus.test.tsx | 25 | ✅ Pass |
+| offline-integration.test.ts | 18 | ✅ Pass |
+| **TOTAL** | **824** | **✅ All Pass** |
 
 ---
 
@@ -411,9 +446,13 @@ Last Updated: 2026-01-27 (Session 5)
 - [x] Root cause tracking
 - [x] Status management (open/in_progress/closed)
 
-### Phase 5: CRDT + Offline 🔲 PENDING
-- [ ] Yjs integration
-- [ ] Offline-first editing
+### Phase 5: CRDT + Offline ✅ COMPLETE
+- [x] Yjs integration (Sync Service with 42 tests)
+- [x] Offline Storage Service (IndexedDB + fallback)
+- [x] Sync React Hooks (SyncProvider, useSyncStatus, etc.)
+- [x] y-indexeddb persistence for Yjs documents
+- [x] OfflineSyncStatus UI component (25 tests)
+- [x] Offline integration tests (18 tests)
 
 ### Phase 6: Grounded AI 🔲 PENDING
 - [ ] Document upload
