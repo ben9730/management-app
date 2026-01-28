@@ -134,24 +134,24 @@ const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'relative w-full border-2 border-black bg-white shadow-lg',
+          'relative w-full border border-[var(--fp-border-light)] bg-white shadow-[var(--fp-shadow-lg)] rounded-[var(--fp-radius-lg)]',
           sizes[size],
           className
         )}
       >
         {/* Header */}
-        <div className="flex items-start justify-between border-b-2 border-black p-4">
+        <div className="flex items-start justify-between border-b border-[var(--fp-border-light)] p-4">
           <div>
             {title && (
               <h2
                 id={titleId}
-                className="text-lg font-bold uppercase tracking-wider text-black"
+                className="text-lg font-bold text-[var(--fp-text-primary)]"
               >
                 {title}
               </h2>
             )}
             {description && (
-              <p id={descriptionId} className="mt-1 text-sm text-gray-600">
+              <p id={descriptionId} className="mt-1 text-sm text-[var(--fp-text-secondary)]">
                 {description}
               </p>
             )}
@@ -161,7 +161,7 @@ const Modal: React.FC<ModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close modal"
-              className="ml-4 p-1 text-black transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
+              className="ml-4 p-1 text-[var(--fp-text-secondary)] transition-colors hover:text-[var(--fp-text-primary)] hover:bg-[var(--fp-bg-tertiary)] rounded-[var(--fp-radius-sm)] focus:outline-none focus:ring-2 focus:ring-[var(--fp-brand-primary)]"
             >
               <svg
                 className="h-5 w-5"
@@ -186,7 +186,7 @@ const Modal: React.FC<ModalProps> = ({
         {footer && (
           <div
             data-testid="modal-footer"
-            className="border-t-2 border-black p-4"
+            className="border-t border-[var(--fp-border-light)] p-4"
           >
             {footer}
           </div>

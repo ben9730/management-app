@@ -60,7 +60,7 @@ describe('Select', () => {
     })
 
     it('renders with controlled value', () => {
-      render(<Select options={mockOptions} value="option3" onChange={() => {}} />)
+      render(<Select options={mockOptions} value="option3" onChange={() => { }} />)
       expect(screen.getByRole('combobox')).toHaveValue('option3')
     })
   })
@@ -97,20 +97,22 @@ describe('Select', () => {
     it('applies default variant styling', () => {
       render(<Select options={mockOptions} />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-2')
-      expect(select).toHaveClass('border-black')
+      expect(select).not.toHaveClass('border-2')
+      expect(select).toHaveClass('border')
+      expect(select).toHaveClass('border-[var(--fp-border-light)]')
+      expect(select).toHaveClass('rounded-[var(--fp-radius-md)]')
     })
 
     it('applies error variant styling', () => {
       render(<Select options={mockOptions} variant="error" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-red-500')
+      expect(select).toHaveClass('border-[var(--fp-status-error)]')
     })
 
     it('applies success variant styling', () => {
       render(<Select options={mockOptions} variant="success" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-green-500')
+      expect(select).toHaveClass('border-[var(--fp-status-success)]')
     })
   })
 
@@ -216,13 +218,13 @@ describe('Select', () => {
     it('applies error styling when error is provided', () => {
       render(<Select options={mockOptions} error="Invalid selection" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-red-500')
+      expect(select).toHaveClass('border-[var(--fp-status-error)]')
     })
 
     it('error message has error color', () => {
       render(<Select options={mockOptions} error="Invalid selection" />)
       const errorText = screen.getByText('Invalid selection')
-      expect(errorText).toHaveClass('text-red-500')
+      expect(errorText).toHaveClass('text-[var(--fp-status-error)]')
     })
   })
 

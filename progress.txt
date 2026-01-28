@@ -619,3 +619,16 @@ flowplan/
 - All components tested with React Testing Library
 - Critical Path Method (CPM) fully implemented with resource awareness
 - Phase 4 (Audit Findings) complete - full CRUD with CAPA support
+
+---
+
+## 🔄 SESSION 8: Team Management Page
+
+### Team Page Implementation (Planned)
+- [ ] Create `src/app/team/page.tsx`
+- [ ] Implement Team Member List/Grid view
+- [ ] Integrate `TeamMemberForm` for Create/Edit
+- [ ] Implement local state management (CRUD) for demo
+- [ ] Ensure Hebrew RTL support
+- [ ] Verify accessibility
+

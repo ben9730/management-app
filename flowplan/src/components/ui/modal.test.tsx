@@ -14,7 +14,7 @@ describe('Modal', () => {
   describe('rendering', () => {
     it('does not render when closed', () => {
       render(
-        <Modal isOpen={false} onClose={() => {}}>
+        <Modal isOpen={false} onClose={() => { }}>
           <div>Modal Content</div>
         </Modal>
       )
@@ -23,7 +23,7 @@ describe('Modal', () => {
 
     it('renders when open', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Modal Content</div>
         </Modal>
       )
@@ -32,7 +32,7 @@ describe('Modal', () => {
 
     it('renders children content', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Modal Content</div>
         </Modal>
       )
@@ -41,7 +41,7 @@ describe('Modal', () => {
 
     it('renders title when provided', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} title="Confirm Action">
+        <Modal isOpen={true} onClose={() => { }} title="Confirm Action">
           <div>Content</div>
         </Modal>
       )
@@ -52,7 +52,7 @@ describe('Modal', () => {
       render(
         <Modal
           isOpen={true}
-          onClose={() => {}}
+          onClose={() => { }}
           title="Confirm"
           description="Are you sure you want to proceed?"
         >
@@ -67,7 +67,7 @@ describe('Modal', () => {
   describe('close button', () => {
     it('renders close button by default', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
@@ -89,7 +89,7 @@ describe('Modal', () => {
 
     it('hides close button when showCloseButton is false', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} showCloseButton={false}>
+        <Modal isOpen={true} onClose={() => { }} showCloseButton={false}>
           <div>Content</div>
         </Modal>
       )
@@ -101,7 +101,7 @@ describe('Modal', () => {
   describe('overlay', () => {
     it('renders overlay behind modal', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
@@ -168,7 +168,7 @@ describe('Modal', () => {
   describe('sizes', () => {
     it('applies small size styling', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} size="sm">
+        <Modal isOpen={true} onClose={() => { }} size="sm">
           <div>Content</div>
         </Modal>
       )
@@ -178,7 +178,7 @@ describe('Modal', () => {
 
     it('applies medium size styling by default', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
@@ -188,7 +188,7 @@ describe('Modal', () => {
 
     it('applies large size styling', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} size="lg">
+        <Modal isOpen={true} onClose={() => { }} size="lg">
           <div>Content</div>
         </Modal>
       )
@@ -198,7 +198,7 @@ describe('Modal', () => {
 
     it('applies extra large size styling', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} size="xl">
+        <Modal isOpen={true} onClose={() => { }} size="xl">
           <div>Content</div>
         </Modal>
       )
@@ -208,7 +208,7 @@ describe('Modal', () => {
 
     it('applies full size styling', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} size="full">
+        <Modal isOpen={true} onClose={() => { }} size="full">
           <div>Content</div>
         </Modal>
       )
@@ -221,18 +221,21 @@ describe('Modal', () => {
   describe('brutalist styling', () => {
     it('applies brutalist border style', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
       const dialog = screen.getByRole('dialog')
-      expect(dialog).toHaveClass('border-2')
-      expect(dialog).toHaveClass('border-black')
+      expect(dialog).toHaveClass('rounded-[var(--fp-radius-lg)]')
+      expect(dialog).toHaveClass('border')
+      expect(dialog).toHaveClass('border-[var(--fp-border-light)]')
+      expect(dialog).not.toHaveClass('border-2')
+      expect(dialog).not.toHaveClass('border-black')
     })
 
     it('applies white background', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
@@ -247,7 +250,7 @@ describe('Modal', () => {
       render(
         <Modal
           isOpen={true}
-          onClose={() => {}}
+          onClose={() => { }}
           footer={<button>Confirm</button>}
         >
           <div>Content</div>
@@ -260,7 +263,7 @@ describe('Modal', () => {
       render(
         <Modal
           isOpen={true}
-          onClose={() => {}}
+          onClose={() => { }}
           footer={<button>Confirm</button>}
         >
           <div>Content</div>
@@ -274,7 +277,7 @@ describe('Modal', () => {
   describe('accessibility', () => {
     it('has dialog role', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
@@ -283,7 +286,7 @@ describe('Modal', () => {
 
     it('has aria-modal attribute', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
@@ -292,7 +295,7 @@ describe('Modal', () => {
 
     it('has aria-labelledby when title is provided', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} title="My Title">
+        <Modal isOpen={true} onClose={() => { }} title="My Title">
           <div>Content</div>
         </Modal>
       )
@@ -304,7 +307,7 @@ describe('Modal', () => {
       render(
         <Modal
           isOpen={true}
-          onClose={() => {}}
+          onClose={() => { }}
           title="Title"
           description="Description text"
         >
@@ -317,7 +320,7 @@ describe('Modal', () => {
 
     it('traps focus within modal', async () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <button>First</button>
           <button>Second</button>
         </Modal>
@@ -343,7 +346,7 @@ describe('Modal', () => {
   describe('custom styling', () => {
     it('applies custom className to dialog', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} className="custom-modal">
+        <Modal isOpen={true} onClose={() => { }} className="custom-modal">
           <div>Content</div>
         </Modal>
       )
@@ -352,7 +355,7 @@ describe('Modal', () => {
 
     it('applies custom className to overlay', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}} overlayClassName="custom-overlay">
+        <Modal isOpen={true} onClose={() => { }} overlayClassName="custom-overlay">
           <div>Content</div>
         </Modal>
       )
@@ -364,7 +367,7 @@ describe('Modal', () => {
   describe('portal', () => {
     it('renders in document body by default', () => {
       render(
-        <Modal isOpen={true} onClose={() => {}}>
+        <Modal isOpen={true} onClose={() => { }}>
           <div data-testid="modal-content">Content</div>
         </Modal>
       )

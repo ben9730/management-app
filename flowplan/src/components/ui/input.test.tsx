@@ -28,7 +28,7 @@ describe('Input', () => {
     })
 
     it('renders with controlled value', () => {
-      render(<Input value="Controlled value" onChange={() => {}} />)
+      render(<Input value="Controlled value" onChange={() => { }} />)
       expect(screen.getByRole('textbox')).toHaveValue('Controlled value')
     })
 
@@ -84,20 +84,22 @@ describe('Input', () => {
     it('applies default variant styling', () => {
       render(<Input />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-2')
-      expect(input).toHaveClass('border-black')
+      expect(input).not.toHaveClass('border-2')
+      expect(input).toHaveClass('border')
+      expect(input).toHaveClass('border-[var(--fp-border-light)]')
+      expect(input).toHaveClass('rounded-[var(--fp-radius-md)]')
     })
 
     it('applies error variant styling', () => {
       render(<Input variant="error" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-red-500')
+      expect(input).toHaveClass('border-[var(--fp-status-error)]')
     })
 
     it('applies success variant styling', () => {
       render(<Input variant="success" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-green-500')
+      expect(input).toHaveClass('border-[var(--fp-status-success)]')
     })
   })
 
@@ -208,13 +210,13 @@ describe('Input', () => {
     it('applies error styling when error is provided', () => {
       render(<Input error="Invalid input" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-red-500')
+      expect(input).toHaveClass('border-[var(--fp-status-error)]')
     })
 
     it('error message has error color', () => {
       render(<Input error="Invalid input" />)
       const errorText = screen.getByText('Invalid input')
-      expect(errorText).toHaveClass('text-red-500')
+      expect(errorText).toHaveClass('text-[var(--fp-status-error)]')
     })
   })
 

@@ -3,7 +3,8 @@
 /* FlowPlan Design System - Precision Clarity */
 :root {
   /* Monday.com Inspired Core Colors */
-  --fp-bg-primary: #eceff8; /* Light gray background */
+  --fp-bg-primary: #eceff8;
+  /* Light gray background */
   --fp-bg-secondary: #ffffff;
   --fp-bg-tertiary: #f5f6f8;
   --fp-bg-elevated: #ffffff;
@@ -15,20 +16,27 @@
   --fp-text-inverse: #ffffff;
 
   /* Brand Colors */
-  --fp-brand-primary: #a25ddc; /* Monday Purple-ish */
-  --fp-brand-secondary: #0073ea; /* Monday Blue */
+  --fp-brand-primary: #a25ddc;
+  /* Monday Purple-ish */
+  --fp-brand-secondary: #0073ea;
+  /* Monday Blue */
   --fp-brand-accent: #ffcb00;
 
   /* Status Colors (Monday style) */
-  --fp-status-success: #00ca72; /* Done (Green) */
+  --fp-status-success: #00ca72;
+  /* Done (Green) */
   --fp-status-success-bg: #00ca72;
-  --fp-status-warning: #fdab3d; /* Working on it (Orange) */
+  --fp-status-warning: #fdab3d;
+  /* Working on it (Orange) */
   --fp-status-warning-bg: #fdab3d;
-  --fp-status-error: #e2445c; /* Stuck (Red) */
+  --fp-status-error: #e2445c;
+  /* Stuck (Red) */
   --fp-status-error-bg: #e2445c;
-  --fp-status-info: #579bfc; /* Info (Blue) */
+  --fp-status-info: #579bfc;
+  /* Info (Blue) */
   --fp-status-info-bg: #579bfc;
-  --fp-status-pending: #c4c4c4; /* Gray */
+  --fp-status-pending: #c4c4c4;
+  /* Gray */
 
   /* Critical Path */
   --fp-critical: #e2445c;
@@ -141,7 +149,7 @@ body {
   border-radius: var(--fp-radius-lg);
   box-shadow: var(--fp-shadow-sm);
   transition: box-shadow var(--fp-transition-normal),
-              transform var(--fp-transition-normal);
+    transform var(--fp-transition-normal);
 }
 
 .fp-card:hover {
@@ -260,6 +268,7 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -271,6 +280,7 @@ body {
     opacity: 0;
     transform: translateX(24px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -282,6 +292,7 @@ body {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -289,9 +300,12 @@ body {
 }
 
 @keyframes fp-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -310,19 +324,42 @@ body {
 }
 
 /* Stagger children */
-.fp-stagger > * {
+.fp-stagger>* {
   opacity: 0;
   animation: fp-fade-in 0.4s ease forwards;
 }
 
-.fp-stagger > *:nth-child(1) { animation-delay: 0ms; }
-.fp-stagger > *:nth-child(2) { animation-delay: 50ms; }
-.fp-stagger > *:nth-child(3) { animation-delay: 100ms; }
-.fp-stagger > *:nth-child(4) { animation-delay: 150ms; }
-.fp-stagger > *:nth-child(5) { animation-delay: 200ms; }
-.fp-stagger > *:nth-child(6) { animation-delay: 250ms; }
-.fp-stagger > *:nth-child(7) { animation-delay: 300ms; }
-.fp-stagger > *:nth-child(8) { animation-delay: 350ms; }
+.fp-stagger>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.fp-stagger>*:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.fp-stagger>*:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.fp-stagger>*:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+.fp-stagger>*:nth-child(5) {
+  animation-delay: 200ms;
+}
+
+.fp-stagger>*:nth-child(6) {
+  animation-delay: 250ms;
+}
+
+.fp-stagger>*:nth-child(7) {
+  animation-delay: 300ms;
+}
+
+.fp-stagger>*:nth-child(8) {
+  animation-delay: 350ms;
+}
 
 /* RTL Support */
 [dir="rtl"] .fp-icon-arrow {

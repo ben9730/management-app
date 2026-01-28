@@ -48,15 +48,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const effectiveVariant = error ? 'error' : variant
 
     const baseStyles =
-      'w-full border-2 bg-white font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2'
+      'w-full border bg-[var(--fp-bg-secondary)] text-[var(--fp-text-primary)] rounded-[var(--fp-radius-md)] transition-all duration-200 focus:outline-none focus:ring-1'
 
     const variants = {
       default:
-        'border-black focus:ring-black placeholder:text-gray-400',
+        'border-[var(--fp-border-light)] focus:border-[var(--fp-brand-primary)] focus:ring-[var(--fp-brand-primary)] placeholder:text-[var(--fp-text-tertiary)]',
       error:
-        'border-red-500 focus:ring-red-500 placeholder:text-gray-400',
+        'border-[var(--fp-status-error)] focus:border-[var(--fp-status-error)] focus:ring-[var(--fp-status-error)] placeholder:text-[var(--fp-status-error)]/50',
       success:
-        'border-green-500 focus:ring-green-500 placeholder:text-gray-400',
+        'border-[var(--fp-status-success)] focus:border-[var(--fp-status-success)] focus:ring-[var(--fp-status-success)] placeholder:text-[var(--fp-status-success)]/50',
     }
 
     const sizes = {
@@ -66,7 +66,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-gray-100'
+      ? 'opacity-50 cursor-not-allowed bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-tertiary)]'
       : ''
 
     const iconPadding = {
@@ -79,7 +79,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
+            className="mb-1.5 block text-xs font-medium text-[var(--fp-text-secondary)]"
           >
             {label}
           </label>
@@ -115,12 +115,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && (
-          <p id={errorId} className="mt-1 text-sm text-red-500">
+          <p id={errorId} className="mt-1 text-xs text-[var(--fp-status-error)]">
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-1 text-xs text-[var(--fp-text-secondary)]">{helperText}</p>
         )}
       </div>
     )
