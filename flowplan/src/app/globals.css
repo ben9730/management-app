@@ -2,44 +2,45 @@
 
 /* FlowPlan Design System - Precision Clarity */
 :root {
-  /* Core Colors */
-  --fp-bg-primary: #fafbfc;
+  /* Monday.com Inspired Core Colors */
+  --fp-bg-primary: #eceff8; /* Light gray background */
   --fp-bg-secondary: #ffffff;
-  --fp-bg-tertiary: #f4f6f8;
+  --fp-bg-tertiary: #f5f6f8;
   --fp-bg-elevated: #ffffff;
 
   /* Text Colors */
-  --fp-text-primary: #1a2332;
-  --fp-text-secondary: #5a6a7e;
-  --fp-text-tertiary: #8b97a6;
+  --fp-text-primary: #323338;
+  --fp-text-secondary: #676879;
+  --fp-text-tertiary: #9699a6;
   --fp-text-inverse: #ffffff;
 
   /* Brand Colors */
-  --fp-brand-primary: #2563eb;
-  --fp-brand-secondary: #3b82f6;
-  --fp-brand-accent: #f59e0b;
+  --fp-brand-primary: #a25ddc; /* Monday Purple-ish */
+  --fp-brand-secondary: #0073ea; /* Monday Blue */
+  --fp-brand-accent: #ffcb00;
 
-  /* Status Colors */
-  --fp-status-success: #10b981;
-  --fp-status-success-bg: #ecfdf5;
-  --fp-status-warning: #f59e0b;
-  --fp-status-warning-bg: #fffbeb;
-  --fp-status-error: #ef4444;
-  --fp-status-error-bg: #fef2f2;
-  --fp-status-info: #3b82f6;
-  --fp-status-info-bg: #eff6ff;
+  /* Status Colors (Monday style) */
+  --fp-status-success: #00ca72; /* Done (Green) */
+  --fp-status-success-bg: #00ca72;
+  --fp-status-warning: #fdab3d; /* Working on it (Orange) */
+  --fp-status-warning-bg: #fdab3d;
+  --fp-status-error: #e2445c; /* Stuck (Red) */
+  --fp-status-error-bg: #e2445c;
+  --fp-status-info: #579bfc; /* Info (Blue) */
+  --fp-status-info-bg: #579bfc;
+  --fp-status-pending: #c4c4c4; /* Gray */
 
   /* Critical Path */
-  --fp-critical: #dc2626;
-  --fp-critical-bg: #fef2f2;
+  --fp-critical: #e2445c;
+  --fp-critical-bg: #fff0f3;
 
   /* Borders & Shadows */
-  --fp-border-light: #e5e9ef;
-  --fp-border-medium: #d1d9e4;
-  --fp-shadow-sm: 0 1px 2px rgba(26, 35, 50, 0.04);
-  --fp-shadow-md: 0 4px 12px rgba(26, 35, 50, 0.08);
-  --fp-shadow-lg: 0 12px 32px rgba(26, 35, 50, 0.12);
-  --fp-shadow-glow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  --fp-border-light: #d0d4e4;
+  --fp-border-medium: #c3c6d4;
+  --fp-shadow-sm: 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --fp-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --fp-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --fp-shadow-glow: 0 0 0 4px rgba(0, 115, 234, 0.2);
 
   /* Spacing Scale */
   --fp-space-xs: 0.25rem;
@@ -50,10 +51,10 @@
   --fp-space-2xl: 3rem;
 
   /* Border Radius */
-  --fp-radius-sm: 6px;
-  --fp-radius-md: 10px;
-  --fp-radius-lg: 14px;
-  --fp-radius-xl: 20px;
+  --fp-radius-sm: 4px;
+  --fp-radius-md: 8px;
+  --fp-radius-lg: 12px;
+  --fp-radius-xl: 16px;
 
   /* Transitions */
   --fp-transition-fast: 150ms ease;
@@ -64,21 +65,21 @@
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --fp-bg-primary: #0f1419;
-    --fp-bg-secondary: #1a2332;
-    --fp-bg-tertiary: #232f3e;
-    --fp-bg-elevated: #1e2a3a;
+    --fp-bg-primary: #181b34;
+    --fp-bg-secondary: #292f4c;
+    --fp-bg-tertiary: #303855;
+    --fp-bg-elevated: #3b4463;
 
-    --fp-text-primary: #f1f5f9;
-    --fp-text-secondary: #94a3b8;
-    --fp-text-tertiary: #64748b;
+    --fp-text-primary: #dcdde2;
+    --fp-text-secondary: #9092a6;
+    --fp-text-tertiary: #676879;
 
-    --fp-border-light: #2d3d52;
-    --fp-border-medium: #3d4f66;
+    --fp-border-light: #3e4463;
+    --fp-border-medium: #4e5878;
 
-    --fp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --fp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --fp-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+    --fp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --fp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --fp-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
   }
 }
 

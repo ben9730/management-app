@@ -226,11 +226,14 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
           role="figure"
           aria-label="Gantt chart - No tasks"
           className={cn(
-            'border-2 border-black bg-white p-8 text-center',
+            'border border-[var(--fp-border-light)] bg-white p-12 text-center rounded-lg shadow-sm',
             className
           )}
         >
-          <p className="text-gray-500 font-bold">No tasks to display</p>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--fp-bg-tertiary)] mb-3">
+            <span className="text-2xl text-[var(--fp-text-tertiary)]">📊</span>
+          </div>
+          <p className="text-[var(--fp-text-secondary)] font-medium">No tasks to display</p>
         </div>
       )
     }
@@ -243,18 +246,18 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
         role="figure"
         aria-label="Gantt chart showing project timeline"
         className={cn(
-          'border-2 border-black bg-white overflow-hidden',
+          'border border-[var(--fp-border-light)] bg-white overflow-hidden rounded-lg shadow-sm',
           className
         )}
       >
         {/* Controls */}
-        <div className="flex items-center justify-between p-2 border-b-2 border-black bg-gray-100">
+        <div className="flex items-center justify-between p-3 border-b border-[var(--fp-border-light)] bg-[var(--fp-bg-tertiary)]/50">
           <div className="flex items-center gap-2">
             {showTodayMarker && (
               <button
                 data-testid="scroll-to-today"
                 onClick={handleScrollToToday}
-                className="px-2 py-1 text-xs font-bold border-2 border-black hover:bg-black hover:text-white transition-colors"
+                className="px-3 py-1 text-xs font-bold border border-[var(--fp-border-medium)] rounded-full hover:bg-[var(--fp-border-light)] transition-colors text-[var(--fp-text-secondary)] hover:text-[var(--fp-text-primary)]"
               >
                 Today
               </button>
@@ -266,7 +269,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                 data-testid="zoom-out"
                 onClick={handleZoomOut}
                 disabled={dayWidth <= MIN_DAY_WIDTH}
-                className="w-6 h-6 border-2 border-black font-bold hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+                className="w-7 h-7 flex items-center justify-center border border-[var(--fp-border-medium)] rounded-md hover:bg-[var(--fp-bg-tertiary)] transition-colors disabled:opacity-50 text-[var(--fp-text-secondary)]"
               >
                 -
               </button>
@@ -274,7 +277,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                 data-testid="zoom-in"
                 onClick={handleZoomIn}
                 disabled={dayWidth >= MAX_DAY_WIDTH}
-                className="w-6 h-6 border-2 border-black font-bold hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+                className="w-7 h-7 flex items-center justify-center border border-[var(--fp-border-medium)] rounded-md hover:bg-[var(--fp-bg-tertiary)] transition-colors disabled:opacity-50 text-[var(--fp-text-secondary)]"
               >
                 +
               </button>
@@ -284,13 +287,13 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
 
         <div className="flex">
           {/* Task List Panel */}
-          <div className="w-64 flex-shrink-0 border-r-2 border-black">
+          <div className="w-64 flex-shrink-0 border-r border-[var(--fp-border-light)]">
             {/* Header */}
-            <div className="h-16 border-b-2 border-black bg-gray-100 flex items-center px-3">
-              <span className="font-black text-sm uppercase">Tasks</span>
+            <div className="h-12 border-b border-[var(--fp-border-light)] bg-[var(--fp-bg-tertiary)]/30 flex items-center px-4">
+              <span className="font-bold text-xs uppercase text-[var(--fp-text-secondary)] tracking-wider">Tasks</span>
             </div>
             {/* Task Rows */}
-            <div>
+            <div className="bg-white">
               {tasks.map((task) => (
                 <div
                   key={task.id}
@@ -300,17 +303,17 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                   onClick={() => handleTaskRowClick(task)}
                   onKeyDown={(e) => handleTaskRowKeyDown(e, task)}
                   className={cn(
-                    'flex items-center px-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50',
-                    'focus:outline-none focus:bg-gray-100'
+                    'flex items-center px-4 border-b border-[var(--fp-border-light)]/50 cursor-pointer hover:bg-[var(--fp-bg-tertiary)] transition-colors',
+                    'focus:outline-none focus:bg-[var(--fp-bg-tertiary)]'
                   )}
                   style={{ height: ROW_HEIGHT }}
                 >
                   {task.wbs_number && (
-                    <span className="text-xs font-mono text-gray-500 mr-2 w-10">
+                    <span className="text-xs font-mono text-[var(--fp-text-tertiary)] mr-2 w-8">
                       {task.wbs_number}
                     </span>
                   )}
-                  <span className="text-sm truncate flex-1">{task.title}</span>
+                  <span className="text-sm truncate flex-1 text-[var(--fp-text-primary)]">{task.title}</span>
                 </div>
               ))}
             </div>
@@ -325,15 +328,15 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
             {/* Timeline Header */}
             <div
               data-testid="timeline-header"
-              className="h-16 border-b-2 border-black bg-gray-100"
+              className="h-12 border-b border-[var(--fp-border-light)] bg-[var(--fp-bg-tertiary)]/30"
               style={{ width: timelineWidth }}
             >
               {/* Month Labels */}
-              <div className="h-8 flex border-b border-gray-300">
+              <div className="h-6 flex border-b border-[var(--fp-border-light)]/50">
                 {monthLabels.map((month, idx) => (
                   <div
                     key={`${month.month}-${idx}`}
-                    className="text-xs font-bold uppercase flex items-center justify-center border-r border-gray-300"
+                    className="text-[10px] font-bold uppercase flex items-center justify-center border-r border-[var(--fp-border-light)]/50 text-[var(--fp-text-secondary)]"
                     style={{ width: month.width * dayWidth }}
                   >
                     {month.month}
@@ -341,13 +344,13 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                 ))}
               </div>
               {/* Day Labels */}
-              <div className="h-8 flex">
+              <div className="h-6 flex">
                 {dateHeaders.map((header, idx) => (
                   <div
                     key={idx}
                     className={cn(
-                      'text-xs flex items-center justify-center border-r border-gray-200',
-                      header.isWeekend && 'bg-gray-200'
+                      'text-[10px] flex items-center justify-center border-r border-[var(--fp-border-light)]/30 text-[var(--fp-text-tertiary)]',
+                      header.isWeekend && 'bg-[var(--fp-bg-tertiary)]/50'
                     )}
                     style={{ width: dayWidth }}
                   >
@@ -359,17 +362,17 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
 
             {/* Timeline Body */}
             <div
-              className="relative"
+              className="relative bg-white"
               style={{ width: timelineWidth, height: tasks.length * ROW_HEIGHT }}
             >
               {/* Grid Lines */}
-              <div className="absolute inset-0">
+              <div className="absolute inset-0 pointer-events-none">
                 {dateHeaders.map((header, idx) => (
                   <div
                     key={idx}
                     className={cn(
-                      'absolute top-0 bottom-0 border-r border-gray-100',
-                      header.isWeekend && 'bg-gray-50'
+                      'absolute top-0 bottom-0 border-r border-[var(--fp-border-light)]/30',
+                      header.isWeekend && 'bg-[var(--fp-bg-tertiary)]/30'
                     )}
                     style={{ left: idx * dayWidth, width: dayWidth }}
                   />
@@ -380,7 +383,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
               {tasks.map((_, idx) => (
                 <div
                   key={idx}
-                  className="absolute left-0 right-0 border-b border-gray-200"
+                  className="absolute left-0 right-0 border-b border-[var(--fp-border-light)]/30 pointer-events-none"
                   style={{ top: (idx + 1) * ROW_HEIGHT - 1 }}
                 />
               ))}
@@ -389,7 +392,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
               {showTodayMarker && todayOffset >= 0 && todayOffset < totalDays && (
                 <div
                   data-testid="today-marker"
-                  className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                  className="absolute top-0 bottom-0 w-[2px] bg-[var(--fp-brand-secondary)] z-10 opacity-70"
                   style={{ left: todayPosition }}
                 />
               )}
@@ -405,16 +408,16 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     data-testid={`task-bar-${task.id}`}
                     data-start-offset={Math.round(left / dayWidth)}
                     className={cn(
-                      'absolute cursor-pointer transition-all',
+                      'absolute cursor-pointer transition-all group',
                       isCritical && 'critical-path',
                       isMilestone && 'milestone',
                       `status-${task.status}`
                     )}
                     style={{
                       left,
-                      width: isMilestone ? ROW_HEIGHT - 8 : width,
-                      top: top + 4,
-                      height: ROW_HEIGHT - 8,
+                      width: isMilestone ? ROW_HEIGHT - 12 : width,
+                      top: top + 6,
+                      height: ROW_HEIGHT - 12,
                     }}
                     onClick={(e) => handleTaskBarClick(e, task)}
                     onMouseEnter={() => setHoveredTaskId(task.id)}
@@ -423,33 +426,31 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     {isMilestone ? (
                       <div
                         className={cn(
-                          'w-full h-full rotate-45 transform origin-center',
-                          isCritical ? 'bg-red-600' : 'bg-black'
+                          'w-full h-full rotate-45 transform origin-center shadow-sm hover:shadow-md transition-shadow',
+                          isCritical ? 'bg-[var(--fp-critical)]' : 'bg-[var(--fp-text-primary)]'
                         )}
                       />
                     ) : (
                       <div
                         className={cn(
-                          'w-full h-full border-2 border-black relative overflow-hidden',
-                          task.status === 'done' && 'bg-green-200',
-                          task.status === 'in_progress' && 'bg-blue-200',
-                          task.status === 'pending' && 'bg-gray-200',
-                          isCritical && 'border-red-600 border-3'
+                          'w-full h-full rounded-md relative overflow-hidden shadow-sm hover:shadow-md transition-shadow',
+                          task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
+                            task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
+                              task.status === 'pending' ? 'bg-[var(--fp-status-pending)]' :
+                                'bg-[var(--fp-brand-primary)]',
+                          isCritical && 'ring-2 ring-[var(--fp-critical)] ring-offset-1'
                         )}
                       >
-                        {/* Progress Fill */}
+
+                        {/* Progress Fill (Darker shade overlay) */}
                         <div
                           data-testid={`task-progress-${task.id}`}
-                          className={cn(
-                            'absolute inset-y-0 left-0',
-                            task.status === 'done' && 'bg-green-500',
-                            task.status === 'in_progress' && 'bg-blue-500',
-                            task.status === 'pending' && 'bg-gray-400'
-                          )}
+                          className="absolute inset-y-0 left-0 bg-black/10"
                           style={{ width: `${task.progress_percent}%` }}
                         />
+
                         {/* Task Title */}
-                        <span className="absolute inset-0 flex items-center px-2 text-xs font-bold truncate z-10">
+                        <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium truncate z-10 text-white drop-shadow-sm">
                           {task.title}
                         </span>
                       </div>
@@ -472,14 +473,19 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     const endX = successorPos.left
                     const endY = successorPos.top + ROW_HEIGHT / 2
 
+                    // Use curved paths for better visuals
+                    const path = `M ${startX} ${startY} 
+                                  C ${startX + 15} ${startY}, ${endX - 15} ${endY}, ${endX} ${endY}`
+
                     return (
                       <g key={dep.id} data-testid={`dependency-${dep.id}`}>
                         <path
-                          d={`M ${startX} ${startY} L ${startX + 10} ${startY} L ${startX + 10} ${endY} L ${endX} ${endY}`}
+                          d={path}
                           fill="none"
-                          stroke="#666"
-                          strokeWidth="2"
+                          stroke="var(--fp-border-medium)"
+                          strokeWidth="1.5"
                           markerEnd="url(#arrowhead)"
+                          strokeDasharray="4 2"
                         />
                       </g>
                     )
@@ -487,13 +493,13 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                   <defs>
                     <marker
                       id="arrowhead"
-                      markerWidth="10"
-                      markerHeight="7"
-                      refX="9"
-                      refY="3.5"
+                      markerWidth="6"
+                      markerHeight="4"
+                      refX="5"
+                      refY="2"
                       orient="auto"
                     >
-                      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                      <polygon points="0 0, 6 2, 0 4" fill="var(--fp-border-medium)" />
                     </marker>
                   </defs>
                 </svg>
@@ -506,16 +512,18 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
         {hoveredTask && (
           <div
             data-testid="task-tooltip"
-            className="fixed z-50 bg-black text-white px-3 py-2 text-sm border-2 border-white shadow-lg"
-            style={{
-              pointerEvents: 'none',
-            }}
+            className="fixed z-50 bg-white/95 backdrop-blur-sm text-[var(--fp-text-primary)] px-3 py-2 text-xs border border-[var(--fp-border-light)] rounded-lg shadow-lg pointer-events-none"
           >
-            <div className="font-bold">{hoveredTask.title}</div>
-            <div className="text-xs mt-1">
-              {formatDateDisplay(hoveredTask.start_date)} - {formatDateDisplay(hoveredTask.due_date)}
+            <div className="font-bold mb-1">{hoveredTask.title}</div>
+            <div className="flex items-center gap-2 text-[var(--fp-text-secondary)]">
+              <span>{formatDateDisplay(hoveredTask.start_date)} - {formatDateDisplay(hoveredTask.due_date)}</span>
             </div>
-            <div className="text-xs">Progress: {hoveredTask.progress_percent}%</div>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="w-16 h-1.5 bg-[var(--fp-bg-tertiary)] rounded-full overflow-hidden">
+                <div className="h-full bg-[var(--fp-status-success)]" style={{ width: `${hoveredTask.progress_percent}%` }}></div>
+              </div>
+              <span>{hoveredTask.progress_percent}%</span>
+            </div>
           </div>
         )}
       </div>

@@ -38,31 +38,35 @@ describe('Button', () => {
   it('applies default variant styling', () => {
     render(<Button>Default</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-black')
+    // Default is now brand primary
+    expect(button.className).toContain('bg-[var(--fp-brand-primary)]')
   })
 
   it('applies secondary variant styling', () => {
     render(<Button variant="secondary">Secondary</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-gray-200')
+    // Secondary is now tertiary bg
+    expect(button.className).toContain('bg-[var(--fp-bg-tertiary)]')
   })
 
   it('applies destructive variant styling', () => {
     render(<Button variant="destructive">Delete</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-red-600')
+    // Destructive is now status error
+    expect(button.className).toContain('bg-[var(--fp-status-error)]')
   })
 
   it('applies outline variant styling', () => {
     render(<Button variant="outline">Outline</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('border-2')
+    expect(button).toHaveClass('border')
+    expect(button.className).toContain('border-[var(--fp-border-medium)]')
   })
 
   it('applies ghost variant styling', () => {
     render(<Button variant="ghost">Ghost</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('hover:bg-gray-100')
+    expect(button.className).toContain('text-[var(--fp-text-primary)]')
   })
 
   it('applies small size styling', () => {

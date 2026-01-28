@@ -79,144 +79,178 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
 
     const overdue = isOverdue(task.due_date)
 
+
     return (
-      <article
+      <div
         ref={ref}
         data-testid="task-card"
         role="article"
         aria-label={`Task: ${task.title}`}
         className={cn(
-          'border-2 border-black bg-white p-3 cursor-pointer transition-all hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]',
-          isCriticalPath && 'border-red-500 border-l-4',
+          'flex items-center gap-3 p-3 bg-white border-b border-[var(--fp-border-light)] hover:bg-[var(--fp-bg-tertiary)] transition-colors group',
+          isCriticalPath && 'border-l-4',
           className
         )}
+        style={{
+          borderLeftColor: isCriticalPath ? 'var(--fp-critical)' : 'transparent'
+        }}
         onClick={handleCardClick}
       >
-        <div className="flex items-start gap-3">
-          {/* Critical Path Indicator */}
+        {/* Critical Path Indicator (Visual only, distinct from border) */}
+        {isCriticalPath && (
           <span
             data-testid="critical-path-indicator"
-            className={cn(
-              'text-lg font-bold leading-none mt-0.5',
-              isCriticalPath ? 'text-red-600' : 'text-gray-400'
-            )}
+            className="text-[var(--fp-critical)] text-xs mr-1"
+            title="Critical Path"
           >
-            {isCriticalPath ? '■' : '□'}
+            ■
           </span>
+        )}
+        {!isCriticalPath && (
+          <span
+            data-testid="critical-path-indicator"
+            className="text-transparent text-xs mr-1 select-none"
+          >
+            □
+          </span>
+        )}
 
+        {/* Status Checkbox / Completion Toggle */}
+        <button
+          data-testid="status-checkbox"
+          aria-label={`Mark task ${task.status === 'done' ? 'incomplete' : 'complete'}`}
+          onClick={handleStatusToggle}
+          className={cn(
+            'w-5 h-5 rounded-full border border-[var(--fp-border-medium)] flex items-center justify-center transition-colors',
+            task.status === 'done'
+              ? 'bg-[var(--fp-status-success)] border-[var(--fp-status-success)] text-white'
+              : 'hover:border-[var(--fp-brand-primary)]'
+          )}
+        >
+          {task.status === 'done' && <span className="text-xs font-bold">✓</span>}
+        </button>
+
+        <div className="flex-1 min-w-0 flex items-center gap-4">
+
+          {/* Title & WBS */}
           <div className="flex-1 min-w-0">
-            {/* Header Row */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
               {/* Task Type Icon */}
               <span
                 data-testid="task-type-icon"
                 data-type={task.task_type}
-                className="text-sm"
+                className="text-[var(--fp-text-secondary)] text-xs"
               >
                 {task.task_type === 'milestone' ? '◆' : '●'}
               </span>
-
-              {/* WBS Number */}
+              <h3 className="font-medium text-sm text-[var(--fp-text-primary)] truncate">
+                {task.title}
+              </h3>
               {task.wbs_number && (
-                <span className="text-xs font-mono text-gray-500">
+                <span className="text-xs text-[var(--fp-text-tertiary)] font-mono">
                   {task.wbs_number}
                 </span>
               )}
+            </div>
+            {!compact && task.description && (
+              <p className="text-xs text-[var(--fp-text-secondary)] mt-0.5 line-clamp-1">
+                {task.description}
+              </p>
+            )}
+          </div>
 
-              {/* Priority Badge */}
-              <Badge variant={priorityVariantMap[task.priority]}>
+          {/* Meta Columns (Desktop) */}
+          <div className="flex items-center gap-6">
+
+            {/* Priority */}
+            <div className="min-w-[80px] flex justify-center">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-bold border-0 text-white",
+                  task.priority === 'critical' ? 'bg-[var(--fp-status-error)]' :
+                    task.priority === 'high' ? 'bg-[var(--fp-status-warning)]' :
+                      task.priority === 'medium' ? 'bg-[var(--fp-status-info)]' :
+                        'bg-[var(--fp-status-pending)]'
+                )}
+                style={task.priority === 'critical' ? { backgroundColor: 'var(--fp-status-error)' } : {}}
+              >
                 {task.priority.toUpperCase()}
               </Badge>
+            </div>
 
-              {/* Status Badge */}
-              <Badge variant="secondary">
+            {/* Status Label (optional if redundant with checkbox, but good for Monday style) */}
+            <div className="min-w-[80px] hidden md:flex justify-center">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[10px] font-bold border-0 text-white",
+                  task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
+                    task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
+                      'bg-[var(--fp-status-pending)] text-[var(--fp-text-secondary)]'
+                )}
+              >
                 {statusDisplayMap[task.status]}
               </Badge>
             </div>
 
-            {/* Title */}
-            <h3 className="font-bold text-base mt-1 truncate">
-              {task.title}
-            </h3>
-
-            {/* Description (only in non-compact mode) */}
-            {!compact && task.description && (
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                {task.description}
-              </p>
-            )}
-
-            {/* Meta Row */}
-            <div className="flex items-center gap-4 mt-2 text-sm">
-              {/* Due Date */}
+            {/* Due Date */}
+            <div className="min-w-[100px] text-right">
               {task.due_date ? (
                 <span
                   data-testid="due-date"
-                  className={cn(overdue && 'text-red-600 font-bold')}
+                  className={cn(
+                    "text-xs",
+                    overdue ? 'text-[var(--fp-status-error)] font-bold' : 'text-[var(--fp-text-secondary)]'
+                  )}
                 >
                   {formatDateDisplay(task.due_date)}
                 </span>
               ) : (
-                <span data-testid="due-date" className="text-gray-400">
+                <span data-testid="due-date" className="text-xs text-[var(--fp-text-tertiary)]">
                   No due date
                 </span>
               )}
 
-              {/* Slack */}
+              {/* Slim Slack Display */}
               {slack !== undefined && (
-                <span className="text-gray-500">
+                <div className="text-[10px] text-[var(--fp-text-tertiary)]">
                   {slack} {slack === 1 ? 'day' : 'days'} slack
-                </span>
-              )}
-
-              {/* Assignee */}
-              {assignee ? (
-                <div className="flex items-center gap-1">
-                  <span className="w-6 h-6 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">
-                    {getInitials(assignee.first_name, assignee.last_name)}
-                  </span>
-                  <span>{assignee.first_name} {assignee.last_name}</span>
                 </div>
-              ) : (
-                <span className="text-gray-400">Unassigned</span>
               )}
             </div>
 
-            {/* Progress Bar */}
-            {showProgress && (
-              <div className="mt-2">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span>Progress</span>
-                  <span>{task.progress_percent}%</span>
+            {/* Assignee */}
+            <div className="w-8 flex justify-center">
+              {assignee ? (
+                <div
+                  className="w-6 h-6 rounded-full bg-[var(--fp-brand-secondary)] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white"
+                  title={`${assignee.first_name} ${assignee.last_name}`}
+                >
+                  {getInitials(assignee.first_name, assignee.last_name)}
                 </div>
-                <div className="h-2 bg-gray-200 border border-black">
-                  <div
-                    data-testid="progress-bar"
-                    className="h-full bg-black"
-                    style={{ width: `${task.progress_percent}%` }}
-                  />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-[var(--fp-text-tertiary)] flex items-center justify-center">
+                  <span className="text-[10px] text-white">?</span>
                 </div>
-              </div>
-            )}
+              )}
+              {!assignee && <span className="sr-only">Unassigned</span>}
+            </div>
           </div>
 
-          {/* Status Checkbox */}
-          {onStatusChange && (
-            <button
-              data-testid="status-checkbox"
-              aria-label={`Mark task ${task.status === 'done' ? 'incomplete' : 'complete'}`}
-              onClick={handleStatusToggle}
-              className={cn(
-                'w-6 h-6 border-2 border-black flex items-center justify-center',
-                'hover:bg-gray-100 transition-colors',
-                task.status === 'done' && 'bg-black text-white'
-              )}
-            >
-              {task.status === 'done' && '✓'}
-            </button>
-          )}
         </div>
-      </article>
+
+        {/* Progress Bar (Bottom overlay) */}
+        {showProgress && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--fp-bg-tertiary)]">
+            <div
+              data-testid="progress-bar"
+              className="h-full bg-[var(--fp-status-success)]"
+              style={{ width: `${task.progress_percent}%` }}
+            />
+          </div>
+        )}
+      </div>
     )
   }
 )

@@ -78,92 +78,100 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
         role="region"
         aria-label={`Phase: ${phase.name}`}
         className={cn(
-          'border-2 border-black bg-white mb-4',
-          statusStyleMap[phase.status],
+          'bg-white mb-6 border border-[var(--fp-border-light)] rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow',
+          // Left border strip via class or style - using style for dynamic colors is easier with vars
           'border-l-4',
           className
         )}
+        style={{
+          borderLeftColor:
+            phase.status === 'completed' ? 'var(--fp-status-success)' :
+              phase.status === 'active' ? 'var(--fp-brand-primary)' :
+                'var(--fp-border-medium)'
+        }}
       >
         {/* Phase Header */}
-        <div className="flex items-start gap-4 p-4">
+        <div className="flex items-center gap-4 p-4 bg-[var(--fp-bg-primary)]/30 border-b border-[var(--fp-border-light)]">
           <button
             data-testid="phase-header"
             aria-expanded={!isCollapsed}
             aria-controls={contentId}
             onClick={handleToggle}
-            className="flex items-start gap-4 flex-1 text-left hover:bg-gray-50 transition-colors -m-4 p-4"
+            className="flex items-center gap-3 flex-1 text-left group"
           >
             {/* Collapse Indicator */}
-            <span
-              data-testid="collapse-indicator"
-              className="text-lg font-bold mt-0.5"
-            >
-              {isCollapsed ? '▶' : '▼'}
-            </span>
+            <div className="w-5 h-5 flex items-center justify-center rounded hover:bg-[var(--fp-border-medium)] transition-colors text-[var(--fp-text-secondary)]">
+              <span
+                data-testid="collapse-indicator"
+                className="text-xs transition-transform duration-200"
+                style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+              >
+                ▼
+              </span>
+            </div>
 
             <div className="flex-1 min-w-0">
-              {/* Title Row */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-xl font-black uppercase tracking-tight">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-bold text-[var(--fp-text-primary)] tracking-tight">
                   {phase.name}
                 </h2>
-                <Badge variant={phase.status === 'completed' ? 'success' : 'secondary'}>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded-full px-2 py-0 text-[10px] font-medium border-0",
+                    phase.status === 'completed' ? 'bg-[var(--fp-status-success)] text-white' :
+                      phase.status === 'active' ? 'bg-[var(--fp-brand-primary)] text-white' :
+                        'bg-[var(--fp-status-pending)] text-[var(--fp-text-primary)]'
+                  )}
+                >
                   {statusDisplayMap[phase.status]}
                 </Badge>
               </div>
 
-              {/* Description */}
               {phase.description && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs text-[var(--fp-text-secondary)] mt-0.5 truncate">
                   {phase.description}
                 </p>
               )}
-
-              {/* Meta Row */}
-              <div className="flex items-center gap-6 mt-2 text-sm">
-                {/* Dates */}
-                {phase.start_date || phase.end_date ? (
-                  <span className="text-gray-600">
-                    {formatDateDisplay(phase.start_date)} - {formatDateDisplay(phase.end_date)}
-                  </span>
-                ) : (
-                  <span className="text-gray-400">No dates set</span>
-                )}
-
-                {/* Task Count */}
-                <span className="font-mono">
-                  {phase.completed_task_count} / {phase.task_count} tasks
-                </span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="font-bold">Progress</span>
-                  <span className="font-bold">{progressPercent}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 border border-black">
-                  <div
-                    data-testid="phase-progress-bar"
-                    className={cn(
-                      'h-full transition-all',
-                      phase.status === 'completed' ? 'bg-green-600' : 'bg-black'
-                    )}
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
             </div>
           </button>
 
-          {/* Add Task Button - outside the header button */}
+          {/* Metrics Row (Right aligned in header) */}
+          <div className="flex items-center gap-6 text-xs text-[var(--fp-text-secondary)] hidden md:flex">
+            {/* Dates */}
+            {(phase.start_date || phase.end_date) && (
+              <span className="text-[10px] bg-[var(--fp-bg-tertiary)] px-2 py-1 rounded">
+                {formatDateDisplay(phase.start_date)} - {formatDateDisplay(phase.end_date)}
+              </span>
+            )}
+
+            {/* Progress Mini */}
+            <div className="flex items-center gap-2 min-w-[100px]">
+              <div className="h-1.5 flex-1 bg-[var(--fp-border-light)] rounded-full overflow-hidden">
+                <div
+                  data-testid="phase-progress-bar"
+                  className={cn(
+                    'h-full transition-all rounded-full',
+                    phase.status === 'completed' ? 'bg-[var(--fp-status-success)]' : 'bg-[var(--fp-brand-primary)]'
+                  )}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className="font-mono text-[10px] w-8 text-right">
+                {progressPercent}%
+              </span>
+            </div>
+          </div>
+
+          {/* Add Task Button */}
           {onAddTask && (
             <button
               data-testid="add-task-button"
               onClick={handleAddTask}
-              className="px-3 py-1 border-2 border-black font-bold text-sm hover:bg-black hover:text-white transition-colors flex-shrink-0"
+              className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-[var(--fp-brand-primary)] text-white hover:opacity-90 transition-opacity shadow-sm"
+              title="Add Task"
             >
-              + Add Task
+              <span className="text-lg leading-none mb-0.5">+</span>
             </button>
           )}
         </div>
@@ -172,10 +180,10 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
         {!isCollapsed && (
           <div
             id={contentId}
-            className="border-t-2 border-black p-4"
+            className="bg-[var(--fp-bg-tertiary)]/30"
           >
             {tasks.length > 0 ? (
-              <div className="space-y-3">
+              <div className="">
                 {tasks.map((task) => (
                   <TaskCard
                     key={task.id}
@@ -185,21 +193,23 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
                     isCriticalPath={criticalPathTaskIds.includes(task.id)}
                     onClick={onTaskClick}
                     onStatusChange={onTaskStatusChange}
+                    className="hover:shadow-sm" // Keep hover shadow but respect TaskCard borders
                   />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p className="font-bold">No tasks in this phase</p>
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--fp-bg-tertiary)] mb-3">
+                  <span className="text-2xl text-[var(--fp-text-tertiary)]">📝</span>
+                </div>
+                <p className="text-[var(--fp-text-secondary)] font-medium">No tasks in this phase</p>
                 {onAddTask && (
-                  <p className="mt-2">
-                    <button
-                      onClick={handleAddTask}
-                      className="text-black underline hover:no-underline"
-                    >
-                      Add a task to get started
-                    </button>
-                  </p>
+                  <button
+                    onClick={handleAddTask}
+                    className="mt-2 text-sm text-[var(--fp-brand-primary)] hover:underline"
+                  >
+                    Add a task to get started
+                  </button>
                 )}
               </div>
             )}

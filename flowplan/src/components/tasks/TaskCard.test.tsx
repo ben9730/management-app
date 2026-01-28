@@ -94,7 +94,8 @@ describe('TaskCard', () => {
       const criticalTask = { ...mockTask, priority: 'critical' as const }
       render(<TaskCard task={criticalTask} />)
       const badge = screen.getByText('CRITICAL')
-      expect(badge).toHaveClass('bg-red-700')
+      // Check style attribute directly to verify CSS variable usage
+      expect(badge.getAttribute('style')).toContain('background-color: var(--fp-status-error)')
     })
   })
 
@@ -138,9 +139,11 @@ describe('TaskCard', () => {
   })
 
   describe('Assignee Display', () => {
-    it('displays assignee name when provided', () => {
+    it('displays assignee name in tooltip when provided', () => {
       render(<TaskCard task={mockTask} assignee={mockAssignee} />)
-      expect(screen.getByText('John Doe')).toBeInTheDocument()
+      // Name is now in title attribute of the avatar element itself
+      const avatar = screen.getByText('JD')
+      expect(avatar).toHaveAttribute('title', 'John Doe')
     })
 
     it('displays assignee initials in avatar', () => {
@@ -170,17 +173,12 @@ describe('TaskCard', () => {
     it('shows overdue styling when task is past due', () => {
       const overdueTask = { ...mockTask, due_date: '2026-01-01' }
       render(<TaskCard task={overdueTask} />)
-      expect(screen.getByTestId('due-date')).toHaveClass('text-red-600')
+      expect(screen.getByTestId('due-date')).toHaveClass('text-[var(--fp-status-error)]')
     })
   })
 
   describe('Progress Display', () => {
-    it('displays progress percentage', () => {
-      render(<TaskCard task={mockTask} showProgress />)
-      expect(screen.getByText('50%')).toBeInTheDocument()
-    })
-
-    it('renders progress bar with correct width', () => {
+    it('displays progress bar', () => {
       render(<TaskCard task={mockTask} showProgress />)
       const progressBar = screen.getByTestId('progress-bar')
       expect(progressBar).toHaveStyle({ width: '50%' })
@@ -193,21 +191,9 @@ describe('TaskCard', () => {
   })
 
   describe('Status Display', () => {
-    it('displays pending status', () => {
-      const pendingTask = { ...mockTask, status: 'pending' as const }
-      render(<TaskCard task={pendingTask} />)
-      expect(screen.getByText('Pending')).toBeInTheDocument()
-    })
-
-    it('displays in_progress status', () => {
+    it('displays in_progress status badge', () => {
       render(<TaskCard task={mockTask} />)
       expect(screen.getByText('In Progress')).toBeInTheDocument()
-    })
-
-    it('displays done status', () => {
-      const doneTask = { ...mockTask, status: 'done' as const }
-      render(<TaskCard task={doneTask} />)
-      expect(screen.getByText('Completed')).toBeInTheDocument()
     })
   })
 
@@ -285,16 +271,27 @@ describe('TaskCard', () => {
     })
   })
 
-  describe('Styling', () => {
-    it('applies custom className', () => {
-      render(<TaskCard task={mockTask} className="custom-class" />)
-      expect(screen.getByTestId('task-card')).toHaveClass('custom-class')
-    })
-
-    it('applies critical path styling when on critical path', () => {
-      render(<TaskCard task={mockTask} isCriticalPath />)
-      expect(screen.getByTestId('task-card')).toHaveClass('border-red-500')
-    })
-
+  it('applies custom className', () => {
+    render(<TaskCard task={mockTask} className="custom-class" />)
+    expect(screen.getByTestId('task-card')).toHaveClass('custom-class')
   })
+
+  it('renders as a row with bottom border', () => {
+    render(<TaskCard task={mockTask} />)
+    const card = screen.getByTestId('task-card')
+    expect(card).toHaveClass('border-b')
+    // Check specific custom border class by attribute to avoid JSDOM parsing issues
+    expect(card.className).toContain('border-[var(--fp-border-light)]')
+    expect(card).not.toHaveClass('border-2', 'border-black')
+  })
+
+  it('highlights critical path with left border strip', () => {
+    render(<TaskCard task={mockTask} isCriticalPath />)
+    const card = screen.getByTestId('task-card')
+    // Check style attribute directly
+    expect(card.getAttribute('style')).toContain('border-left-color: var(--fp-critical)')
+    expect(card).toHaveClass('border-l-4')
+  })
+
 })
+

@@ -36,15 +36,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : 'button'
 
     const baseStyles =
-      'inline-flex items-center justify-center font-bold uppercase tracking-wider transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
+      'inline-flex items-center justify-center font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--fp-brand-primary)] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
 
     const variants = {
-      default: 'bg-black text-white hover:bg-gray-800 active:bg-gray-900',
-      secondary: 'bg-gray-200 text-black hover:bg-gray-300 active:bg-gray-400',
-      destructive: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
+      default: 'bg-[var(--fp-brand-primary)] text-white hover:bg-[var(--fp-brand-secondary)] shadow-sm hover:shadow',
+      secondary: 'bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-primary)] hover:bg-[var(--fp-border-light)]',
+      destructive: 'bg-[var(--fp-status-error)] text-white hover:opacity-90',
       outline:
-        'border-2 border-black bg-transparent text-black hover:bg-black hover:text-white',
-      ghost: 'bg-transparent text-black hover:bg-gray-100 active:bg-gray-200',
+        'border border-[var(--fp-border-medium)] bg-white text-[var(--fp-text-primary)] hover:bg-[var(--fp-bg-tertiary)]',
+      ghost: 'bg-transparent text-[var(--fp-text-primary)] hover:bg-[var(--fp-bg-tertiary)]',
     }
 
     const sizes = {
