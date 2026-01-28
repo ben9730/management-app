@@ -367,49 +367,60 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      {/* Header */}
-      <header className="bg-white border-b-4 border-black">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-black tracking-tight">FLOWPLAN</h1>
-              <Badge variant={project.status === 'active' ? 'success' : 'secondary'}>
-                {project.status === 'active' ? 'פעיל' : project.status === 'completed' ? 'הושלם' : 'בארכיון'}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setIsProjectModalOpen(true)}>הגדרות פרויקט</Button>
-              <Button onClick={() => handleAddTask(phases[0]?.id || '')}>+ משימה חדשה</Button>
-            </div>
-          </div>
+    <div className="py-6 px-6" dir="rtl">
+      {/* Action Buttons */}
+      <div className="max-w-[1400px] mx-auto mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Badge variant={project.status === 'active' ? 'success' : 'secondary'} className="fp-badge--success">
+            {project.status === 'active' ? 'פעיל' : project.status === 'completed' ? 'הושלם' : 'בארכיון'}
+          </Badge>
         </div>
-      </header>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => setIsProjectModalOpen(true)}>הגדרות פרויקט</Button>
+          <Button onClick={() => handleAddTask(phases[0]?.id || '')}>+ משימה חדשה</Button>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Project Title */}
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold mb-2">{project.name}</h2>
-          {project.description && <p className="text-gray-600">{project.description}</p>}
-          <div className="flex gap-4 mt-2 text-sm text-gray-500">
-            <span>התחלה: {formatDate(project.start_date)}</span>
-            <span>סיום: {formatDate(project.end_date)}</span>
+      <main className="max-w-[1400px] mx-auto">
+        {/* Project Header */}
+        <div className="fp-card p-6 mb-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--fp-text-primary)' }}>{project.name}</h1>
+              {project.description && <p style={{ color: 'var(--fp-text-secondary)' }}>{project.description}</p>}
+            </div>
+            <div className="text-left" style={{ color: 'var(--fp-text-tertiary)' }}>
+              <div className="text-sm">התחלה: {formatDate(project.start_date)}</div>
+              <div className="text-sm">סיום: {formatDate(project.end_date)}</div>
+            </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">התקדמות</CardTitle></CardHeader>
-            <CardContent><div className="text-3xl font-black">{progressPercent}%</div>
-              <div className="w-full bg-gray-200 h-2 mt-2"><div className="bg-black h-2" style={{ width: `${progressPercent}%` }} /></div>
-            </CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">משימות</CardTitle></CardHeader>
-            <CardContent><div className="text-3xl font-black">{completedTasks}/{totalTasks}</div><div className="text-sm text-gray-500">הושלמו</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">ימים נותרים</CardTitle></CardHeader>
-            <CardContent><div className="text-3xl font-black">{daysRemaining}</div><div className="text-sm text-gray-500">עד סיום</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-gray-500">Critical Path</CardTitle></CardHeader>
-            <CardContent><div className="text-3xl font-black text-red-600">{criticalTasks}</div><div className="text-sm text-gray-500">משימות קריטיות</div></CardContent></Card>
+        <div className="grid grid-cols-4 gap-4 mb-6 fp-stagger">
+          <div className="fp-card p-5">
+            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>התקדמות</div>
+            <div className="text-3xl font-bold mb-3" style={{ color: 'var(--fp-text-primary)' }}>{progressPercent}%</div>
+            <div className="fp-progress">
+              <div className="fp-progress__fill fp-progress__fill--default" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
+          <div className="fp-card p-5">
+            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>משימות</div>
+            <div className="text-3xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>{completedTasks}/{totalTasks}</div>
+            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>הושלמו</div>
+          </div>
+          <div className="fp-card p-5">
+            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>ימים נותרים</div>
+            <div className="text-3xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>{daysRemaining}</div>
+            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>עד סיום</div>
+          </div>
+          <div className="fp-card p-5">
+            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>נתיב קריטי</div>
+            <div className="text-3xl font-bold" style={{ color: 'var(--fp-critical)' }}>{criticalTasks}</div>
+            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>משימות קריטיות</div>
+          </div>
         </div>
 
         {/* View Toggle */}
@@ -422,7 +433,7 @@ export default function DashboardPage() {
         <div className="flex gap-6">
           <div className="flex-1">
             {viewMode === 'phases' ? (
-              <div className="space-y-4">
+              <div className="space-y-4 fp-stagger">
                 {phases.map(phase => (
                   <PhaseSection key={phase.id} phase={phase} tasks={getTasksForPhase(phase.id)}
                     taskAssignees={taskAssignees} onTaskClick={setSelectedTask}
@@ -430,44 +441,79 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <GanttChart tasks={tasks} dependencies={[]} onTaskClick={setSelectedTask} showTodayMarker />
+              <div className="fp-card p-4">
+                <GanttChart tasks={tasks} dependencies={[]} onTaskClick={setSelectedTask} showTodayMarker />
+              </div>
             )}
           </div>
 
           {/* Task Detail Sidebar */}
           {selectedTask && (
-            <div className="w-80 flex-shrink-0">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{selectedTask.title}</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedTask(null)}>✕</Button>
+            <div className="w-96 flex-shrink-0 fp-animate-slide-in">
+              <div className="fp-card fp-card-elevated sticky top-24">
+                <div className="p-5 border-b" style={{ borderColor: 'var(--fp-border-light)' }}>
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-lg font-semibold" style={{ color: 'var(--fp-text-primary)' }}>{selectedTask.title}</h3>
+                    <button
+                      onClick={() => setSelectedTask(null)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fp-bg-tertiary)] transition-colors"
+                      style={{ color: 'var(--fp-text-tertiary)' }}
+                    >
+                      ✕
+                    </button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div><div className="text-sm font-medium text-gray-500">סטטוס</div>
+                  {selectedTask.wbs_number && (
+                    <span className="text-xs font-mono mt-1 inline-block" style={{ color: 'var(--fp-text-tertiary)' }}>
+                      WBS: {selectedTask.wbs_number}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="flex gap-2">
                     <Badge variant={selectedTask.status === 'done' ? 'success' : selectedTask.status === 'in_progress' ? 'high' : 'secondary'}>
                       {selectedTask.status === 'done' ? 'הושלם' : selectedTask.status === 'in_progress' ? 'בביצוע' : 'ממתין'}
-                    </Badge></div>
-                  <div><div className="text-sm font-medium text-gray-500">עדיפות</div>
+                    </Badge>
                     <Badge variant={selectedTask.priority as 'critical' | 'high' | 'medium' | 'low'}>
                       {selectedTask.priority === 'critical' ? 'קריטי' : selectedTask.priority === 'high' ? 'גבוה' : selectedTask.priority === 'medium' ? 'בינוני' : 'נמוך'}
-                    </Badge></div>
-                  {selectedTask.description && <div><div className="text-sm font-medium text-gray-500">תיאור</div><p className="text-sm">{selectedTask.description}</p></div>}
-                  <div><div className="text-sm font-medium text-gray-500">משך</div><p className="text-sm">{selectedTask.duration} ימי עבודה</p></div>
-                  {selectedTask.assignee_id && <div><div className="text-sm font-medium text-gray-500">אחראי</div><p className="text-sm">{getTeamMemberName(selectedTask.assignee_id)}</p></div>}
-                  {selectedTask.is_critical && (
-                    <div className="p-2 bg-red-50 border border-red-200 rounded">
-                      <div className="text-sm font-medium text-red-700">■ Critical Path</div>
-                      <p className="text-xs text-red-600">משימה על הנתיב הקריטי</p>
+                    </Badge>
+                  </div>
+
+                  {selectedTask.description && (
+                    <div>
+                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>תיאור</div>
+                      <p className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>{selectedTask.description}</p>
                     </div>
                   )}
-                  <div className="flex gap-2 pt-4 border-t">
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>משך</div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>{selectedTask.duration} ימים</p>
+                    </div>
+                    {selectedTask.assignee_id && (
+                      <div>
+                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>אחראי</div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>{getTeamMemberName(selectedTask.assignee_id)}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedTask.is_critical && (
+                    <div className="p-3 rounded-lg" style={{ background: 'var(--fp-critical-bg)', border: '1px solid var(--fp-critical)' }}>
+                      <div className="flex items-center gap-2">
+                        <span className="fp-status-dot fp-status-dot--error" />
+                        <span className="text-sm font-medium" style={{ color: 'var(--fp-critical)' }}>נתיב קריטי</span>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: 'var(--fp-text-secondary)' }}>איחור במשימה זו ישפיע על תאריך הסיום</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-4 border-t" style={{ borderColor: 'var(--fp-border-light)' }}>
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditTask(selectedTask)}>עריכה</Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDeleteTask(selectedTask.id)}>מחיקה</Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           )}
         </div>
