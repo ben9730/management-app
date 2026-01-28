@@ -8,6 +8,7 @@
 import * as React from 'react'
 import { cn, formatDateDisplay, parseDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { Check, Calendar, User, Zap, Circle, Target } from 'lucide-react'
 import type { Task, TeamMember } from '@/types/entities'
 
 export interface TaskCardProps {
@@ -87,8 +88,8 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         role="article"
         aria-label={`Task: ${task.title}`}
         className={cn(
-          'flex items-center gap-3 p-3 bg-white border-b border-[var(--fp-border-light)] hover:bg-[var(--fp-bg-tertiary)] transition-colors group',
-          isCriticalPath && 'border-l-4',
+          'flex items-center gap-3 p-4 bg-white border-2 border-gray-900 mb-1 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group cursor-pointer',
+          isCriticalPath && 'border-l-8',
           className
         )}
         style={{
@@ -96,38 +97,19 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         }}
         onClick={handleCardClick}
       >
-        {/* Critical Path Indicator (Visual only, distinct from border) */}
-        {isCriticalPath && (
-          <span
-            data-testid="critical-path-indicator"
-            className="text-[var(--fp-critical)] text-xs mr-1"
-            title="Critical Path"
-          >
-            ■
-          </span>
-        )}
-        {!isCriticalPath && (
-          <span
-            data-testid="critical-path-indicator"
-            className="text-transparent text-xs mr-1 select-none"
-          >
-            □
-          </span>
-        )}
-
         {/* Status Checkbox / Completion Toggle */}
         <button
           data-testid="status-checkbox"
           aria-label={`Mark task ${task.status === 'done' ? 'incomplete' : 'complete'}`}
           onClick={handleStatusToggle}
           className={cn(
-            'w-5 h-5 rounded-full border border-[var(--fp-border-medium)] flex items-center justify-center transition-colors',
+            'w-8 h-8 rounded-none border-2 border-gray-900 flex items-center justify-center transition-all bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5',
             task.status === 'done'
-              ? 'bg-[var(--fp-status-success)] border-[var(--fp-status-success)] text-white'
-              : 'hover:border-[var(--fp-brand-primary)]'
+              ? 'bg-[#00ca72] text-white'
+              : 'hover:bg-gray-100 hover:border-[#a25ddc]'
           )}
         >
-          {task.status === 'done' && <span className="text-xs font-bold">✓</span>}
+          {task.status === 'done' && <Check className="w-5 h-5" strokeWidth={4} />}
         </button>
 
         <div className="flex-1 min-w-0 flex items-center gap-4">
@@ -139,21 +121,25 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
               <span
                 data-testid="task-type-icon"
                 data-type={task.task_type}
-                className="text-[var(--fp-text-secondary)] text-xs"
+                className="text-gray-900"
               >
-                {task.task_type === 'milestone' ? '◆' : '●'}
+                {task.task_type === 'milestone' ? (
+                  <Target className="w-4 h-4 text-[#e2445c]" strokeWidth={3} />
+                ) : (
+                  <Circle className="w-3 h-3 fill-gray-900" />
+                )}
               </span>
-              <h3 className="font-medium text-sm text-[var(--fp-text-primary)] truncate">
+              <h3 className="font-bold text-sm text-gray-900 truncate">
                 {task.title}
               </h3>
               {task.wbs_number && (
-                <span className="text-xs text-[var(--fp-text-tertiary)] font-mono">
+                <span className="text-xs text-gray-500 font-mono">
                   {task.wbs_number}
                 </span>
               )}
             </div>
             {!compact && task.description && (
-              <p className="text-xs text-[var(--fp-text-secondary)] mt-0.5 line-clamp-1">
+              <p className="text-xs text-gray-700 mt-0.5 line-clamp-1">
                 {task.description}
               </p>
             )}
@@ -171,7 +157,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
                   task.priority === 'critical' ? 'bg-[var(--fp-status-error)]' :
                     task.priority === 'high' ? 'bg-[var(--fp-status-warning)]' :
                       task.priority === 'medium' ? 'bg-[var(--fp-status-info)]' :
-                        'bg-[var(--fp-status-pending)]'
+                        'bg-gray-400'
                 )}
                 style={task.priority === 'critical' ? { backgroundColor: 'var(--fp-status-error)' } : {}}
               >
@@ -187,7 +173,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
                   "rounded-full px-2 py-0.5 text-[10px] font-bold border-0 text-white",
                   task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
                     task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
-                      'bg-[var(--fp-status-pending)] text-[var(--fp-text-secondary)]'
+                      'bg-gray-200 text-gray-900'
                 )}
               >
                 {statusDisplayMap[task.status]}
@@ -200,14 +186,14 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
                 <span
                   data-testid="due-date"
                   className={cn(
-                    "text-xs",
-                    overdue ? 'text-[var(--fp-status-error)] font-bold' : 'text-[var(--fp-text-secondary)]'
+                    "text-xs font-semibold",
+                    overdue ? 'text-[var(--fp-status-error)] font-bold' : 'text-gray-800'
                   )}
                 >
                   {formatDateDisplay(task.due_date)}
                 </span>
               ) : (
-                <span data-testid="due-date" className="text-xs text-[var(--fp-text-tertiary)]">
+                <span data-testid="due-date" className="text-xs text-gray-500">
                   No due date
                 </span>
               )}

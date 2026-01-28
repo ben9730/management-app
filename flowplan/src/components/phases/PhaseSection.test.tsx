@@ -225,14 +225,15 @@ describe('PhaseSection', () => {
     it('shows collapse indicator when expanded', () => {
       render(<PhaseSection phase={mockPhase} tasks={mockTasks} />)
       const indicator = screen.getByTestId('collapse-indicator')
-      // Check for rotation style 0deg (expanded)
+      // Expect finding an SVG (Lucide icon)
+      expect(indicator.querySelector('svg')).toBeInTheDocument()
       expect(indicator).toHaveStyle('transform: rotate(0deg)')
     })
 
     it('shows expand indicator when collapsed', () => {
       render(<PhaseSection phase={mockPhase} tasks={mockTasks} defaultCollapsed />)
       const indicator = screen.getByTestId('collapse-indicator')
-      // Check for rotation style -90deg (collapsed)
+      expect(indicator.querySelector('svg')).toBeInTheDocument()
       expect(indicator).toHaveStyle('transform: rotate(-90deg)')
     })
   })
@@ -263,7 +264,9 @@ describe('PhaseSection', () => {
         />
       )
 
-      fireEvent.click(screen.getByTestId('add-task-button'))
+      const button = screen.getByTestId('add-task-button')
+      expect(button.querySelector('svg')).toBeInTheDocument()
+      fireEvent.click(button)
 
       expect(handleAddTask).toHaveBeenCalledWith(mockPhase.id)
     })
@@ -297,9 +300,9 @@ describe('PhaseSection', () => {
 
       const taskCards = screen.getAllByTestId('task-card')
       // Critical Path in Monday style is highlighted via left border strip
-      expect(taskCards[0]).toHaveClass('border-l-4')
-      expect(taskCards[1]).not.toHaveClass('border-l-4')
-      expect(taskCards[2]).toHaveClass('border-l-4')
+      expect(taskCards[0]).toHaveClass('border-l-8')
+      expect(taskCards[1]).not.toHaveClass('border-l-8')
+      expect(taskCards[2]).toHaveClass('border-l-8')
     })
   })
 
@@ -398,6 +401,28 @@ describe('PhaseSection', () => {
       render(<PhaseSection phase={mockPhase} tasks={[]} />)
       const section = screen.getByTestId('phase-section')
       expect(section.getAttribute('style')).toContain('border-left-color: var(--fp-brand-primary)')
+    })
+  })
+
+  describe('High Contrast & Visibility', () => {
+    it('has high contrast header background', () => {
+      render(<PhaseSection phase={mockPhase} tasks={[]} />)
+      const header = screen.getByTestId('phase-header').parentElement
+      // We want to avoid highly translucent backgrounds like /30
+      expect(header).toHaveClass('bg-gray-100')
+      expect(header).not.toHaveClass('bg-[var(--fp-bg-primary)]/30')
+    })
+
+    it('has high contrast text in header', () => {
+      render(<PhaseSection phase={mockPhase} tasks={[]} />)
+      const title = screen.getByText('Planning')
+      expect(title).toHaveClass('text-gray-900')
+    })
+
+    it('has high contrast secondary text in header', () => {
+      render(<PhaseSection phase={mockPhase} tasks={[]} />)
+      const description = screen.getByText('Initial planning and requirements gathering')
+      expect(description).toHaveClass('text-gray-700')
     })
   })
 })

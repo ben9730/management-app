@@ -3,17 +3,17 @@
 /* FlowPlan Design System - Precision Clarity */
 :root {
   /* Monday.com Inspired Core Colors */
-  --fp-bg-primary: #eceff8;
+  --fp-bg-primary: #f0f2f9;
   /* Light gray background */
   --fp-bg-secondary: #ffffff;
-  --fp-bg-tertiary: #f5f6f8;
+  --fp-bg-tertiary: #f8f9fb;
   --fp-bg-elevated: #ffffff;
 
   /* Text Colors - Enhanced Contrast */
-  --fp-text-primary: #323338;
-  --fp-text-secondary: #4a4c59;
+  --fp-text-primary: #1d1e22;
+  --fp-text-secondary: #323338;
   /* Darker for better visibility */
-  --fp-text-tertiary: #6b6d7a;
+  --fp-text-tertiary: #4a4c59;
   /* Darker for readable placeholders */
   --fp-text-inverse: #ffffff;
 

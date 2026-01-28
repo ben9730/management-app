@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { cn } from '@/lib/utils'
 import type { Project, ProjectPhase, Task, TeamMember } from '@/types/entities'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -10,6 +11,7 @@ import { PhaseSection } from '@/components/phases/PhaseSection'
 import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
+import { Plus, Settings, LayoutDashboard, GanttChartIcon, Calendar, CheckCircle2, AlertTriangle, TrendingUp, Clock, Target, User } from 'lucide-react'
 
 // Helper to format dates for display
 const formatDate = (date: Date | string | null | undefined): string => {
@@ -376,57 +378,101 @@ export default function DashboardPage() {
           </Badge>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => setIsProjectModalOpen(true)}>הגדרות פרויקט</Button>
-          <Button onClick={() => handleAddTask(phases[0]?.id || '')}>+ משימה חדשה</Button>
+          <Button variant="outline" className="gap-2 border-2 border-gray-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white" onClick={() => setIsProjectModalOpen(true)}>
+            <Settings className="w-4 h-4" />
+            הגדרות פרויקט
+          </Button>
+          <Button className="gap-2 bg-[#0073ea] text-white border-2 border-gray-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold hover:bg-[#0060c4]" onClick={() => handleAddTask(phases[0]?.id || '')}>
+            <Plus className="w-4 h-4" strokeWidth={3} />
+            משימה חדשה
+          </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto">
-        {/* Project Header */}
-        <div className="fp-card p-6 mb-6">
+      <main className="max-w-[1400px] mx-auto pb-20 px-4">
+        {/* Project Header - Image 0 Style */}
+        <div className="bg-[#282e3f] text-white p-8 mb-8 rounded-xl shadow-lg border border-[#373e53]">
           <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--fp-text-primary)' }}>{project.name}</h1>
-              {project.description && <p style={{ color: 'var(--fp-text-secondary)' }}>{project.description}</p>}
+            <div className="text-right flex-1">
+              <h1 className="text-3xl font-bold mb-2 tracking-tight">{project.name}</h1>
+              {project.description && <p className="text-[#a0aec0] text-sm font-medium leading-relaxed">{project.description}</p>}
             </div>
-            <div className="text-left" style={{ color: 'var(--fp-text-tertiary)' }}>
-              <div className="text-sm">התחלה: {formatDate(project.start_date)}</div>
-              <div className="text-sm">סיום: {formatDate(project.end_date)}</div>
+            <div className="text-left pt-1">
+              <div className="text-xs text-[#a0aec0] space-y-1 font-medium opacity-90">
+                <div>התחלה: {formatDate(project.start_date)}</div>
+                <div>סיום: {formatDate(project.end_date)}</div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6 fp-stagger">
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>התקדמות</div>
-            <div className="text-3xl font-bold mb-3" style={{ color: 'var(--fp-text-primary)' }}>{progressPercent}%</div>
-            <div className="fp-progress">
-              <div className="fp-progress__fill fp-progress__fill--default" style={{ width: `${progressPercent}%` }} />
+        {/* Stats Cards - Image 0 Style */}
+        <div className="grid grid-cols-4 gap-6 mb-10">
+          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-between min-h-[140px]">
+            <div className="text-right">
+              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">התקדמות</div>
+              <div className="text-4xl font-black text-white">{progressPercent}%</div>
+            </div>
+            <div className="mt-4">
+              <div className="h-2 w-full bg-[#1d1e22] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#a25ddc] to-[#0073ea] rounded-full"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
           </div>
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>משימות</div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>{completedTasks}/{totalTasks}</div>
-            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>הושלמו</div>
+
+          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-center min-h-[140px]">
+            <div className="text-right">
+              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">משימות</div>
+              <div className="text-4xl font-black text-white">{completedTasks}<span className="text-xl text-[#6b7280]">/{totalTasks}</span></div>
+              <div className="text-[10px] font-bold text-[#6b7280] mt-1">הושלמו</div>
+            </div>
           </div>
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>ימים נותרים</div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>{daysRemaining}</div>
-            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>עד סיום</div>
+
+          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-center min-h-[140px]">
+            <div className="text-right">
+              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">ימים נותרים</div>
+              <div className="text-4xl font-black text-white">{daysRemaining}</div>
+              <div className="text-[10px] font-bold text-[#6b7280] mt-1">עד סיום</div>
+            </div>
           </div>
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>נתיב קריטי</div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--fp-critical)' }}>{criticalTasks}</div>
-            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>משימות קריטיות</div>
+
+          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-center min-h-[140px]">
+            <div className="text-right">
+              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">נתיב קריטי</div>
+              <div className="text-4xl font-black text-[#e2445c]">{criticalTasks}</div>
+              <div className="text-[10px] font-bold text-[#6b7280] mt-1">משימות קריטיות</div>
+            </div>
           </div>
         </div>
 
         {/* View Toggle */}
-        <div className="flex gap-2 mb-6">
-          <Button variant={viewMode === 'phases' ? 'default' : 'outline'} onClick={() => setViewMode('phases')}>תצוגת שלבים</Button>
-          <Button variant={viewMode === 'gantt' ? 'default' : 'outline'} onClick={() => setViewMode('gantt')}>Gantt Chart</Button>
+        <div className="flex gap-4 mb-6">
+          <Button
+            variant={viewMode === 'phases' ? 'default' : 'outline'}
+            className={cn(
+              "gap-2 border-2 border-gray-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
+              viewMode === 'phases' && "bg-[#a25ddc] translate-x-0.5 translate-y-0.5 shadow-none"
+            )}
+            onClick={() => setViewMode('phases')}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            תצוגת שלבים
+          </Button>
+          <Button
+            variant={viewMode === 'gantt' ? 'default' : 'outline'}
+            className={cn(
+              "gap-2 border-2 border-gray-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
+              viewMode === 'gantt' && "bg-[#a25ddc] translate-x-0.5 translate-y-0.5 shadow-none"
+            )}
+            onClick={() => setViewMode('gantt')}
+          >
+            <GanttChartIcon className="w-4 h-4" />
+            Gantt Chart
+          </Button>
         </div>
 
         {/* Content */}
@@ -447,70 +493,72 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Task Detail Sidebar */}
+          {/* Task Detail Sidebar - Image 0 Style */}
           {selectedTask && (
             <div className="w-96 flex-shrink-0 fp-animate-slide-in">
-              <div className="fp-card fp-card-elevated sticky top-24">
-                <div className="p-5 border-b" style={{ borderColor: 'var(--fp-border-light)' }}>
+              <div className="bg-[#282e3f] border border-[#373e53] shadow-2xl sticky top-24 rounded-xl overflow-hidden">
+                <div className="p-6 border-b border-[#373e53]">
                   <div className="flex items-start justify-between">
-                    <h3 className="text-lg font-semibold" style={{ color: 'var(--fp-text-primary)' }}>{selectedTask.title}</h3>
                     <button
                       onClick={() => setSelectedTask(null)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fp-bg-tertiary)] transition-colors"
-                      style={{ color: 'var(--fp-text-tertiary)' }}
+                      className="text-[#a0aec0] hover:text-white transition-colors"
                     >
-                      ✕
+                      <Plus className="w-6 h-6 rotate-45" />
                     </button>
+                    <div className="text-right">
+                      <h3 className="text-2xl font-bold text-white leading-tight">{selectedTask.title}</h3>
+                      {selectedTask.wbs_number && (
+                        <div className="text-[11px] font-bold text-[#718096] mt-1">
+                          WBS: {selectedTask.wbs_number}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {selectedTask.wbs_number && (
-                    <span className="text-xs font-mono mt-1 inline-block" style={{ color: 'var(--fp-text-tertiary)' }}>
-                      WBS: {selectedTask.wbs_number}
-                    </span>
-                  )}
                 </div>
-                <div className="p-5 space-y-4">
-                  <div className="flex gap-2">
-                    <Badge variant={selectedTask.status === 'done' ? 'success' : selectedTask.status === 'in_progress' ? 'high' : 'secondary'}>
+
+                <div className="p-6 space-y-8">
+                  <div className="flex justify-end gap-3">
+                    <Badge variant={selectedTask.status === 'done' ? 'success' : selectedTask.status === 'in_progress' ? 'high' : 'secondary'} className="px-4 py-1.5 rounded-md border-0 text-xs font-bold">
                       {selectedTask.status === 'done' ? 'הושלם' : selectedTask.status === 'in_progress' ? 'בביצוע' : 'ממתין'}
                     </Badge>
-                    <Badge variant={selectedTask.priority as 'critical' | 'high' | 'medium' | 'low'}>
+                    <Badge variant={selectedTask.priority as 'critical' | 'high' | 'medium' | 'low'} className="px-4 py-1.5 rounded-md border-0 text-xs font-bold">
                       {selectedTask.priority === 'critical' ? 'קריטי' : selectedTask.priority === 'high' ? 'גבוה' : selectedTask.priority === 'medium' ? 'בינוני' : 'נמוך'}
                     </Badge>
                   </div>
 
                   {selectedTask.description && (
-                    <div>
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>תיאור</div>
-                      <p className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>{selectedTask.description}</p>
+                    <div className="text-right">
+                      <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-2">תיאור</div>
+                      <p className="text-sm text-[#cbd5e0] font-medium leading-relaxed">{selectedTask.description}</p>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>משך</div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>{selectedTask.duration} ימים</p>
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="text-right">
+                      <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">משך</div>
+                      <p className="text-xl font-bold text-white">{selectedTask.duration} ימים</p>
                     </div>
                     {selectedTask.assignee_id && (
-                      <div>
-                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>אחראי</div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>{getTeamMemberName(selectedTask.assignee_id)}</p>
+                      <div className="text-right">
+                        <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">אחראי</div>
+                        <p className="text-lg font-bold text-white">{getTeamMemberName(selectedTask.assignee_id)}</p>
                       </div>
                     )}
                   </div>
 
                   {selectedTask.is_critical && (
-                    <div className="p-3 rounded-lg" style={{ background: 'var(--fp-critical-bg)', border: '1px solid var(--fp-critical)' }}>
-                      <div className="flex items-center gap-2">
-                        <span className="fp-status-dot fp-status-dot--error" />
-                        <span className="text-sm font-medium" style={{ color: 'var(--fp-critical)' }}>נתיב קריטי</span>
+                    <div className="p-4 bg-white rounded-xl flex items-center justify-between border-l-4 border-[#e2445c]">
+                      <div className="w-3 h-3 bg-[#e2445c] rounded-full animate-pulse" />
+                      <div className="text-right flex-1 pr-4">
+                        <div className="text-[13px] font-bold text-[#e2445c]">נתיב קריטי</div>
+                        <div className="text-[11px] text-gray-500 font-medium">איחור במשימה זו ישפיע על תאריך הסיום</div>
                       </div>
-                      <p className="text-xs mt-1" style={{ color: 'var(--fp-text-secondary)' }}>איחור במשימה זו ישפיע על תאריך הסיום</p>
                     </div>
                   )}
 
-                  <div className="flex gap-2 pt-4 border-t" style={{ borderColor: 'var(--fp-border-light)' }}>
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditTask(selectedTask)}>עריכה</Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteTask(selectedTask.id)}>מחיקה</Button>
+                  <div className="flex gap-4 pt-4">
+                    <Button variant="outline" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 border-0 rounded-lg font-bold py-6 shadow-md" onClick={() => handleEditTask(selectedTask)}>עריכה</Button>
+                    <Button variant="destructive" className="flex-1 bg-[#e2445c] hover:bg-[#c53030] text-white border-0 rounded-lg font-bold py-6 shadow-md" onClick={() => handleDeleteTask(selectedTask.id)}>מחיקה</Button>
                   </div>
                 </div>
               </div>
@@ -520,24 +568,46 @@ export default function DashboardPage() {
       </main>
 
       {/* Task Modal */}
-      <Modal isOpen={isTaskModalOpen} onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
-        title={editingTask ? 'עריכת משימה' : 'משימה חדשה'} size="md">
-        <TaskForm mode={editingTask ? 'edit' : 'create'}
-          initialValues={editingTask ? { title: editingTask.title, description: editingTask.description || undefined,
-            priority: editingTask.priority, duration: editingTask.duration,
+      <Modal
+        isOpen={isTaskModalOpen}
+        onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
+        title={editingTask ? 'עריכת משימה' : 'משימה חדשה'}
+        size="md"
+      >
+        <TaskForm
+          mode={editingTask ? 'edit' : 'create'}
+          initialValues={editingTask ? {
+            title: editingTask.title,
+            description: editingTask.description || undefined,
+            priority: editingTask.priority,
+            duration: editingTask.duration,
             estimated_hours: editingTask.estimated_hours || undefined,
-            start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined } : undefined}
+            start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined
+          } : undefined}
           onSubmit={handleTaskFormSubmit}
-          onCancel={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }} />
+          onCancel={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
+        />
       </Modal>
 
       {/* Project Modal */}
-      <Modal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} title="הגדרות פרויקט" size="md">
-        <ProjectForm mode="edit"
-          initialValues={{ name: project.name, description: project.description || undefined, status: project.status,
+      <Modal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        title="הגדרות פרויקט"
+        size="md"
+      >
+        <ProjectForm
+          mode="edit"
+          initialValues={{
+            name: project.name,
+            description: project.description || undefined,
+            status: project.status,
             start_date: project.start_date instanceof Date ? project.start_date.toISOString().split('T')[0] : project.start_date || undefined,
-            end_date: project.end_date instanceof Date ? project.end_date.toISOString().split('T')[0] : project.end_date || undefined }}
-          onSubmit={handleProjectFormSubmit} onCancel={() => setIsProjectModalOpen(false)} />
+            end_date: project.end_date instanceof Date ? project.end_date.toISOString().split('T')[0] : project.end_date || undefined
+          }}
+          onSubmit={handleProjectFormSubmit}
+          onCancel={() => setIsProjectModalOpen(false)}
+        />
       </Modal>
     </div>
   )
