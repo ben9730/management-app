@@ -7,6 +7,8 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { UserRole, EmploymentType } from '@/types/entities'
 
@@ -103,7 +105,7 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({
   }
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target
     const newValue = type === 'number' ? Number(value) : value
@@ -162,191 +164,98 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({
       className={cn('space-y-4', className)}
     >
       {/* Name */}
-      <div>
-        <label
-          htmlFor="name"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Name *
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          value={formData.name}
-          onChange={handleChange}
-          disabled={isLoading}
-          required
-          aria-invalid={!!errors.name}
-          aria-describedby={errors.name ? 'name-error' : undefined}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            errors.name && 'border-red-500 focus:ring-red-500',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        />
-        {errors.name && (
-          <div aria-live="polite">
-            <p id="name-error" className="mt-1 text-sm text-red-500">
-              {errors.name}
-            </p>
-          </div>
-        )}
-      </div>
+      <Input
+        label="Name *"
+        id="name"
+        name="name"
+        value={formData.name}
+        onChange={handleChange}
+        disabled={isLoading}
+        required
+        error={errors.name}
+        fullWidth
+        placeholder="Enter member name"
+      />
 
       {/* Email */}
-      <div>
-        <label
-          htmlFor="email"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Email *
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          disabled={isLoading}
-          required
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? 'email-error' : undefined}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            errors.email && 'border-red-500 focus:ring-red-500',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        />
-        {errors.email && (
-          <div aria-live="polite">
-            <p id="email-error" className="mt-1 text-sm text-red-500">
-              {errors.email}
-            </p>
-          </div>
-        )}
-      </div>
+      <Input
+        label="Email *"
+        id="email"
+        name="email"
+        type="email"
+        value={formData.email}
+        onChange={handleChange}
+        disabled={isLoading}
+        required
+        error={errors.email}
+        fullWidth
+        placeholder="Enter email address"
+      />
 
       {/* Role & Employment Type */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="role"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Role
-          </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            disabled={isLoading}
-            className={cn(
-              'w-full appearance-none border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          >
-            {roleOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Role"
+          id="role"
+          name="role"
+          value={formData.role}
+          options={roleOptions}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+        />
 
-        <div>
-          <label
-            htmlFor="employment_type"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Employment Type
-          </label>
-          <select
-            id="employment_type"
-            name="employment_type"
-            value={formData.employment_type}
-            onChange={handleChange}
-            disabled={isLoading}
-            className={cn(
-              'w-full appearance-none border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          >
-            {employmentTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Employment Type"
+          id="employment_type"
+          name="employment_type"
+          value={formData.employment_type}
+          options={employmentTypeOptions}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+        />
       </div>
 
       {/* Work Hours & Hourly Rate */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="work_hours_per_day"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Work Hours Per Day
-          </label>
-          <input
-            id="work_hours_per_day"
-            name="work_hours_per_day"
-            type="number"
-            min={1}
-            max={24}
-            step={0.5}
-            value={formData.work_hours_per_day}
-            onChange={handleChange}
-            disabled={isLoading}
-            className={cn(
-              'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          />
-        </div>
+        <Input
+          label="Work Hours Per Day"
+          id="work_hours_per_day"
+          name="work_hours_per_day"
+          type="number"
+          min={1}
+          max={24}
+          step={0.5}
+          value={formData.work_hours_per_day}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+        />
 
-        <div>
-          <label
-            htmlFor="hourly_rate"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Hourly Rate (₪)
-          </label>
-          <input
-            id="hourly_rate"
-            name="hourly_rate"
-            type="number"
-            min={0}
-            step={1}
-            value={formData.hourly_rate || ''}
-            onChange={handleChange}
-            disabled={isLoading}
-            className={cn(
-              'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          />
-        </div>
+        <Input
+          label="Hourly Rate (₪)"
+          id="hourly_rate"
+          name="hourly_rate"
+          type="number"
+          min={0}
+          step={1}
+          value={formData.hourly_rate || ''}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+        />
       </div>
 
       {/* Work Days */}
       <fieldset
         role="group"
         aria-labelledby="work-days-label"
-        className="border-2 border-black p-4"
+        className="border border-[#c3c6d4] p-4 rounded-[var(--fp-radius-md)] bg-white"
       >
         <legend
           id="work-days-label"
-          className="px-2 text-sm font-bold uppercase tracking-wider text-black"
+          className="px-2 text-xs font-semibold uppercase tracking-wider text-gray-900"
         >
           Work Days
         </legend>
@@ -355,10 +264,10 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({
             <label
               key={day.value}
               className={cn(
-                'flex cursor-pointer items-center gap-2 border-2 border-black px-3 py-2 transition-all',
+                'flex cursor-pointer items-center gap-2 border border-[#c3c6d4] px-3 py-2 transition-all rounded-[var(--fp-radius-sm)]',
                 formData.work_days.includes(day.value)
                   ? 'bg-black text-white'
-                  : 'bg-white text-black hover:bg-gray-100',
+                  : 'bg-white text-gray-900 hover:bg-gray-100',
                 isLoading && 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -376,16 +285,16 @@ const TeamMemberForm: React.FC<TeamMemberFormProps> = ({
         </div>
         {errors.work_days && (
           <div aria-live="polite">
-            <p className="mt-2 text-sm text-red-500">{errors.work_days}</p>
+            <p className="mt-2 text-sm text-[var(--fp-status-error)] font-medium">{errors.work_days}</p>
           </div>
         )}
       </fieldset>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t-2 border-black">
+      <div className="flex justify-end gap-3 pt-4 border-t border-[#c3c6d4]">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={handleCancel}
           disabled={isLoading}
         >

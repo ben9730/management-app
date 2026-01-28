@@ -22,9 +22,9 @@ export interface SelectProps
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
   label?: string
-  placeholder?: string
   helperText?: string
   error?: string
+  placeholder?: string
   wrapperClassName?: string
 }
 
@@ -38,11 +38,11 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       size = 'md',
       fullWidth = false,
       label,
-      placeholder,
       helperText,
       error,
-      disabled,
       id,
+      placeholder,
+      disabled,
       ...props
     },
     ref
@@ -54,12 +54,12 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const effectiveVariant = error ? 'error' : variant
 
     const baseStyles =
-      'w-full appearance-none border bg-[var(--fp-bg-secondary)] text-[var(--fp-text-primary)] rounded-[var(--fp-radius-md)] transition-all duration-200 focus:outline-none focus:ring-1 pr-10'
+      'w-full appearance-none border-2 bg-white text-gray-900 rounded-[var(--fp-radius-md)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--fp-brand-primary)] pr-10'
 
     const variants = {
-      default: 'border-[var(--fp-border-light)] focus:border-[var(--fp-brand-primary)] focus:ring-[var(--fp-brand-primary)]',
-      error: 'border-[var(--fp-status-error)] focus:border-[var(--fp-status-error)] focus:ring-[var(--fp-status-error)]',
-      success: 'border-[var(--fp-status-success)] focus:border-[var(--fp-status-success)] focus:ring-[var(--fp-status-success)]',
+      default: 'border-gray-900 focus:border-[var(--fp-brand-primary)]',
+      error: 'border-[var(--fp-status-error)] focus:border-[var(--fp-status-error)]',
+      success: 'border-[var(--fp-status-success)] focus:border-[var(--fp-status-success)]',
     }
 
     const sizes = {
@@ -69,73 +69,23 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-gray-100'
+      ? 'opacity-50 cursor-not-allowed bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-tertiary)]'
       : 'cursor-pointer'
 
-    // Group options by their group property
-    const groupedOptions = options.reduce<Record<string, SelectOption[]>>(
-      (acc, option) => {
-        const group = option.group || '__ungrouped__'
-        if (!acc[group]) {
-          acc[group] = []
-        }
-        acc[group].push(option)
-        return acc
-      },
-      {}
-    )
-
-    const hasGroups = Object.keys(groupedOptions).some(
-      (key) => key !== '__ungrouped__'
-    )
-
-    const renderOptions = () => {
-      if (hasGroups) {
-        return Object.entries(groupedOptions).map(([group, groupOptions]) => {
-          if (group === '__ungrouped__') {
-            return groupOptions.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </option>
-            ))
-          }
-          return (
-            <optgroup key={group} label={group}>
-              {groupOptions.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                  disabled={option.disabled}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </optgroup>
-          )
-        })
-      }
-
-      return options.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-          disabled={option.disabled}
-        >
-          {option.label}
-        </option>
-      ))
-    }
+    // Group options if needed
+    const groupedOptions = options.reduce((acc, option) => {
+      const group = option.group || 'default'
+      if (!acc[group]) acc[group] = []
+      acc[group].push(option)
+      return acc
+    }, {} as Record<string, SelectOption[]>)
 
     return (
       <div className={cn(fullWidth && 'w-full', wrapperClassName)}>
         {label && (
           <label
             htmlFor={selectId}
-            className="mb-1.5 block text-xs font-medium text-[var(--fp-text-secondary)]"
+            className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-900"
           >
             {label}
           </label>
@@ -161,14 +111,35 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 {placeholder}
               </option>
             )}
-            {renderOptions()}
+            {Object.entries(groupedOptions).map(([group, groupOptions]) =>
+              group === 'default' ? (
+                groupOptions.map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                    disabled={option.disabled}
+                  >
+                    {option.label}
+                  </option>
+                ))
+              ) : (
+                <optgroup key={group} label={group}>
+                  {groupOptions.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.disabled}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+              )
+            )}
           </select>
-          <div
-            data-testid="select-chevron"
-            className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"
-          >
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3" data-testid="select-chevron">
             <svg
-              className="h-4 w-4 text-[var(--fp-text-secondary)]"
+              className="h-4 w-4 text-gray-900"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -182,12 +153,14 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </div>
         </div>
         {error && (
-          <p id={errorId} className="mt-1 text-xs text-[var(--fp-status-error)]">
-            {error}
-          </p>
+          <div aria-live="polite">
+            <p id={errorId} className="mt-1 text-xs text-[var(--fp-status-error)] font-semibold">
+              {error}
+            </p>
+          </div>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-xs text-[var(--fp-text-secondary)]">{helperText}</p>
+          <p className="mt-1 text-xs text-gray-600">{helperText}</p>
         )}
       </div>
     )

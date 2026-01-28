@@ -145,7 +145,7 @@ const Modal: React.FC<ModalProps> = ({
             {title && (
               <h2
                 id={titleId}
-                className="text-lg font-bold text-[var(--fp-text-primary)]"
+                className="text-xl font-bold text-gray-900"
               >
                 {title}
               </h2>

@@ -224,3 +224,15 @@ Total: **1004 tests** passing.
 3. **Connect to Backend**: Replace local state with React Query hooks
 4. **Authentication**: Add Supabase Auth flow
 5. **Team Page**: Build `/team` route for member management
+
+---
+### שלב 8: תיקון נראות וקונטרסט (UI Visibility Fix) - TDD Approach
+- **בעיה**: קונטרסט נמוך בשדות קלט, פלייסהולדרים וכפתורי Cancel (כפי שנראה בצילומי המסך).
+- **מתודולוגיה**: TDD מלא לפי `tdd-workflow.md`.
+    1. כתיבת טסטים ב-`input.test.tsx` ו-`button.test.tsx` שבודקים את הקלאסים החדשים.
+    2. עדכון הקומפוננטות וה-CSS.
+    3. הרצת טסטים ואישור מעבר.
+- [ ] תיקון Input placeholder contrast
+- [ ] תיקון Select text contrast
+- [ ] תיקון Button secondary visibility
+- [ ] תיקון Modal labels contrast

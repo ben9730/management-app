@@ -40,7 +40,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       default: 'bg-[var(--fp-brand-primary)] text-white hover:bg-[var(--fp-brand-secondary)] shadow-sm hover:shadow',
-      secondary: 'bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-primary)] hover:bg-[var(--fp-border-light)]',
+      secondary: 'bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200',
       destructive: 'bg-[var(--fp-status-error)] text-white hover:opacity-90',
       outline:
         'border border-[var(--fp-border-medium)] bg-white text-[var(--fp-text-primary)] hover:bg-[var(--fp-bg-tertiary)]',

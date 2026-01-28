@@ -9,10 +9,12 @@
   --fp-bg-tertiary: #f5f6f8;
   --fp-bg-elevated: #ffffff;
 
-  /* Text Colors */
+  /* Text Colors - Enhanced Contrast */
   --fp-text-primary: #323338;
-  --fp-text-secondary: #676879;
-  --fp-text-tertiary: #9699a6;
+  --fp-text-secondary: #4a4c59;
+  /* Darker for better visibility */
+  --fp-text-tertiary: #6b6d7a;
+  /* Darker for readable placeholders */
   --fp-text-inverse: #ffffff;
 
   /* Brand Colors */

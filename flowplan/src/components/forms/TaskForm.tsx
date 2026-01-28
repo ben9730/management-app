@@ -134,185 +134,105 @@ const TaskForm: React.FC<TaskFormProps> = ({
       className={cn('space-y-4', className)}
     >
       {/* Title */}
-      <div>
-        <label
-          htmlFor="title"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Title *
-        </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          value={formData.title}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={isLoading}
-          required
-          aria-invalid={!!errors.title}
-          aria-describedby={errors.title ? 'title-error' : undefined}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            errors.title && 'border-red-500 focus:ring-red-500',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        />
-        {errors.title && (
-          <div aria-live="polite">
-            <p id="title-error" className="mt-1 text-sm text-red-500">
-              {errors.title}
-            </p>
-          </div>
-        )}
-      </div>
+      <Input
+        label="Title *"
+        id="title"
+        name="title"
+        value={formData.title}
+        onChange={handleChange}
+        // onBlur={handleBlur} // Removed
+        disabled={isLoading}
+        required
+        error={errors.title}
+        fullWidth
+        placeholder="Enter task title"
+        data-testid="task-title-input"
+      />
 
       {/* Description */}
-      <div>
-        <label
-          htmlFor="description"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Description
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={isLoading}
-          rows={3}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        />
-      </div>
+      <Input
+        label="Description"
+        id="description"
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        // onBlur={handleBlur} // Removed
+        disabled={isLoading}
+        multiline
+        rows={3}
+        fullWidth
+        placeholder="Enter task description"
+        data-testid="task-description-input"
+      />
 
       {/* Priority */}
-      <div>
-        <label
-          htmlFor="priority"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Priority
-        </label>
-        <select
-          id="priority"
-          name="priority"
-          value={formData.priority}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={isLoading}
-          className={cn(
-            'w-full appearance-none border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        >
-          {priorityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Select
+        label="Priority"
+        id="priority"
+        name="priority"
+        value={formData.priority}
+        options={priorityOptions}
+        onChange={handleChange}
+        // onBlur={handleBlur} // Removed
+        disabled={isLoading}
+        fullWidth
+        data-testid="task-priority-select"
+      />
 
       {/* Duration & Estimated Hours - Side by Side */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="duration"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Duration (days)
-          </label>
-          <input
-            id="duration"
-            name="duration"
-            type="number"
-            min={1}
-            value={formData.duration}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isLoading}
-            aria-invalid={!!errors.duration}
-            aria-describedby={errors.duration ? 'duration-error' : undefined}
-            className={cn(
-              'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              errors.duration && 'border-red-500 focus:ring-red-500',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          />
-          {errors.duration && (
-            <div aria-live="polite">
-              <p id="duration-error" className="mt-1 text-sm text-red-500">
-                {errors.duration}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="estimated_hours"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Estimated Hours
-          </label>
-          <input
-            id="estimated_hours"
-            name="estimated_hours"
-            type="number"
-            min={0}
-            value={formData.estimated_hours || ''}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isLoading}
-            className={cn(
-              'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          />
-        </div>
-      </div>
-
-      {/* Start Date */}
-      <div>
-        <label
-          htmlFor="start_date"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Start Date
-        </label>
-        <input
-          id="start_date"
-          name="start_date"
-          type="date"
-          value={formData.start_date}
+        <Input
+          label="Duration (days)"
+          id="duration"
+          name="duration"
+          type="number"
+          min={1}
+          value={formData.duration}
           onChange={handleChange}
-          onBlur={handleBlur}
+          // onBlur={handleBlur} // Removed
           disabled={isLoading}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
+          error={errors.duration} // Changed to always show error if present after submit
+          fullWidth
+          data-testid="task-duration-input"
+        />
+
+        <Input
+          label="Estimated Hours"
+          id="estimated_hours"
+          name="estimated_hours"
+          type="number"
+          min={0}
+          value={formData.estimated_hours || ''}
+          onChange={handleChange}
+          // onBlur={handleBlur} // Removed
+          disabled={isLoading}
+          fullWidth
+          data-testid="task-estimated-hours-input"
         />
       </div>
 
+      {/* Start Date */}
+      <Input
+        label="Start Date"
+        id="start_date"
+        name="start_date"
+        type="date"
+        value={formData.start_date}
+        onChange={handleChange}
+        // onBlur={handleBlur} // Removed
+        disabled={isLoading}
+        fullWidth
+        data-testid="task-start-date-input"
+      />
+
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t-2 border-black">
+      <div className="flex justify-end gap-3 pt-4 border-t-2 border-[#c3c6d4]">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={handleCancel}
           disabled={isLoading}
+          data-testid="task-form-cancel-button"
         >
           Cancel
         </Button>

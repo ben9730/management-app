@@ -81,13 +81,14 @@ describe('Input', () => {
 
   // Variants
   describe('variants', () => {
-    it('applies default variant styling', () => {
-      render(<Input />)
-      const input = screen.getByRole('textbox')
-      expect(input).not.toHaveClass('border-2')
-      expect(input).toHaveClass('border')
-      expect(input).toHaveClass('border-[var(--fp-border-light)]')
-      expect(input).toHaveClass('rounded-[var(--fp-radius-md)]')
+    it('applies default variant styling and high contrast placeholder', () => {
+      render(<Input placeholder="Test Placeholder" />)
+      const input = screen.getByPlaceholderText('Test Placeholder')
+      expect(input).toHaveClass('border-2')
+      expect(input).toHaveClass('border-gray-900')
+      expect(input).toHaveClass('text-gray-900')
+      // We want to ensure the placeholder color is dark enough
+      expect(input).toHaveClass('placeholder:text-gray-500')
     })
 
     it('applies error variant styling', () => {
@@ -278,7 +279,7 @@ describe('Input', () => {
     })
 
     it('allows focus via ref', () => {
-      const inputRef = { current: null as HTMLInputElement | null }
+      const inputRef = { current: null as HTMLInputElement | HTMLTextAreaElement | null }
       render(<Input ref={(el) => { inputRef.current = el }} />)
 
       inputRef.current?.focus()

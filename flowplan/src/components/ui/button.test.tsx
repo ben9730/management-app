@@ -42,11 +42,13 @@ describe('Button', () => {
     expect(button.className).toContain('bg-[var(--fp-brand-primary)]')
   })
 
-  it('applies secondary variant styling', () => {
+  it('applies secondary variant styling with high visibility', () => {
     render(<Button variant="secondary">Secondary</Button>)
     const button = screen.getByRole('button')
-    // Secondary is now tertiary bg
-    expect(button.className).toContain('bg-[var(--fp-bg-tertiary)]')
+    // Secondary should have a visible border and dark text
+    expect(button).toHaveClass('border')
+    expect(button).toHaveClass('text-gray-900')
+    expect(button).toHaveClass('bg-gray-100')
   })
 
   it('applies destructive variant styling', () => {

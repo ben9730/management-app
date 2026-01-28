@@ -95,11 +95,10 @@ describe('Select', () => {
   // Variants
   describe('variants', () => {
     it('applies default variant styling', () => {
-      render(<Select options={mockOptions} />)
+      render(<Select options={[{ value: '1', label: 'Option 1' }]} />)
       const select = screen.getByRole('combobox')
-      expect(select).not.toHaveClass('border-2')
-      expect(select).toHaveClass('border')
-      expect(select).toHaveClass('border-[var(--fp-border-light)]')
+      expect(select).toHaveClass('border-2')
+      expect(select).toHaveClass('border-gray-900')
       expect(select).toHaveClass('rounded-[var(--fp-radius-md)]')
     })
 
