@@ -36,28 +36,27 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : 'button'
 
     const baseStyles =
-      'inline-flex items-center justify-center font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--fp-brand-primary)] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
+      'inline-flex items-center justify-center font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95'
 
     const variants = {
-      default: 'bg-[var(--fp-brand-primary)] text-white hover:bg-[var(--fp-brand-secondary)] shadow-sm hover:shadow',
-      secondary: 'bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200',
-      destructive: 'bg-[var(--fp-status-error)] text-white hover:opacity-90',
-      outline:
-        'border border-[var(--fp-border-medium)] bg-white text-[var(--fp-text-primary)] hover:bg-[var(--fp-bg-tertiary)]',
-      ghost: 'bg-transparent text-[var(--fp-text-primary)] hover:bg-[var(--fp-bg-tertiary)]',
+      default: 'bg-[var(--fp-brand-blue)] text-white shadow-lg shadow-blue-500/20 hover:brightness-110',
+      secondary: 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+      destructive: 'bg-[var(--fp-brand-danger)] text-white shadow-lg shadow-red-500/20 hover:brightness-110',
+      outline: 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+      ghost: 'bg-transparent text-slate-500 hover:bg-slate-100',
     }
 
     const sizes = {
-      sm: 'px-3 py-1.5 text-sm',
-      md: 'px-4 py-2 text-base',
-      lg: 'px-8 py-3 text-lg',
-      icon: 'p-2',
+      sm: 'px-4 py-1.5 text-xs rounded-lg',
+      md: 'px-6 py-2.5 text-sm rounded-xl',
+      lg: 'px-8 py-4 text-base rounded-2xl',
+      icon: 'p-2 rounded-xl',
     }
 
     const LoadingSpinner = () => (
       <svg
         data-testid="loading-spinner"
-        className="mr-2 h-4 w-4 animate-spin"
+        className="ml-2 h-4 w-4 animate-spin"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -78,21 +77,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       </svg>
     )
 
-    // For asChild, don't wrap with loading spinner
-    // The child element will receive button props directly
+    const classNames = cn(
+      baseStyles,
+      variants[variant],
+      sizes[size],
+      fullWidth && 'w-full',
+      className
+    )
+
     if (asChild) {
       return (
-        <Slot
-          className={cn(
-            baseStyles,
-            variants[variant],
-            sizes[size],
-            fullWidth && 'w-full',
-            className
-          )}
-          ref={ref}
-          {...props}
-        >
+        <Slot className={classNames} ref={ref} {...props}>
           {children}
         </Slot>
       )
@@ -100,13 +95,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        className={cn(
-          baseStyles,
-          variants[variant],
-          sizes[size],
-          fullWidth && 'w-full',
-          className
-        )}
+        className={classNames}
         ref={ref}
         disabled={disabled || loading}
         {...props}

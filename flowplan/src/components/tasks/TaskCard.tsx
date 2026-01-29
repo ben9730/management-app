@@ -78,164 +78,82 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
       }
     }
 
-    const overdue = isOverdue(task.due_date)
-
-
     return (
       <div
         ref={ref}
         data-testid="task-card"
-        role="article"
-        aria-label={`Task: ${task.title}`}
         className={cn(
-          'flex items-center gap-3 p-4 bg-white border-2 border-gray-900 mb-1 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group cursor-pointer',
-          isCriticalPath && 'border-l-8',
+          'p-4 flex items-center gap-4 group hover:bg-surface/50 transition-colors cursor-pointer',
+          isCriticalPath && 'border-r-4 border-emerald-500',
           className
         )}
-        style={{
-          borderLeftColor: isCriticalPath ? 'var(--fp-critical)' : 'transparent'
-        }}
         onClick={handleCardClick}
       >
-        {/* Status Checkbox / Completion Toggle */}
-        <button
-          data-testid="status-checkbox"
-          aria-label={`Mark task ${task.status === 'done' ? 'incomplete' : 'complete'}`}
-          onClick={handleStatusToggle}
-          className={cn(
-            'w-8 h-8 rounded-none border-2 border-gray-900 flex items-center justify-center transition-all bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5',
-            task.status === 'done'
-              ? 'bg-[#00ca72] text-white'
-              : 'hover:bg-gray-100 hover:border-[#a25ddc]'
-          )}
-        >
-          {task.status === 'done' && <Check className="w-5 h-5" strokeWidth={4} />}
-        </button>
-
-        <div className="flex-1 min-w-0 flex items-center gap-4">
-
-          {/* Title & WBS */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              {/* Task Type Icon */}
-              <span
-                data-testid="task-type-icon"
-                data-type={task.task_type}
-                className="text-gray-900"
-              >
-                {task.task_type === 'milestone' ? (
-                  <Target className="w-4 h-4 text-[#e2445c]" strokeWidth={3} />
-                ) : (
-                  <Circle className="w-3 h-3 fill-gray-900" />
-                )}
-              </span>
-              <h3 className="font-bold text-sm text-gray-900 truncate">
-                {task.title}
-              </h3>
-              {task.wbs_number && (
-                <span className="text-xs text-gray-500 font-mono">
-                  {task.wbs_number}
-                </span>
-              )}
-            </div>
-            {!compact && task.description && (
-              <p className="text-xs text-gray-700 mt-0.5 line-clamp-1">
-                {task.description}
-              </p>
-            )}
-          </div>
-
-          {/* Meta Columns (Desktop) */}
-          <div className="flex items-center gap-6">
-
-            {/* Priority */}
-            <div className="min-w-[80px] flex justify-center">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-bold border-0 text-white",
-                  task.priority === 'critical' ? 'bg-[var(--fp-status-error)]' :
-                    task.priority === 'high' ? 'bg-[var(--fp-status-warning)]' :
-                      task.priority === 'medium' ? 'bg-[var(--fp-status-info)]' :
-                        'bg-gray-400'
-                )}
-                style={task.priority === 'critical' ? { backgroundColor: 'var(--fp-status-error)' } : {}}
-              >
-                {task.priority.toUpperCase()}
-              </Badge>
-            </div>
-
-            {/* Status Label (optional if redundant with checkbox, but good for Monday style) */}
-            <div className="min-w-[80px] hidden md:flex justify-center">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-bold border-0 text-white",
-                  task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
-                    task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
-                      'bg-gray-200 text-gray-900'
-                )}
-              >
-                {statusDisplayMap[task.status]}
-              </Badge>
-            </div>
-
-            {/* Due Date */}
-            <div className="min-w-[100px] text-right">
-              {task.due_date ? (
-                <span
-                  data-testid="due-date"
-                  className={cn(
-                    "text-xs font-semibold",
-                    overdue ? 'text-[var(--fp-status-error)] font-bold' : 'text-gray-800'
-                  )}
-                >
-                  {formatDateDisplay(task.due_date)}
-                </span>
-              ) : (
-                <span data-testid="due-date" className="text-xs text-gray-500">
-                  No due date
-                </span>
-              )}
-
-              {/* Slim Slack Display */}
-              {slack !== undefined && (
-                <div className="text-[10px] text-[var(--fp-text-tertiary)]">
-                  {slack} {slack === 1 ? 'day' : 'days'} slack
-                </div>
-              )}
-            </div>
-
-            {/* Assignee */}
-            <div className="w-8 flex justify-center">
-              {assignee ? (
-                <div
-                  className="w-6 h-6 rounded-full bg-[var(--fp-brand-secondary)] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white"
-                  title={`${assignee.first_name} ${assignee.last_name}`}
-                >
-                  {getInitials(assignee.first_name, assignee.last_name)}
-                </div>
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-[var(--fp-text-tertiary)] flex items-center justify-center">
-                  <span className="text-[10px] text-white">?</span>
-                </div>
-              )}
-              {!assignee && <span className="sr-only">Unassigned</span>}
-            </div>
-          </div>
-
+        {/* Assignee Avatar (Right side) */}
+        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0">
+          {assignee ? getInitials(assignee.first_name, assignee.last_name) : '?'}
         </div>
 
-        {/* Progress Bar (Bottom overlay) */}
-        {showProgress && (
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--fp-bg-tertiary)]">
-            <div
-              data-testid="progress-bar"
-              className="h-full bg-[var(--fp-status-success)]"
-              style={{ width: `${task.progress_percent}%` }}
-            />
+        {/* Title & Info (Middle) */}
+        <div className="flex-grow min-w-0">
+          <div className="flex items-center gap-2">
+            {task.wbs_number && (
+              <span className="text-slate-400 text-xs font-medium">{task.wbs_number}</span>
+            )}
+            <h4 className={cn(
+              "font-semibold text-foreground truncate",
+              task.status === 'done' && "text-slate-400 line-through"
+            )}>
+              {task.title}
+            </h4>
           </div>
-        )}
+          {task.description && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md">{task.description}</p>
+          )}
+        </div>
+
+        {/* Meta Info (Left side) */}
+        <div className="flex items-center gap-6">
+          <div className="hidden md:block text-slate-500 dark:text-slate-400 text-sm">
+            {formatDateDisplay(task.due_date || task.end_date)}
+          </div>
+
+          {/* Status Badge */}
+          <span className={cn(
+            "px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap",
+            task.status === 'done' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+              task.status === 'in_progress' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+          )}>
+            {task.status === 'done' ? 'הושלם' : task.status === 'in_progress' ? 'בתהליך' : 'ממתין'}
+          </span>
+
+          {/* Priority Badge */}
+          <span className={cn(
+            "px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap",
+            task.priority === 'critical' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' :
+              task.priority === 'high' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+          )}>
+            {task.priority.toUpperCase()}
+          </span>
+
+          {/* Checkbox */}
+          <button
+            data-testid="status-checkbox"
+            onClick={handleStatusToggle}
+            className={cn(
+              "w-6 h-6 border-2 rounded flex items-center justify-center transition-all",
+              task.status === 'done'
+                ? "border-emerald-500 bg-emerald-50 text-emerald-500 dark:bg-emerald-900/20"
+                : "border-slate-300 dark:border-slate-600 bg-transparent"
+            )}
+          >
+            {task.status === 'done' && (
+              <span className="material-icons text-xs">check</span>
+            )}
+          </button>
+        </div>
       </div>
     )
   }

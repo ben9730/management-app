@@ -48,35 +48,24 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
     const inputId = id || React.useId()
     const errorId = error ? `${inputId}-error` : undefined
 
-    // Determine effective variant based on error state
-    const effectiveVariant = error ? 'error' : variant
-
     const baseStyles =
-      'w-full border-2 bg-white text-gray-900 rounded-[var(--fp-radius-md)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--fp-brand-primary)]'
+      'w-full border bg-slate-50 text-slate-900 rounded-xl transition-all duration-200 placeholder:text-slate-400 placeholder:font-medium font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white'
 
     const variants = {
-      default:
-        'border-gray-900 focus:border-[var(--fp-brand-primary)] placeholder:text-gray-500 placeholder:opacity-100',
-      error:
-        'border-[var(--fp-status-error)] focus:border-[var(--fp-status-error)] placeholder:text-[var(--fp-status-error)]/50',
-      success:
-        'border-[var(--fp-status-success)] focus:border-[var(--fp-status-success)] placeholder:text-[var(--fp-status-success)]/50',
+      default: 'border-slate-200 focus:border-blue-500',
+      error: 'border-red-300 focus:border-red-500 bg-red-50/30',
+      success: 'border-green-300 focus:border-green-500 bg-green-50/30',
     }
 
     const sizes = {
-      sm: 'px-2 py-1 text-sm',
-      md: 'px-3 py-2 text-base',
-      lg: 'px-4 py-3 text-lg',
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2.5 text-base',
+      lg: 'px-5 py-4 text-lg',
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-tertiary)]'
+      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400'
       : ''
-
-    const iconPadding = {
-      left: leftIcon ? 'pl-10' : '',
-      right: rightIcon ? 'pr-10' : '',
-    }
 
     const commonProps = {
       id: inputId,
@@ -85,11 +74,11 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
       'aria-describedby': errorId,
       className: cn(
         baseStyles,
-        variants[effectiveVariant],
+        variants[error ? 'error' : variant],
         sizes[size],
         disabledStyles,
-        !multiline && iconPadding.left,
-        !multiline && iconPadding.right,
+        leftIcon && !multiline && 'pl-10',
+        rightIcon && !multiline && 'pr-10',
         className
       ),
       ...props,
@@ -100,14 +89,14 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-900"
+            className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500"
           >
             {label}
           </label>
         )}
         <div className="relative">
           {leftIcon && !multiline && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               {leftIcon}
             </div>
           )}
@@ -125,20 +114,20 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
             />
           )}
           {rightIcon && !multiline && (
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
               {rightIcon}
             </div>
           )}
         </div>
         {error && (
           <div aria-live="polite">
-            <p id={errorId} className="mt-1 text-xs text-[var(--fp-status-error)] font-semibold">
+            <p id={errorId} className="mt-1.5 text-xs text-red-500 font-bold">
               {error}
             </p>
           </div>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-xs text-gray-600">{helperText}</p>
+          <p className="mt-1.5 text-xs text-slate-400 font-medium">{helperText}</p>
         )}
       </div>
     )

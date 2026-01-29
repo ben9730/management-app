@@ -369,110 +369,116 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="py-6 px-6" dir="rtl">
-      {/* Action Buttons */}
-      <div className="max-w-[1400px] mx-auto mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Badge variant={project.status === 'active' ? 'success' : 'secondary'} className="fp-badge--success">
-            {project.status === 'active' ? 'פעיל' : project.status === 'completed' ? 'הושלם' : 'בארכיון'}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 border-2 border-gray-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white" onClick={() => setIsProjectModalOpen(true)}>
-            <Settings className="w-4 h-4" />
-            הגדרות פרויקט
-          </Button>
-          <Button className="gap-2 bg-[#0073ea] text-white border-2 border-gray-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-bold hover:bg-[#0060c4]" onClick={() => handleAddTask(phases[0]?.id || '')}>
-            <Plus className="w-4 h-4" strokeWidth={3} />
-            משימה חדשה
-          </Button>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-background font-display" dir="rtl">
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto pb-20 px-4">
-        {/* Project Header - Image 0 Style */}
-        <div className="bg-[#282e3f] text-white p-8 mb-8 rounded-xl shadow-lg border border-[#373e53]">
-          <div className="flex items-start justify-between">
-            <div className="text-right flex-1">
-              <h1 className="text-3xl font-bold mb-2 tracking-tight">{project.name}</h1>
-              {project.description && <p className="text-[#a0aec0] text-sm font-medium leading-relaxed">{project.description}</p>}
-            </div>
-            <div className="text-left pt-1">
-              <div className="text-xs text-[#a0aec0] space-y-1 font-medium opacity-90">
-                <div>התחלה: {formatDate(project.start_date)}</div>
-                <div>סיום: {formatDate(project.end_date)}</div>
-              </div>
-            </div>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <Button
+              className="bg-primary hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
+              onClick={() => handleAddTask(phases[0]?.id || '')}
+            >
+              <span className="material-icons text-lg">add</span>
+              משימה חדשה
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+              onClick={() => setIsProjectModalOpen(true)}
+            >
+              <span className="material-icons text-lg">settings</span>
+              הגדרות פרויקט
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl">
+            <button
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                viewMode === 'phases' ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50"
+              )}
+              onClick={() => setViewMode('phases')}
+            >
+              תצוגת רשימה
+            </button>
+            <button
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                viewMode === 'gantt' ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50"
+              )}
+              onClick={() => setViewMode('gantt')}
+            >
+              תרשים גאנט
+            </button>
           </div>
         </div>
 
-        {/* Stats Cards - Image 0 Style */}
-        <div className="grid grid-cols-4 gap-6 mb-10">
-          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-between min-h-[140px]">
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">התקדמות</div>
-              <div className="text-4xl font-black text-white">{progressPercent}%</div>
+        {/* Project Hero Area */}
+        <div className="bg-surface rounded-2xl p-8 mb-8 border border-slate-200 dark:border-slate-800 custom-shadow overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
+                  {project.status === 'active' ? 'פעיל' : 'הושלם'}
+                </span>
+                <span className="text-slate-400 text-sm">פרויקט #F-2026</span>
+              </div>
+              <h1 className="text-3xl font-extrabold mb-2 text-foreground">{project.name}</h1>
+              <p className="text-slate-500 dark:text-slate-400 max-w-xl">{project.description}</p>
             </div>
-            <div className="mt-4">
-              <div className="h-2 w-full bg-[#1d1e22] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#a25ddc] to-[#0073ea] rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
+            <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+              <div className="text-right">
+                <p>התחלה: <span className="font-semibold text-foreground">{formatDate(project.start_date)}</span></p>
+                <p>סיום משוער: <span className="font-semibold text-foreground">{formatDate(project.end_date)}</span></p>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-center min-h-[140px]">
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">משימות</div>
-              <div className="text-4xl font-black text-white">{completedTasks}<span className="text-xl text-[#6b7280]">/{totalTasks}</span></div>
-              <div className="text-[10px] font-bold text-[#6b7280] mt-1">הושלמו</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10 relative">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">נתיב קריטי</span>
+                <span className="material-icons text-red-500">priority_high</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-red-500">{criticalTasks}</span>
+                <span className="text-xs text-slate-400">משימות קריטיות</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">ימים נותרים</span>
+                <span className="material-icons text-blue-500">schedule</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-foreground">{daysRemaining}</span>
+                <span className="text-xs text-slate-400">עד לסיום</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">התקדמות משימות</span>
+                <span className="material-icons text-amber-500">fact_check</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-foreground">{completedTasks}/{totalTasks}</span>
+                <span className="text-xs text-slate-400">הושלמו</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">אחוז ביצוע</span>
+                <span className="text-primary font-bold">{progressPercent}%</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+              </div>
             </div>
           </div>
-
-          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-center min-h-[140px]">
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">ימים נותרים</div>
-              <div className="text-4xl font-black text-white">{daysRemaining}</div>
-              <div className="text-[10px] font-bold text-[#6b7280] mt-1">עד סיום</div>
-            </div>
-          </div>
-
-          <div className="bg-[#282e3f] p-6 rounded-xl border border-[#373e53] shadow-md flex flex-col justify-center min-h-[140px]">
-            <div className="text-right">
-              <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">נתיב קריטי</div>
-              <div className="text-4xl font-black text-[#e2445c]">{criticalTasks}</div>
-              <div className="text-[10px] font-bold text-[#6b7280] mt-1">משימות קריטיות</div>
-            </div>
-          </div>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex gap-4 mb-6">
-          <Button
-            variant={viewMode === 'phases' ? 'default' : 'outline'}
-            className={cn(
-              "gap-2 border-2 border-gray-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
-              viewMode === 'phases' && "bg-[#a25ddc] translate-x-0.5 translate-y-0.5 shadow-none"
-            )}
-            onClick={() => setViewMode('phases')}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            תצוגת שלבים
-          </Button>
-          <Button
-            variant={viewMode === 'gantt' ? 'default' : 'outline'}
-            className={cn(
-              "gap-2 border-2 border-gray-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]",
-              viewMode === 'gantt' && "bg-[#a25ddc] translate-x-0.5 translate-y-0.5 shadow-none"
-            )}
-            onClick={() => setViewMode('gantt')}
-          >
-            <GanttChartIcon className="w-4 h-4" />
-            Gantt Chart
-          </Button>
         </div>
 
         {/* Content */}
@@ -493,73 +499,85 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Task Detail Sidebar - Image 0 Style */}
+          {/* Task Detail Sidebar */}
           {selectedTask && (
-            <div className="w-96 flex-shrink-0 fp-animate-slide-in">
-              <div className="bg-[#282e3f] border border-[#373e53] shadow-2xl sticky top-24 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-[#373e53]">
-                  <div className="flex items-start justify-between">
-                    <button
-                      onClick={() => setSelectedTask(null)}
-                      className="text-[#a0aec0] hover:text-white transition-colors"
-                    >
-                      <Plus className="w-6 h-6 rotate-45" />
+            <div className="w-[450px] flex-shrink-0 fp-animate-slide-in sticky top-24 self-start">
+              <div className="bg-surface text-foreground shadow-2xl rounded-2xl overflow-hidden flex flex-col min-h-[600px] border border-slate-200 dark:border-slate-800">
+                <div className="p-8 flex-1">
+                  <div className="flex items-center justify-between mb-8">
+                    <Badge className={cn(
+                      "rounded-full px-4 py-1.5 text-[10px] font-bold border-0 uppercase tracking-widest",
+                      selectedTask.priority === 'critical' ? 'bg-red-500/20 text-red-100' :
+                        selectedTask.priority === 'high' ? 'bg-orange-500/20 text-orange-100' :
+                          'bg-blue-500/20 text-blue-100'
+                    )}>
+                      {selectedTask.priority === 'critical' ? 'עדיפות קריטית' : 'עדיפות רגילה'}
+                    </Badge>
+                    <button onClick={() => setSelectedTask(null)} className="text-slate-400 hover:text-white transition-colors">
+                      <Plus className="w-8 h-8 rotate-45" />
                     </button>
-                    <div className="text-right">
-                      <h3 className="text-2xl font-bold text-white leading-tight">{selectedTask.title}</h3>
-                      {selectedTask.wbs_number && (
-                        <div className="text-[11px] font-bold text-[#718096] mt-1">
-                          WBS: {selectedTask.wbs_number}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-8">
-                  <div className="flex justify-end gap-3">
-                    <Badge variant={selectedTask.status === 'done' ? 'success' : selectedTask.status === 'in_progress' ? 'high' : 'secondary'} className="px-4 py-1.5 rounded-md border-0 text-xs font-bold">
-                      {selectedTask.status === 'done' ? 'הושלם' : selectedTask.status === 'in_progress' ? 'בביצוע' : 'ממתין'}
-                    </Badge>
-                    <Badge variant={selectedTask.priority as 'critical' | 'high' | 'medium' | 'low'} className="px-4 py-1.5 rounded-md border-0 text-xs font-bold">
-                      {selectedTask.priority === 'critical' ? 'קריטי' : selectedTask.priority === 'high' ? 'גבוה' : selectedTask.priority === 'medium' ? 'בינוני' : 'נמוך'}
-                    </Badge>
                   </div>
 
-                  {selectedTask.description && (
-                    <div className="text-right">
-                      <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-2">תיאור</div>
-                      <p className="text-sm text-[#cbd5e0] font-medium leading-relaxed">{selectedTask.description}</p>
-                    </div>
-                  )}
+                  <h2 className="text-3xl font-black mb-8 leading-tight">{selectedTask.title}</h2>
 
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="text-right">
-                      <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">משך</div>
-                      <p className="text-xl font-bold text-white">{selectedTask.duration} ימים</p>
+                  <div className="space-y-6 mb-10">
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">זמן מוערך</div>
+                        <div className="text-sm font-bold">{selectedTask.duration} ימים</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">לוח זמנים</div>
+                        <div className="text-sm font-bold">{formatDate(selectedTask.start_date)} - {formatDate(selectedTask.due_date)}</div>
+                      </div>
                     </div>
                     {selectedTask.assignee_id && (
-                      <div className="text-right">
-                        <div className="text-[11px] font-bold uppercase text-[#a0aec0] tracking-wider mb-1">אחראי</div>
-                        <p className="text-lg font-bold text-white">{getTeamMemberName(selectedTask.assignee_id)}</p>
+                      <div className="flex items-center gap-4 text-slate-300">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">אחראי</div>
+                          <div className="text-sm font-bold">{getTeamMemberName(selectedTask.assignee_id)}</div>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {selectedTask.is_critical && (
-                    <div className="p-4 bg-white rounded-xl flex items-center justify-between border-l-4 border-[#e2445c]">
-                      <div className="w-3 h-3 bg-[#e2445c] rounded-full animate-pulse" />
-                      <div className="text-right flex-1 pr-4">
-                        <div className="text-[13px] font-bold text-[#e2445c]">נתיב קריטי</div>
-                        <div className="text-[11px] text-gray-500 font-medium">איחור במשימה זו ישפיע על תאריך הסיום</div>
+                  <div className="mb-8">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">תיאור המשימה</div>
+                    <p className="text-slate-400 leading-relaxed font-medium">
+                      {selectedTask.description || 'אין תיאור זמין למשימה זו.'}
+                    </p>
+                  </div>
+
+                  {/* Critical Path Alert */}
+                  {selectedTask.priority === 'critical' && (
+                    <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4">
+                      <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" />
+                      <div>
+                        <div className="text-sm font-bold text-red-100 mb-1">משימה בנתיב הקריטי</div>
+                        <div className="text-xs text-red-200/60 font-medium leading-relaxed">עיכוב במשימה זו ישפיע ישירות על תאריך סיום הפרויקט.</div>
                       </div>
                     </div>
                   )}
+                </div>
 
-                  <div className="flex gap-4 pt-4">
-                    <Button variant="outline" className="flex-1 bg-white hover:bg-gray-100 text-gray-900 border-0 rounded-lg font-bold py-6 shadow-md" onClick={() => handleEditTask(selectedTask)}>עריכה</Button>
-                    <Button variant="destructive" className="flex-1 bg-[#e2445c] hover:bg-[#c53030] text-white border-0 rounded-lg font-bold py-6 shadow-md" onClick={() => handleDeleteTask(selectedTask.id)}>מחיקה</Button>
-                  </div>
+                <div className="p-8 bg-slate-800/30 flex gap-4">
+                  <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 h-12 shadow-lg shadow-red-500/20 rounded-xl font-bold" onClick={() => handleDeleteTask(selectedTask.id)}>
+                    מחק משימה
+                  </Button>
+                  <Button className="flex-1 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white border-0 h-12 rounded-xl font-bold" onClick={() => handleEditTask(selectedTask)}>
+                    עריכת משימה
+                  </Button>
                 </div>
               </div>
             </div>

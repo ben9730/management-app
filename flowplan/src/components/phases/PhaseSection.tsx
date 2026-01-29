@@ -31,10 +31,10 @@ const statusDisplayMap: Record<ProjectPhase['status'], string> = {
   completed: 'Completed',
 }
 
-const statusStyleMap: Record<ProjectPhase['status'], string> = {
-  pending: 'border-gray-400',
-  active: 'border-blue-500',
-  completed: 'border-green-500',
+const statusColorMap: Record<ProjectPhase['status'], string> = {
+  pending: 'border-slate-400',
+  active: 'border-indigo-500',
+  completed: 'border-emerald-500',
 }
 
 const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
@@ -76,146 +76,93 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
       <section
         ref={ref}
         data-testid="phase-section"
-        role="region"
-        aria-label={`Phase: ${phase.name}`}
         className={cn(
-          'bg-white mb-6 border-2 border-gray-900 rounded-lg overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all',
-          // Left border strip 
-          'border-l-8',
+          'bg-card border-r-4 rounded-xl overflow-hidden custom-shadow border border-slate-200 dark:border-slate-800 transition-all',
+          statusColorMap[phase.status || 'pending'],
+          phase.status === 'pending' && 'opacity-70',
           className
         )}
-        style={{
-          borderLeftColor:
-            phase.status === 'completed' ? 'var(--fp-status-success)' :
-              phase.status === 'active' ? 'var(--fp-brand-primary)' :
-                '#9ca3af'
-        }}
       >
-        {/* Phase Header */}
-        <div className="flex items-center gap-4 p-4 bg-gray-100 border-b-2 border-gray-900 transition-colors">
-          <button
-            data-testid="phase-header"
-            aria-expanded={!isCollapsed}
-            aria-controls={contentId}
-            onClick={handleToggle}
-            className="flex items-center gap-3 flex-1 text-left group"
-          >
-            {/* Collapse Indicator */}
-            <div
-              data-testid="collapse-indicator"
-              className="w-8 h-8 flex items-center justify-center rounded border-2 border-gray-900 bg-white hover:bg-gray-100 transition-all text-gray-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-none group-hover:translate-x-0.5 group-hover:translate-y-0.5"
-              style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+        {/* Phase Header - Accordion Style */}
+        <div
+          className="p-4 flex flex-wrap items-center justify-between gap-4 bg-surface/50 border-b border-slate-100 dark:border-slate-800 cursor-pointer"
+          onClick={handleToggle}
+          data-testid="phase-header"
+        >
+          <div className="flex items-center gap-4">
+            <button
+              className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-700 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600"
             >
-              <ChevronDown className="w-4 h-4" strokeWidth={3} />
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">
-                  {phase.name}
-                </h2>
+              <span className={cn("material-icons text-slate-400 transition-transform duration-200", !isCollapsed && "rotate-180")}>
+                expand_more
+              </span>
+            </button>
+            <div>
+              <h3 className="font-bold text-lg flex items-center gap-3 text-foreground">
+                {(phase.phase_order ?? 0) + 1}. {phase.name}
                 <Badge
-                  variant="outline"
                   className={cn(
-                    "rounded-none px-3 py-1 text-[11px] font-black border-2 border-gray-900",
-                    phase.status === 'completed' ? 'bg-[#00ca72] text-white' :
-                      phase.status === 'active' ? 'bg-[#a25ddc] text-white' :
-                        'bg-gray-300 text-gray-900'
+                    "rounded-full px-2 py-0.5 text-[10px] font-bold border-0 uppercase",
+                    phase.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
+                      phase.status === 'active' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400' :
+                        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
                   )}
                 >
-                  {statusDisplayMap[phase.status]}
+                  {phase.status === 'completed' ? 'הושלם' : phase.status === 'active' ? 'פעיל' : 'PENDING'}
                 </Badge>
-              </div>
-
-              {phase.description && (
-                <p className="text-sm text-gray-700 mt-1 font-bold">
-                  {phase.description}
-                </p>
-              )}
-            </div>
-          </button>
-
-          {/* Metrics Row (Right aligned in header) */}
-          <div className="flex items-center gap-8 text-xs text-gray-900 hidden lg:flex font-black uppercase">
-            {/* Dates */}
-            {(phase.start_date || phase.end_date) && (
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] text-gray-500 mb-0.5">Timeline</span>
-                <span className="text-[11px] bg-white border-2 border-gray-900 px-3 py-1 rounded-none shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                  {formatDateDisplay(phase.start_date)} — {formatDateDisplay(phase.end_date)}
-                </span>
-              </div>
-            )}
-
-            {/* Progress Mini */}
-            <div className="flex flex-col items-center min-w-[140px]">
-              <span className="text-[9px] text-gray-500 mb-0.5">Completion</span>
-              <div className="flex items-center gap-3 w-full">
-                <div className="h-5 flex-1 bg-white border-2 border-gray-900 rounded-none overflow-hidden p-0.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                  <div
-                    data-testid="phase-progress-bar"
-                    className={cn(
-                      'h-full transition-all',
-                      phase.status === 'completed' ? 'bg-[#00ca72]' : 'bg-[#a25ddc]'
-                    )}
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <span className="font-black text-sm w-10 text-right">
-                  {progressPercent}%
-                </span>
-              </div>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{phase.description}</p>
             </div>
           </div>
 
-          {/* Add Task Button */}
-          {onAddTask && (
+          <div className="flex items-center gap-8">
+            <div className="hidden sm:block text-right">
+              <p className="text-[10px] uppercase text-slate-400 font-bold mb-1">לוח זמנים</p>
+              <p className="text-sm font-medium text-foreground">{formatDateDisplay(phase.start_date)} - {formatDateDisplay(phase.end_date)}</p>
+            </div>
+
+            <div className="w-32 hidden sm:block">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase text-slate-400 font-bold">ביצוע</span>
+                <span className="text-[10px] font-bold text-foreground">{progressPercent}%</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full transition-all duration-500",
+                    phase.status === 'completed' ? 'bg-emerald-500' :
+                      phase.status === 'active' ? 'bg-indigo-500' : 'bg-slate-400')}
+                  style={{ width: `${progressPercent}%` }}
+                ></div>
+              </div>
+            </div>
+
             <button
-              data-testid="add-task-button"
               onClick={handleAddTask}
-              className="ml-4 w-12 h-12 flex items-center justify-center border-2 border-gray-900 bg-[#0073ea] text-white hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group"
-              title="Add Task"
+              className="text-primary hover:bg-primary/10 p-2 rounded-lg transition-colors"
             >
-              <Plus className="w-6 h-6 transition-transform group-hover:scale-125" strokeWidth={3} />
+              <span className="material-icons">add_circle_outline</span>
             </button>
-          )}
+          </div>
         </div>
 
         {/* Tasks Content */}
         {!isCollapsed && (
-          <div
-            id={contentId}
-            className="bg-gray-50 p-1"
-          >
+          <div id={contentId} className="divide-y divide-slate-100 dark:divide-slate-800">
             {tasks.length > 0 ? (
-              <div className="">
-                {tasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    assignee={taskAssignees[task.id]}
-                    slack={taskSlackValues[task.id]}
-                    isCriticalPath={criticalPathTaskIds.includes(task.id)}
-                    onClick={onTaskClick}
-                    onStatusChange={onTaskStatusChange}
-                    className="hover:shadow-sm" // Keep hover shadow but respect TaskCard borders
-                  />
-                ))}
-              </div>
+              tasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  assignee={taskAssignees[task.id]}
+                  slack={taskSlackValues[task.id]}
+                  isCriticalPath={criticalPathTaskIds.includes(task.id)}
+                  onClick={onTaskClick}
+                  onStatusChange={onTaskStatusChange}
+                />
+              ))
             ) : (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--fp-bg-tertiary)] mb-3">
-                  <span className="text-2xl text-[var(--fp-text-tertiary)]">📝</span>
-                </div>
-                <p className="text-[var(--fp-text-secondary)] font-medium">No tasks in this phase</p>
-                {onAddTask && (
-                  <button
-                    onClick={handleAddTask}
-                    className="mt-2 text-sm text-[var(--fp-brand-primary)] hover:underline"
-                  >
-                    Add a task to get started
-                  </button>
-                )}
+              <div className="text-center py-8">
+                <p className="text-sm text-slate-400 font-medium">אין משימות בשלב זה</p>
               </div>
             )}
           </div>

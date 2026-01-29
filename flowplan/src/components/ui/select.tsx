@@ -50,26 +50,23 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || React.useId()
     const errorId = error ? `${selectId}-error` : undefined
 
-    // Determine effective variant based on error state
-    const effectiveVariant = error ? 'error' : variant
-
     const baseStyles =
-      'w-full appearance-none border-2 bg-white text-gray-900 rounded-[var(--fp-radius-md)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--fp-brand-primary)] pr-10'
+      'w-full appearance-none border bg-slate-50 text-slate-900 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white pr-10'
 
     const variants = {
-      default: 'border-gray-900 focus:border-[var(--fp-brand-primary)]',
-      error: 'border-[var(--fp-status-error)] focus:border-[var(--fp-status-error)]',
-      success: 'border-[var(--fp-status-success)] focus:border-[var(--fp-status-success)]',
+      default: 'border-slate-200 focus:border-blue-500',
+      error: 'border-red-300 focus:border-red-500 bg-red-50/30',
+      success: 'border-green-300 focus:border-green-500 bg-green-50/30',
     }
 
     const sizes = {
-      sm: 'px-2 py-1 text-sm',
-      md: 'px-3 py-2 text-base',
-      lg: 'px-4 py-3 text-lg',
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2.5 text-base',
+      lg: 'px-5 py-3.5 text-lg',
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-tertiary)]'
+      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400'
       : 'cursor-pointer'
 
     // Group options if needed
@@ -85,7 +82,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={selectId}
-            className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-900"
+            className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500"
           >
             {label}
           </label>
@@ -99,7 +96,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             aria-describedby={errorId}
             className={cn(
               baseStyles,
-              variants[effectiveVariant],
+              variants[error ? 'error' : variant],
               sizes[size],
               disabledStyles,
               className
@@ -137,9 +134,9 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               )
             )}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3" data-testid="select-chevron">
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5" data-testid="select-chevron">
             <svg
-              className="h-4 w-4 text-gray-900"
+              className="h-4 w-4 text-slate-400"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -154,13 +151,13 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         </div>
         {error && (
           <div aria-live="polite">
-            <p id={errorId} className="mt-1 text-xs text-[var(--fp-status-error)] font-semibold">
+            <p id={errorId} className="mt-1.5 text-xs text-red-500 font-bold">
               {error}
             </p>
           </div>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-xs text-gray-600">{helperText}</p>
+          <p className="mt-1.5 text-xs text-slate-400 font-medium">{helperText}</p>
         )}
       </div>
     )

@@ -64,17 +64,16 @@ const TaskForm: React.FC<TaskFormProps> = ({
   })
 
   const [errors, setErrors] = React.useState<FormErrors>({})
-  const [touched, setTouched] = React.useState<Record<string, boolean>>({})
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required'
+      newErrors.title = 'כותרת היא שדה חובה'
     }
 
     if (formData.duration < 1) {
-      newErrors.duration = 'Duration must be at least 1'
+      newErrors.duration = 'משך זמן חייב להיות לפחות יום אחד'
     }
 
     setErrors(newErrors)
@@ -92,18 +91,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
       [name]: newValue,
     }))
 
-    // Clear error when field is changed
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
         ...prev,
         [name]: undefined,
       }))
     }
-  }
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name } = e.target
-    setTouched((prev) => ({ ...prev, [name]: true }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -119,11 +112,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
   }
 
-  const handleCancel = (e: React.MouseEvent) => {
-    e.preventDefault()
-    onCancel()
-  }
-
   const isEditMode = mode === 'edit'
 
   return (
@@ -131,113 +119,121 @@ const TaskForm: React.FC<TaskFormProps> = ({
       role="form"
       onSubmit={handleSubmit}
       noValidate
-      className={cn('space-y-4', className)}
+      className={cn('space-y-6', className)}
+      dir="rtl"
     >
       {/* Title */}
       <Input
-        label="Title *"
+        label="שם המשימה *"
         id="title"
         name="title"
         value={formData.title}
         onChange={handleChange}
-        // onBlur={handleBlur} // Removed
         disabled={isLoading}
         required
         error={errors.title}
         fullWidth
-        placeholder="Enter task title"
+        placeholder="לדוגמה: הכנת תוכנית עבודה"
         data-testid="task-title-input"
       />
 
       {/* Description */}
       <Input
-        label="Description"
+        label="תיאור המשימה"
         id="description"
         name="description"
         value={formData.description}
         onChange={handleChange}
-        // onBlur={handleBlur} // Removed
         disabled={isLoading}
         multiline
         rows={3}
         fullWidth
-        placeholder="Enter task description"
+        placeholder="הוסף פירוט על המשימה..."
         data-testid="task-description-input"
       />
 
-      {/* Priority */}
-      <Select
-        label="Priority"
-        id="priority"
-        name="priority"
-        value={formData.priority}
-        options={priorityOptions}
-        onChange={handleChange}
-        // onBlur={handleBlur} // Removed
-        disabled={isLoading}
-        fullWidth
-        data-testid="task-priority-select"
-      />
+      <div className="grid grid-cols-2 gap-4">
+        {/* Priority */}
+        <Select
+          label="עדיפות"
+          id="priority"
+          name="priority"
+          value={formData.priority}
+          options={[
+            { value: 'low', label: 'נמוכה' },
+            { value: 'medium', label: 'בינונית' },
+            { value: 'high', label: 'גבוהה' },
+            { value: 'critical', label: 'קריטית' },
+          ]}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+          data-testid="task-priority-select"
+        />
+
+        {/* Start Date */}
+        <Input
+          label="תאריך התחלה"
+          id="start_date"
+          name="start_date"
+          type="date"
+          value={formData.start_date}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+          data-testid="task-start-date-input"
+        />
+      </div>
 
       {/* Duration & Estimated Hours - Side by Side */}
       <div className="grid grid-cols-2 gap-4">
         <Input
-          label="Duration (days)"
+          label="משך זמן (ימים)"
           id="duration"
           name="duration"
           type="number"
           min={1}
           value={formData.duration}
           onChange={handleChange}
-          // onBlur={handleBlur} // Removed
           disabled={isLoading}
-          error={errors.duration} // Changed to always show error if present after submit
+          error={errors.duration}
           fullWidth
           data-testid="task-duration-input"
         />
 
         <Input
-          label="Estimated Hours"
+          label="שעות מוערכות"
           id="estimated_hours"
           name="estimated_hours"
           type="number"
           min={0}
           value={formData.estimated_hours || ''}
           onChange={handleChange}
-          // onBlur={handleBlur} // Removed
           disabled={isLoading}
           fullWidth
           data-testid="task-estimated-hours-input"
         />
       </div>
 
-      {/* Start Date */}
-      <Input
-        label="Start Date"
-        id="start_date"
-        name="start_date"
-        type="date"
-        value={formData.start_date}
-        onChange={handleChange}
-        // onBlur={handleBlur} // Removed
-        disabled={isLoading}
-        fullWidth
-        data-testid="task-start-date-input"
-      />
-
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t-2 border-[#c3c6d4]">
+      <div className="flex justify-end gap-3 pt-6">
         <Button
           type="button"
-          variant="secondary"
-          onClick={handleCancel}
+          variant="ghost"
+          onClick={onCancel}
           disabled={isLoading}
+          className="font-bold text-slate-400 hover:text-slate-600"
           data-testid="task-form-cancel-button"
         >
-          Cancel
+          ביטול
         </Button>
-        <Button type="submit" disabled={isLoading} loading={isLoading}>
-          {isLoading ? 'Saving...' : isEditMode ? 'Update Task' : 'Create Task'}
+        <Button
+          type="submit"
+          disabled={isLoading}
+          loading={isLoading}
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-purple-200 text-white min-w-[140px]"
+        >
+          {isLoading ? 'שומר...' : isEditMode ? 'עדכן משימה' : 'צור משימה'}
         </Button>
       </div>
     </form>

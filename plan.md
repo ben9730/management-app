@@ -266,3 +266,13 @@ Total: **1004 tests** passing.
 - [ ] תיקון Select text contrast
 - [ ] תיקון Button secondary visibility
 - [ ] תיקון Modal labels contrast
+
+## Phase 15: Pixel-Perfect UI Redesign (FlowPlan Premium) - COMPLETED
+- [x] **Step 1: Write Tests** - Define new design expectations for Layout, KPI Cards, and Task Rows.
+- [x] **Step 2: Design Tokens** - Update `globals.css` with the new color palette, typography (Assistant), and global styles.
+- [x] **Step 3: Layout & Header** - Implement the clean white header and logo as per design.
+- [x] **Step 4: KPI Hero Area** - Create/Update KPI cards with the specified 4 metrics and styles.
+- [x] **Step 5: Task Accordion & Rows** - Redesign task grouping and row layout for better clarity and premium feel.
+- [x] **Step 6: Modals Redesign** - Implement light-themed Add Task modal and dark-themed Task Details modal.
+- [x] **Step 7: Verification** - Run all tests and ensure pixel-perfect alignment.
+
