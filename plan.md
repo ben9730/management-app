@@ -1,6 +1,6 @@
 # FlowPlan Development Plan
 
-Last Updated: 2026-01-28 07:25 (Session 7 - Israel Time)
+Last Updated: 2026-01-29 11:10 (Session 17 - Israel Time)
 
 ---
 
@@ -247,13 +247,35 @@ Total: **1004 tests** passing.
 | Task CRUD | ❌ Not available | ✅ Create/Edit/Delete |
 | Project Settings | ❌ Not available | ✅ Edit modal |
 | Gantt View | ❌ Not integrated | ✅ Toggle view mode |
+| Modern SaaS UI | ❌ Brutalist/Basic | ✅ Premium Dark Theme |
+| About Page | ❌ Not available | ✅ Ben Gutman Bio |
 
 ### Still Needed for Production:
-1. **Supabase Setup**: Configure `.env.local` with real credentials
-2. **Database Schema**: Run `001_initial_schema.sql` in Supabase
-3. **Connect to Backend**: Replace local state with React Query hooks
-4. **Authentication**: Add Supabase Auth flow
-5. **Team Page**: Build `/team` route for member management
+### Still Needed for Production:
+
+#### Phase 17: Production Data Integration (Supabase) 🔗
+- [ ] **Data Migration**: Move mock data into real Supabase tables using `001_initial_schema.sql`.
+- [ ] **React Query Hooks**: Implement/Update `useTasks`, `usePhases`, and `useProject` hooks to fetch from services instead of local state.
+- [ ] **Optimistic Updates**: Ensure UI remains snappy by updating state before server confirmation.
+- [ ] **Real-time Sync**: Enable Supabase broadcast for live updates across multiple users.
+
+#### Phase 18: Authentication & Identity 🔐
+- [ ] **Supabase Auth Provider**: Wrap the app in an Auth context.
+- [ ] **Auth Pages**: Create `/login` and `/register` pages following the Premium Dark theme.
+- [ ] **Protected Routes**: Restrict access to dashboard and settings for authenticated users only.
+- [ ] **User Persistence**: Link browser session to the `auth_user_id` in `team_members`.
+
+#### Phase 19: Team & Resource Management (`/team`) 👥
+- [ ] **Team Directory**: Build a page to list all members with their roles and availability.
+- [ ] **Work Hours Config**: Interface for setting `work_hours_per_day` and `work_days` per member.
+- [ ] **Capacity Planning**: Visual indicator of team load based on assigned tasks and durations.
+- [ ] **Invitation System**: Allow admins to invite new members via email.
+
+#### Phase 20: Audit Findings & Reporting 📊
+- [ ] **Findings Explorer**: Dedicated view for all `audit_findings` across the project.
+- [ ] **Severity Filtering**: Quick filters for Critical/High findings (Priority for auditors).
+- [ ] **CAPA Workflow**: Interface for status updates on corrective actions (Open -> In Progress -> Closed).
+- [ ] **Report Export**: Simple PDF/Excel export of the findings summary.
 
 ---
 ### שלב 8: תיקון נראות וקונטרסט (UI Visibility Fix) - TDD Approach
@@ -275,4 +297,14 @@ Total: **1004 tests** passing.
 - [x] **Step 5: Task Accordion & Rows** - Redesign task grouping and row layout for better clarity and premium feel.
 - [x] **Step 6: Modals Redesign** - Implement light-themed Add Task modal and dark-themed Task Details modal.
 - [x] **Step 7: Verification** - Run all tests and ensure pixel-perfect alignment.
+- [x] **Step 8: Forced Dark Mode** - Lock UI to dark mode, remove ThemeToggle, and fix hydration issues.
+
+## Phase 16: About Page & Personal Branding ✅
+- [x] **Step 1: Implementation** - Create `/about` route and page component.
+- [x] **Step 2: Asset Integration** - Add Ben's profile photo and internship logo.
+- [x] **Step 3: Content Refinement** - Implement English-only professional summary centered for bio.
+- [x] **Step 4: TDD Verification** - Verify rendering and navigation via tests.
+
+## Future Roadmap (Phases 17-20) 🚀
+*Detailed in the "Still Needed for Production" section above.*
 
