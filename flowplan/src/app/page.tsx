@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { cn } from '@/lib/utils'
 import type { Project, ProjectPhase, Task, TeamMember } from '@/types/entities'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -10,6 +11,7 @@ import { PhaseSection } from '@/components/phases/PhaseSection'
 import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
+import { Plus, Settings, LayoutDashboard, GanttChartIcon, Calendar, CheckCircle2, AlertTriangle, TrendingUp, Clock, Target, User } from 'lucide-react'
 
 // Helper to format dates for display
 const formatDate = (date: Date | string | null | undefined): string => {
@@ -367,66 +369,116 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="py-6 px-6" dir="rtl">
-      {/* Action Buttons */}
-      <div className="max-w-[1400px] mx-auto mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Badge variant={project.status === 'active' ? 'success' : 'secondary'} className="fp-badge--success">
-            {project.status === 'active' ? 'פעיל' : project.status === 'completed' ? 'הושלם' : 'בארכיון'}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => setIsProjectModalOpen(true)}>הגדרות פרויקט</Button>
-          <Button onClick={() => handleAddTask(phases[0]?.id || '')}>+ משימה חדשה</Button>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-background font-display" dir="rtl">
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto">
-        {/* Project Header */}
-        <div className="fp-card p-6 mb-6">
-          <div className="flex items-start justify-between">
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <Button
+              className="bg-primary hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
+              onClick={() => handleAddTask(phases[0]?.id || '')}
+            >
+              <span className="material-icons text-lg">add</span>
+              משימה חדשה
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+              onClick={() => setIsProjectModalOpen(true)}
+            >
+              <span className="material-icons text-lg">settings</span>
+              הגדרות פרויקט
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl">
+            <button
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                viewMode === 'phases' ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50"
+              )}
+              onClick={() => setViewMode('phases')}
+            >
+              תצוגת רשימה
+            </button>
+            <button
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                viewMode === 'gantt' ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50"
+              )}
+              onClick={() => setViewMode('gantt')}
+            >
+              תרשים גאנט
+            </button>
+          </div>
+        </div>
+
+        {/* Project Hero Area */}
+        <div className="bg-surface rounded-2xl p-8 mb-8 border border-slate-200 dark:border-slate-800 custom-shadow overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--fp-text-primary)' }}>{project.name}</h1>
-              {project.description && <p style={{ color: 'var(--fp-text-secondary)' }}>{project.description}</p>}
+              <div className="flex items-center gap-3 mb-2">
+                <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
+                  {project.status === 'active' ? 'פעיל' : 'הושלם'}
+                </span>
+                <span className="text-slate-400 text-sm">פרויקט #F-2026</span>
+              </div>
+              <h1 className="text-3xl font-extrabold mb-2 text-foreground">{project.name}</h1>
+              <p className="text-slate-500 dark:text-slate-400 max-w-xl">{project.description}</p>
             </div>
-            <div className="text-left" style={{ color: 'var(--fp-text-tertiary)' }}>
-              <div className="text-sm">התחלה: {formatDate(project.start_date)}</div>
-              <div className="text-sm">סיום: {formatDate(project.end_date)}</div>
+            <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+              <div className="text-right">
+                <p>התחלה: <span className="font-semibold text-foreground">{formatDate(project.start_date)}</span></p>
+                <p>סיום משוער: <span className="font-semibold text-foreground">{formatDate(project.end_date)}</span></p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-6 fp-stagger">
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>התקדמות</div>
-            <div className="text-3xl font-bold mb-3" style={{ color: 'var(--fp-text-primary)' }}>{progressPercent}%</div>
-            <div className="fp-progress">
-              <div className="fp-progress__fill fp-progress__fill--default" style={{ width: `${progressPercent}%` }} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10 relative">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">נתיב קריטי</span>
+                <span className="material-icons text-red-500">priority_high</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-red-500">{criticalTasks}</span>
+                <span className="text-xs text-slate-400">משימות קריטיות</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">ימים נותרים</span>
+                <span className="material-icons text-blue-500">schedule</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-foreground">{daysRemaining}</span>
+                <span className="text-xs text-slate-400">עד לסיום</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">התקדמות משימות</span>
+                <span className="material-icons text-amber-500">fact_check</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-foreground">{completedTasks}/{totalTasks}</span>
+                <span className="text-xs text-slate-400">הושלמו</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">אחוז ביצוע</span>
+                <span className="text-primary font-bold">{progressPercent}%</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+              </div>
             </div>
           </div>
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>משימות</div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>{completedTasks}/{totalTasks}</div>
-            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>הושלמו</div>
-          </div>
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>ימים נותרים</div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>{daysRemaining}</div>
-            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>עד סיום</div>
-          </div>
-          <div className="fp-card p-5">
-            <div className="text-sm font-medium mb-2" style={{ color: 'var(--fp-text-tertiary)' }}>נתיב קריטי</div>
-            <div className="text-3xl font-bold" style={{ color: 'var(--fp-critical)' }}>{criticalTasks}</div>
-            <div className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>משימות קריטיות</div>
-          </div>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex gap-2 mb-6">
-          <Button variant={viewMode === 'phases' ? 'default' : 'outline'} onClick={() => setViewMode('phases')}>תצוגת שלבים</Button>
-          <Button variant={viewMode === 'gantt' ? 'default' : 'outline'} onClick={() => setViewMode('gantt')}>Gantt Chart</Button>
         </div>
 
         {/* Content */}
@@ -449,69 +501,83 @@ export default function DashboardPage() {
 
           {/* Task Detail Sidebar */}
           {selectedTask && (
-            <div className="w-96 flex-shrink-0 fp-animate-slide-in">
-              <div className="fp-card fp-card-elevated sticky top-24">
-                <div className="p-5 border-b" style={{ borderColor: 'var(--fp-border-light)' }}>
-                  <div className="flex items-start justify-between">
-                    <h3 className="text-lg font-semibold" style={{ color: 'var(--fp-text-primary)' }}>{selectedTask.title}</h3>
-                    <button
-                      onClick={() => setSelectedTask(null)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fp-bg-tertiary)] transition-colors"
-                      style={{ color: 'var(--fp-text-tertiary)' }}
-                    >
-                      ✕
+            <div className="w-[450px] flex-shrink-0 fp-animate-slide-in sticky top-24 self-start">
+              <div className="bg-surface text-foreground shadow-2xl rounded-2xl overflow-hidden flex flex-col min-h-[600px] border border-slate-200 dark:border-slate-800">
+                <div className="p-8 flex-1">
+                  <div className="flex items-center justify-between mb-8">
+                    <Badge className={cn(
+                      "rounded-full px-4 py-1.5 text-[10px] font-bold border-0 uppercase tracking-widest",
+                      selectedTask.priority === 'critical' ? 'bg-red-500/20 text-red-100' :
+                        selectedTask.priority === 'high' ? 'bg-orange-500/20 text-orange-100' :
+                          'bg-blue-500/20 text-blue-100'
+                    )}>
+                      {selectedTask.priority === 'critical' ? 'עדיפות קריטית' : 'עדיפות רגילה'}
+                    </Badge>
+                    <button onClick={() => setSelectedTask(null)} className="text-slate-400 hover:text-white transition-colors">
+                      <Plus className="w-8 h-8 rotate-45" />
                     </button>
                   </div>
-                  {selectedTask.wbs_number && (
-                    <span className="text-xs font-mono mt-1 inline-block" style={{ color: 'var(--fp-text-tertiary)' }}>
-                      WBS: {selectedTask.wbs_number}
-                    </span>
-                  )}
-                </div>
-                <div className="p-5 space-y-4">
-                  <div className="flex gap-2">
-                    <Badge variant={selectedTask.status === 'done' ? 'success' : selectedTask.status === 'in_progress' ? 'high' : 'secondary'}>
-                      {selectedTask.status === 'done' ? 'הושלם' : selectedTask.status === 'in_progress' ? 'בביצוע' : 'ממתין'}
-                    </Badge>
-                    <Badge variant={selectedTask.priority as 'critical' | 'high' | 'medium' | 'low'}>
-                      {selectedTask.priority === 'critical' ? 'קריטי' : selectedTask.priority === 'high' ? 'גבוה' : selectedTask.priority === 'medium' ? 'בינוני' : 'נמוך'}
-                    </Badge>
-                  </div>
 
-                  {selectedTask.description && (
-                    <div>
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>תיאור</div>
-                      <p className="text-sm" style={{ color: 'var(--fp-text-secondary)' }}>{selectedTask.description}</p>
+                  <h2 className="text-3xl font-black mb-8 leading-tight">{selectedTask.title}</h2>
+
+                  <div className="space-y-6 mb-10">
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">זמן מוערך</div>
+                        <div className="text-sm font-bold">{selectedTask.duration} ימים</div>
+                      </div>
                     </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>משך</div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>{selectedTask.duration} ימים</p>
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">לוח זמנים</div>
+                        <div className="text-sm font-bold">{formatDate(selectedTask.start_date)} - {formatDate(selectedTask.due_date)}</div>
+                      </div>
                     </div>
                     {selectedTask.assignee_id && (
-                      <div>
-                        <div className="text-xs font-medium mb-1" style={{ color: 'var(--fp-text-tertiary)' }}>אחראי</div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>{getTeamMemberName(selectedTask.assignee_id)}</p>
+                      <div className="flex items-center gap-4 text-slate-300">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">אחראי</div>
+                          <div className="text-sm font-bold">{getTeamMemberName(selectedTask.assignee_id)}</div>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {selectedTask.is_critical && (
-                    <div className="p-3 rounded-lg" style={{ background: 'var(--fp-critical-bg)', border: '1px solid var(--fp-critical)' }}>
-                      <div className="flex items-center gap-2">
-                        <span className="fp-status-dot fp-status-dot--error" />
-                        <span className="text-sm font-medium" style={{ color: 'var(--fp-critical)' }}>נתיב קריטי</span>
+                  <div className="mb-8">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">תיאור המשימה</div>
+                    <p className="text-slate-400 leading-relaxed font-medium">
+                      {selectedTask.description || 'אין תיאור זמין למשימה זו.'}
+                    </p>
+                  </div>
+
+                  {/* Critical Path Alert */}
+                  {selectedTask.priority === 'critical' && (
+                    <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4">
+                      <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" />
+                      <div>
+                        <div className="text-sm font-bold text-red-100 mb-1">משימה בנתיב הקריטי</div>
+                        <div className="text-xs text-red-200/60 font-medium leading-relaxed">עיכוב במשימה זו ישפיע ישירות על תאריך סיום הפרויקט.</div>
                       </div>
-                      <p className="text-xs mt-1" style={{ color: 'var(--fp-text-secondary)' }}>איחור במשימה זו ישפיע על תאריך הסיום</p>
                     </div>
                   )}
+                </div>
 
-                  <div className="flex gap-2 pt-4 border-t" style={{ borderColor: 'var(--fp-border-light)' }}>
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditTask(selectedTask)}>עריכה</Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteTask(selectedTask.id)}>מחיקה</Button>
-                  </div>
+                <div className="p-8 bg-slate-800/30 flex gap-4">
+                  <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 h-12 shadow-lg shadow-red-500/20 rounded-xl font-bold" onClick={() => handleDeleteTask(selectedTask.id)}>
+                    מחק משימה
+                  </Button>
+                  <Button className="flex-1 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white border-0 h-12 rounded-xl font-bold" onClick={() => handleEditTask(selectedTask)}>
+                    עריכת משימה
+                  </Button>
                 </div>
               </div>
             </div>
@@ -520,24 +586,46 @@ export default function DashboardPage() {
       </main>
 
       {/* Task Modal */}
-      <Modal isOpen={isTaskModalOpen} onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
-        title={editingTask ? 'עריכת משימה' : 'משימה חדשה'} size="md">
-        <TaskForm mode={editingTask ? 'edit' : 'create'}
-          initialValues={editingTask ? { title: editingTask.title, description: editingTask.description || undefined,
-            priority: editingTask.priority, duration: editingTask.duration,
+      <Modal
+        isOpen={isTaskModalOpen}
+        onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
+        title={editingTask ? 'עריכת משימה' : 'משימה חדשה'}
+        size="md"
+      >
+        <TaskForm
+          mode={editingTask ? 'edit' : 'create'}
+          initialValues={editingTask ? {
+            title: editingTask.title,
+            description: editingTask.description || undefined,
+            priority: editingTask.priority,
+            duration: editingTask.duration,
             estimated_hours: editingTask.estimated_hours || undefined,
-            start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined } : undefined}
+            start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined
+          } : undefined}
           onSubmit={handleTaskFormSubmit}
-          onCancel={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }} />
+          onCancel={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
+        />
       </Modal>
 
       {/* Project Modal */}
-      <Modal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} title="הגדרות פרויקט" size="md">
-        <ProjectForm mode="edit"
-          initialValues={{ name: project.name, description: project.description || undefined, status: project.status,
+      <Modal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        title="הגדרות פרויקט"
+        size="md"
+      >
+        <ProjectForm
+          mode="edit"
+          initialValues={{
+            name: project.name,
+            description: project.description || undefined,
+            status: project.status,
             start_date: project.start_date instanceof Date ? project.start_date.toISOString().split('T')[0] : project.start_date || undefined,
-            end_date: project.end_date instanceof Date ? project.end_date.toISOString().split('T')[0] : project.end_date || undefined }}
-          onSubmit={handleProjectFormSubmit} onCancel={() => setIsProjectModalOpen(false)} />
+            end_date: project.end_date instanceof Date ? project.end_date.toISOString().split('T')[0] : project.end_date || undefined
+          }}
+          onSubmit={handleProjectFormSubmit}
+          onCancel={() => setIsProjectModalOpen(false)}
+        />
       </Modal>
     </div>
   )

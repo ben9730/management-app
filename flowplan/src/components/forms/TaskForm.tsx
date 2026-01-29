@@ -64,17 +64,16 @@ const TaskForm: React.FC<TaskFormProps> = ({
   })
 
   const [errors, setErrors] = React.useState<FormErrors>({})
-  const [touched, setTouched] = React.useState<Record<string, boolean>>({})
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required'
+      newErrors.title = 'כותרת היא שדה חובה'
     }
 
     if (formData.duration < 1) {
-      newErrors.duration = 'Duration must be at least 1'
+      newErrors.duration = 'משך זמן חייב להיות לפחות יום אחד'
     }
 
     setErrors(newErrors)
@@ -92,18 +91,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
       [name]: newValue,
     }))
 
-    // Clear error when field is changed
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
         ...prev,
         [name]: undefined,
       }))
     }
-  }
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name } = e.target
-    setTouched((prev) => ({ ...prev, [name]: true }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -119,11 +112,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
   }
 
-  const handleCancel = (e: React.MouseEvent) => {
-    e.preventDefault()
-    onCancel()
-  }
-
   const isEditMode = mode === 'edit'
 
   return (
@@ -131,193 +119,121 @@ const TaskForm: React.FC<TaskFormProps> = ({
       role="form"
       onSubmit={handleSubmit}
       noValidate
-      className={cn('space-y-4', className)}
+      className={cn('space-y-6', className)}
+      dir="rtl"
     >
       {/* Title */}
-      <div>
-        <label
-          htmlFor="title"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Title *
-        </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          value={formData.title}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={isLoading}
-          required
-          aria-invalid={!!errors.title}
-          aria-describedby={errors.title ? 'title-error' : undefined}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            errors.title && 'border-red-500 focus:ring-red-500',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        />
-        {errors.title && (
-          <div aria-live="polite">
-            <p id="title-error" className="mt-1 text-sm text-red-500">
-              {errors.title}
-            </p>
-          </div>
-        )}
-      </div>
+      <Input
+        label="שם המשימה *"
+        id="title"
+        name="title"
+        value={formData.title}
+        onChange={handleChange}
+        disabled={isLoading}
+        required
+        error={errors.title}
+        fullWidth
+        placeholder="לדוגמה: הכנת תוכנית עבודה"
+        data-testid="task-title-input"
+      />
 
       {/* Description */}
-      <div>
-        <label
-          htmlFor="description"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Description
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          disabled={isLoading}
-          rows={3}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        />
-      </div>
+      <Input
+        label="תיאור המשימה"
+        id="description"
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        disabled={isLoading}
+        multiline
+        rows={3}
+        fullWidth
+        placeholder="הוסף פירוט על המשימה..."
+        data-testid="task-description-input"
+      />
 
-      {/* Priority */}
-      <div>
-        <label
-          htmlFor="priority"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Priority
-        </label>
-        <select
+      <div className="grid grid-cols-2 gap-4">
+        {/* Priority */}
+        <Select
+          label="עדיפות"
           id="priority"
           name="priority"
           value={formData.priority}
+          options={[
+            { value: 'low', label: 'נמוכה' },
+            { value: 'medium', label: 'בינונית' },
+            { value: 'high', label: 'גבוהה' },
+            { value: 'critical', label: 'קריטית' },
+          ]}
           onChange={handleChange}
-          onBlur={handleBlur}
           disabled={isLoading}
-          className={cn(
-            'w-full appearance-none border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
-        >
-          {priorityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+          fullWidth
+          data-testid="task-priority-select"
+        />
 
-      {/* Duration & Estimated Hours - Side by Side */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="duration"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Duration (days)
-          </label>
-          <input
-            id="duration"
-            name="duration"
-            type="number"
-            min={1}
-            value={formData.duration}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isLoading}
-            aria-invalid={!!errors.duration}
-            aria-describedby={errors.duration ? 'duration-error' : undefined}
-            className={cn(
-              'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              errors.duration && 'border-red-500 focus:ring-red-500',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          />
-          {errors.duration && (
-            <div aria-live="polite">
-              <p id="duration-error" className="mt-1 text-sm text-red-500">
-                {errors.duration}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="estimated_hours"
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-          >
-            Estimated Hours
-          </label>
-          <input
-            id="estimated_hours"
-            name="estimated_hours"
-            type="number"
-            min={0}
-            value={formData.estimated_hours || ''}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            disabled={isLoading}
-            className={cn(
-              'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-              isLoading && 'opacity-50 cursor-not-allowed'
-            )}
-          />
-        </div>
-      </div>
-
-      {/* Start Date */}
-      <div>
-        <label
-          htmlFor="start_date"
-          className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
-        >
-          Start Date
-        </label>
-        <input
+        {/* Start Date */}
+        <Input
+          label="תאריך התחלה"
           id="start_date"
           name="start_date"
           type="date"
           value={formData.start_date}
           onChange={handleChange}
-          onBlur={handleBlur}
           disabled={isLoading}
-          className={cn(
-            'w-full border-2 border-black bg-white px-3 py-2 font-medium transition-all',
-            'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2',
-            isLoading && 'opacity-50 cursor-not-allowed'
-          )}
+          fullWidth
+          data-testid="task-start-date-input"
+        />
+      </div>
+
+      {/* Duration & Estimated Hours - Side by Side */}
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="משך זמן (ימים)"
+          id="duration"
+          name="duration"
+          type="number"
+          min={1}
+          value={formData.duration}
+          onChange={handleChange}
+          disabled={isLoading}
+          error={errors.duration}
+          fullWidth
+          data-testid="task-duration-input"
+        />
+
+        <Input
+          label="שעות מוערכות"
+          id="estimated_hours"
+          name="estimated_hours"
+          type="number"
+          min={0}
+          value={formData.estimated_hours || ''}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+          data-testid="task-estimated-hours-input"
         />
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t-2 border-black">
+      <div className="flex justify-end gap-3 pt-6">
         <Button
           type="button"
-          variant="outline"
-          onClick={handleCancel}
+          variant="ghost"
+          onClick={onCancel}
           disabled={isLoading}
+          className="font-bold text-slate-400 hover:text-slate-600"
+          data-testid="task-form-cancel-button"
         >
-          Cancel
+          ביטול
         </Button>
-        <Button type="submit" disabled={isLoading} loading={isLoading}>
-          {isLoading ? 'Saving...' : isEditMode ? 'Update Task' : 'Create Task'}
+        <Button
+          type="submit"
+          disabled={isLoading}
+          loading={isLoading}
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] shadow-purple-200 text-white min-w-[140px]"
+        >
+          {isLoading ? 'שומר...' : isEditMode ? 'עדכן משימה' : 'צור משימה'}
         </Button>
       </div>
     </form>

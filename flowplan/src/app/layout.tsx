@@ -19,107 +19,58 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="he" dir="rtl">
-      <body className={`${dmSans.variable} font-sans antialiased`}>
-        <div className="min-h-screen flex flex-col" style={{ background: 'var(--fp-bg-primary)' }}>
+    <html lang="he" dir="rtl" className="dark">
+      <head>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+      </head>
+      <body
+        className={`${dmSans.variable} font-sans antialiased bg-background text-foreground min-h-screen transition-colors duration-200`}
+        suppressHydrationWarning
+      >
+        <div className="min-h-screen flex flex-col">
           {/* Header */}
-          <header className="sticky top-0 z-40 fp-glass border-b" style={{ borderColor: 'var(--fp-border-light)' }}>
-            <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-              {/* Logo & Brand */}
-              <div className="flex items-center gap-3">
+          <header className="border-b border-slate-200 dark:border-slate-800 bg-surface sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+              {/* Logo & Nav (Right side) */}
+              <div className="flex items-center gap-8">
                 <div className="flex items-center gap-2">
-                  {/* Logo Icon */}
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, var(--fp-brand-primary), var(--fp-brand-secondary))' }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
+                  <div className="bg-primary p-1.5 rounded-lg">
+                    <span className="material-icons text-white text-xl">check_circle</span>
                   </div>
-                  <span className="text-xl font-bold" style={{ color: 'var(--fp-text-primary)' }}>
-                    FlowPlan
+                  <span className="text-xl font-bold tracking-tight text-foreground">
+                    FlowPlan <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded ml-1">BETA</span>
                   </span>
                 </div>
-                <span
-                  className="px-2 py-0.5 text-[10px] font-semibold rounded"
-                  style={{
-                    background: 'var(--fp-status-info-bg)',
-                    color: 'var(--fp-brand-primary)'
-                  }}
-                >
-                  BETA
-                </span>
+                <nav className="hidden md:flex items-center gap-6">
+                  <NavLink href="/">לוח בקרה</NavLink>
+                  <NavLink href="/about">אודות</NavLink>
+                  <NavLink href="#">ממצאים</NavLink>
+                  <NavLink href="#">צוות</NavLink>
+                  <NavLink href="#">פרויקטים</NavLink>
+                </nav>
               </div>
 
-              {/* Navigation */}
-              <nav className="flex items-center gap-1">
-                <NavLink href="/" active>Dashboard</NavLink>
-                <NavLink href="/projects">Projects</NavLink>
-                <NavLink href="/team">Team</NavLink>
-                <NavLink href="/findings">Findings</NavLink>
-              </nav>
-
-              {/* Right Side */}
-              <div className="flex items-center gap-3">
-                {/* Notifications */}
-                <button
-                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--fp-bg-tertiary)]"
-                  style={{ color: 'var(--fp-text-secondary)' }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
+              {/* User Profile (Left side) */}
+              <div className="flex items-center gap-4">
+                <button className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+                  <span className="material-icons">notifications</span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                 </button>
-
-                {/* User Avatar */}
-                <button className="flex items-center gap-2 p-1 pr-3 rounded-lg transition-colors hover:bg-[var(--fp-bg-tertiary)]">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-semibold"
-                    style={{
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: 'white'
-                    }}
-                  >
-                    DC
+                <div className="flex items-center gap-3 pr-4 border-r border-slate-200 dark:border-slate-800">
+                  <div className="text-left leading-tight hidden sm:block">
+                    <p className="text-sm font-semibold text-foreground">דוד כהן</p>
+                    <p className="text-xs text-slate-500">מנהל פרויקט</p>
                   </div>
-                  <span className="text-sm font-medium" style={{ color: 'var(--fp-text-primary)' }}>
-                    David
-                  </span>
-                </button>
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">DC</div>
+                </div>
               </div>
             </div>
           </header>
 
-          {/* Main Content */}
           <main className="flex-1">
             {children}
           </main>
 
-          {/* Footer */}
-          <footer
-            className="border-t py-4"
-            style={{
-              borderColor: 'var(--fp-border-light)',
-              background: 'var(--fp-bg-secondary)'
-            }}
-          >
-            <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
-              <span className="text-sm" style={{ color: 'var(--fp-text-tertiary)' }}>
-                FlowPlan © 2026
-              </span>
-              <div className="flex items-center gap-4">
-                <a href="#" className="text-sm hover:underline" style={{ color: 'var(--fp-text-secondary)' }}>
-                  Documentation
-                </a>
-                <a href="#" className="text-sm hover:underline" style={{ color: 'var(--fp-text-secondary)' }}>
-                  Support
-                </a>
-              </div>
-            </div>
-          </footer>
         </div>
       </body>
     </html>
@@ -127,15 +78,15 @@ export default function RootLayout({
 }
 
 function NavLink({ href, children, active }: { href: string; children: React.ReactNode; active?: boolean }) {
+  if (active) {
+    return (
+      <a className="text-primary font-semibold border-b-2 border-primary py-4 mt-1" href={href}>
+        {children}
+      </a>
+    )
+  }
   return (
-    <a
-      href={href}
-      className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-      style={{
-        background: active ? 'var(--fp-bg-tertiary)' : 'transparent',
-        color: active ? 'var(--fp-text-primary)' : 'var(--fp-text-secondary)'
-      }}
-    >
+    <a href={href} className="text-slate-500 hover:text-primary dark:text-slate-400 transition-colors">
       {children}
     </a>
   )

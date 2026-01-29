@@ -28,7 +28,7 @@ describe('Input', () => {
     })
 
     it('renders with controlled value', () => {
-      render(<Input value="Controlled value" onChange={() => {}} />)
+      render(<Input value="Controlled value" onChange={() => { }} />)
       expect(screen.getByRole('textbox')).toHaveValue('Controlled value')
     })
 
@@ -81,23 +81,26 @@ describe('Input', () => {
 
   // Variants
   describe('variants', () => {
-    it('applies default variant styling', () => {
-      render(<Input />)
-      const input = screen.getByRole('textbox')
+    it('applies default variant styling and high contrast placeholder', () => {
+      render(<Input placeholder="Test Placeholder" />)
+      const input = screen.getByPlaceholderText('Test Placeholder')
       expect(input).toHaveClass('border-2')
-      expect(input).toHaveClass('border-black')
+      expect(input).toHaveClass('border-gray-900')
+      expect(input).toHaveClass('text-gray-900')
+      // We want to ensure the placeholder color is dark enough
+      expect(input).toHaveClass('placeholder:text-gray-500')
     })
 
     it('applies error variant styling', () => {
       render(<Input variant="error" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-red-500')
+      expect(input).toHaveClass('border-[var(--fp-status-error)]')
     })
 
     it('applies success variant styling', () => {
       render(<Input variant="success" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-green-500')
+      expect(input).toHaveClass('border-[var(--fp-status-success)]')
     })
   })
 
@@ -208,13 +211,13 @@ describe('Input', () => {
     it('applies error styling when error is provided', () => {
       render(<Input error="Invalid input" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-red-500')
+      expect(input).toHaveClass('border-[var(--fp-status-error)]')
     })
 
     it('error message has error color', () => {
       render(<Input error="Invalid input" />)
       const errorText = screen.getByText('Invalid input')
-      expect(errorText).toHaveClass('text-red-500')
+      expect(errorText).toHaveClass('text-[var(--fp-status-error)]')
     })
   })
 
@@ -276,7 +279,7 @@ describe('Input', () => {
     })
 
     it('allows focus via ref', () => {
-      const inputRef = { current: null as HTMLInputElement | null }
+      const inputRef = { current: null as HTMLInputElement | HTMLTextAreaElement | null }
       render(<Input ref={(el) => { inputRef.current = el }} />)
 
       inputRef.current?.focus()

@@ -85,6 +85,8 @@ const Modal: React.FC<ModalProps> = ({
     const focusableElements = modal.querySelectorAll<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )
+    if (focusableElements.length === 0) return
+
     const firstElement = focusableElements[0]
     const lastElement = focusableElements[focusableElements.length - 1]
 
@@ -122,7 +124,7 @@ const Modal: React.FC<ModalProps> = ({
     <div
       data-testid="modal-overlay"
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4',
+        'fixed inset-0 z-[100] flex items-center justify-center p-4 fp-modal-backdrop fp-animate-fade-in',
         overlayClassName
       )}
       onClick={handleOverlayClick}
@@ -134,59 +136,50 @@ const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'relative w-full border-2 border-black bg-white shadow-lg',
+          'relative w-full bg-white shadow-2xl rounded-2xl overflow-hidden fp-animate-slide-up',
           sizes[size],
           className
         )}
       >
         {/* Header */}
-        <div className="flex items-start justify-between border-b-2 border-black p-4">
-          <div>
-            {title && (
-              <h2
-                id={titleId}
-                className="text-lg font-bold uppercase tracking-wider text-black"
+        {(title || showCloseButton) && (
+          <div className="flex items-center justify-between p-6 pb-2">
+            <div>
+              {title && (
+                <h2
+                  id={titleId}
+                  className="text-xl font-black text-slate-800 tracking-tight"
+                >
+                  {title}
+                </h2>
+              )}
+              {description && (
+                <p id={descriptionId} className="mt-1 text-sm text-slate-400 font-medium">
+                  {description}
+                </p>
+              )}
+            </div>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close modal"
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p id={descriptionId} className="mt-1 text-sm text-gray-600">
-                {description}
-              </p>
+                <span className="text-2xl leading-none">&times;</span>
+              </button>
             )}
           </div>
-          {showCloseButton && (
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close modal"
-              className="ml-4 p-1 text-black transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black"
-            >
-              <svg
-                className="h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
+        )}
 
         {/* Content */}
-        <div className="p-4">{children}</div>
+        <div className="p-6">{children}</div>
 
         {/* Footer */}
         {footer && (
           <div
             data-testid="modal-footer"
-            className="border-t-2 border-black p-4"
+            className="p-6 pt-2 bg-slate-50/50"
           >
             {footer}
           </div>

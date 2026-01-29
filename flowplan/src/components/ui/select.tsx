@@ -22,9 +22,9 @@ export interface SelectProps
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
   label?: string
-  placeholder?: string
   helperText?: string
   error?: string
+  placeholder?: string
   wrapperClassName?: string
 }
 
@@ -38,11 +38,11 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       size = 'md',
       fullWidth = false,
       label,
-      placeholder,
       helperText,
       error,
-      disabled,
       id,
+      placeholder,
+      disabled,
       ...props
     },
     ref
@@ -50,92 +50,39 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || React.useId()
     const errorId = error ? `${selectId}-error` : undefined
 
-    // Determine effective variant based on error state
-    const effectiveVariant = error ? 'error' : variant
-
     const baseStyles =
-      'w-full appearance-none border-2 bg-white font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 pr-10'
+      'w-full appearance-none border bg-slate-50 text-slate-900 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white pr-10'
 
     const variants = {
-      default: 'border-black focus:ring-black',
-      error: 'border-red-500 focus:ring-red-500',
-      success: 'border-green-500 focus:ring-green-500',
+      default: 'border-slate-200 focus:border-blue-500',
+      error: 'border-red-300 focus:border-red-500 bg-red-50/30',
+      success: 'border-green-300 focus:border-green-500 bg-green-50/30',
     }
 
     const sizes = {
-      sm: 'px-2 py-1 text-sm',
-      md: 'px-3 py-2 text-base',
-      lg: 'px-4 py-3 text-lg',
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2.5 text-base',
+      lg: 'px-5 py-3.5 text-lg',
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-gray-100'
+      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400'
       : 'cursor-pointer'
 
-    // Group options by their group property
-    const groupedOptions = options.reduce<Record<string, SelectOption[]>>(
-      (acc, option) => {
-        const group = option.group || '__ungrouped__'
-        if (!acc[group]) {
-          acc[group] = []
-        }
-        acc[group].push(option)
-        return acc
-      },
-      {}
-    )
-
-    const hasGroups = Object.keys(groupedOptions).some(
-      (key) => key !== '__ungrouped__'
-    )
-
-    const renderOptions = () => {
-      if (hasGroups) {
-        return Object.entries(groupedOptions).map(([group, groupOptions]) => {
-          if (group === '__ungrouped__') {
-            return groupOptions.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </option>
-            ))
-          }
-          return (
-            <optgroup key={group} label={group}>
-              {groupOptions.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                  disabled={option.disabled}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </optgroup>
-          )
-        })
-      }
-
-      return options.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-          disabled={option.disabled}
-        >
-          {option.label}
-        </option>
-      ))
-    }
+    // Group options if needed
+    const groupedOptions = options.reduce((acc, option) => {
+      const group = option.group || 'default'
+      if (!acc[group]) acc[group] = []
+      acc[group].push(option)
+      return acc
+    }, {} as Record<string, SelectOption[]>)
 
     return (
       <div className={cn(fullWidth && 'w-full', wrapperClassName)}>
         {label && (
           <label
             htmlFor={selectId}
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
+            className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500"
           >
             {label}
           </label>
@@ -149,7 +96,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             aria-describedby={errorId}
             className={cn(
               baseStyles,
-              variants[effectiveVariant],
+              variants[error ? 'error' : variant],
               sizes[size],
               disabledStyles,
               className
@@ -161,14 +108,35 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 {placeholder}
               </option>
             )}
-            {renderOptions()}
+            {Object.entries(groupedOptions).map(([group, groupOptions]) =>
+              group === 'default' ? (
+                groupOptions.map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                    disabled={option.disabled}
+                  >
+                    {option.label}
+                  </option>
+                ))
+              ) : (
+                <optgroup key={group} label={group}>
+                  {groupOptions.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.disabled}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+              )
+            )}
           </select>
-          <div
-            data-testid="select-chevron"
-            className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"
-          >
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5" data-testid="select-chevron">
             <svg
-              className="h-4 w-4 text-black"
+              className="h-4 w-4 text-slate-400"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -182,12 +150,14 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </div>
         </div>
         {error && (
-          <p id={errorId} className="mt-1 text-sm text-red-500">
-            {error}
-          </p>
+          <div aria-live="polite">
+            <p id={errorId} className="mt-1.5 text-xs text-red-500 font-bold">
+              {error}
+            </p>
+          </div>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-1.5 text-xs text-slate-400 font-medium">{helperText}</p>
         )}
       </div>
     )

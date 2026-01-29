@@ -8,6 +8,7 @@
 import * as React from 'react'
 import { cn, formatDateDisplay, parseDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { Check, Calendar, User, Zap, Circle, Target } from 'lucide-react'
 import type { Task, TeamMember } from '@/types/entities'
 
 export interface TaskCardProps {
@@ -77,146 +78,83 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
       }
     }
 
-    const overdue = isOverdue(task.due_date)
-
     return (
-      <article
+      <div
         ref={ref}
         data-testid="task-card"
-        role="article"
-        aria-label={`Task: ${task.title}`}
         className={cn(
-          'border-2 border-black bg-white p-3 cursor-pointer transition-all hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]',
-          isCriticalPath && 'border-red-500 border-l-4',
+          'p-4 flex items-center gap-4 group hover:bg-surface/50 transition-colors cursor-pointer',
+          isCriticalPath && 'border-r-4 border-emerald-500',
           className
         )}
         onClick={handleCardClick}
       >
-        <div className="flex items-start gap-3">
-          {/* Critical Path Indicator */}
-          <span
-            data-testid="critical-path-indicator"
-            className={cn(
-              'text-lg font-bold leading-none mt-0.5',
-              isCriticalPath ? 'text-red-600' : 'text-gray-400'
+        {/* Assignee Avatar (Right side) */}
+        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0">
+          {assignee ? getInitials(assignee.first_name, assignee.last_name) : '?'}
+        </div>
+
+        {/* Title & Info (Middle) */}
+        <div className="flex-grow min-w-0">
+          <div className="flex items-center gap-2">
+            {task.wbs_number && (
+              <span className="text-slate-400 text-xs font-medium">{task.wbs_number}</span>
             )}
-          >
-            {isCriticalPath ? '■' : '□'}
-          </span>
-
-          <div className="flex-1 min-w-0">
-            {/* Header Row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Task Type Icon */}
-              <span
-                data-testid="task-type-icon"
-                data-type={task.task_type}
-                className="text-sm"
-              >
-                {task.task_type === 'milestone' ? '◆' : '●'}
-              </span>
-
-              {/* WBS Number */}
-              {task.wbs_number && (
-                <span className="text-xs font-mono text-gray-500">
-                  {task.wbs_number}
-                </span>
-              )}
-
-              {/* Priority Badge */}
-              <Badge variant={priorityVariantMap[task.priority]}>
-                {task.priority.toUpperCase()}
-              </Badge>
-
-              {/* Status Badge */}
-              <Badge variant="secondary">
-                {statusDisplayMap[task.status]}
-              </Badge>
-            </div>
-
-            {/* Title */}
-            <h3 className="font-bold text-base mt-1 truncate">
+            <h4 className={cn(
+              "font-semibold text-foreground truncate",
+              task.status === 'done' && "text-slate-400 line-through"
+            )}>
               {task.title}
-            </h3>
-
-            {/* Description (only in non-compact mode) */}
-            {!compact && task.description && (
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                {task.description}
-              </p>
-            )}
-
-            {/* Meta Row */}
-            <div className="flex items-center gap-4 mt-2 text-sm">
-              {/* Due Date */}
-              {task.due_date ? (
-                <span
-                  data-testid="due-date"
-                  className={cn(overdue && 'text-red-600 font-bold')}
-                >
-                  {formatDateDisplay(task.due_date)}
-                </span>
-              ) : (
-                <span data-testid="due-date" className="text-gray-400">
-                  No due date
-                </span>
-              )}
-
-              {/* Slack */}
-              {slack !== undefined && (
-                <span className="text-gray-500">
-                  {slack} {slack === 1 ? 'day' : 'days'} slack
-                </span>
-              )}
-
-              {/* Assignee */}
-              {assignee ? (
-                <div className="flex items-center gap-1">
-                  <span className="w-6 h-6 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center">
-                    {getInitials(assignee.first_name, assignee.last_name)}
-                  </span>
-                  <span>{assignee.first_name} {assignee.last_name}</span>
-                </div>
-              ) : (
-                <span className="text-gray-400">Unassigned</span>
-              )}
-            </div>
-
-            {/* Progress Bar */}
-            {showProgress && (
-              <div className="mt-2">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span>Progress</span>
-                  <span>{task.progress_percent}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 border border-black">
-                  <div
-                    data-testid="progress-bar"
-                    className="h-full bg-black"
-                    style={{ width: `${task.progress_percent}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            </h4>
           </div>
-
-          {/* Status Checkbox */}
-          {onStatusChange && (
-            <button
-              data-testid="status-checkbox"
-              aria-label={`Mark task ${task.status === 'done' ? 'incomplete' : 'complete'}`}
-              onClick={handleStatusToggle}
-              className={cn(
-                'w-6 h-6 border-2 border-black flex items-center justify-center',
-                'hover:bg-gray-100 transition-colors',
-                task.status === 'done' && 'bg-black text-white'
-              )}
-            >
-              {task.status === 'done' && '✓'}
-            </button>
+          {task.description && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md">{task.description}</p>
           )}
         </div>
-      </article>
+
+        {/* Meta Info (Left side) */}
+        <div className="flex items-center gap-6">
+          <div className="hidden md:block text-slate-500 dark:text-slate-400 text-sm">
+            {formatDateDisplay(task.due_date || task.end_date)}
+          </div>
+
+          {/* Status Badge */}
+          <span className={cn(
+            "px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap",
+            task.status === 'done' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+              task.status === 'in_progress' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+          )}>
+            {task.status === 'done' ? 'הושלם' : task.status === 'in_progress' ? 'בתהליך' : 'ממתין'}
+          </span>
+
+          {/* Priority Badge */}
+          <span className={cn(
+            "px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap",
+            task.priority === 'critical' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' :
+              task.priority === 'high' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+          )}>
+            {task.priority.toUpperCase()}
+          </span>
+
+          {/* Checkbox */}
+          <button
+            data-testid="status-checkbox"
+            onClick={handleStatusToggle}
+            className={cn(
+              "w-6 h-6 border-2 rounded flex items-center justify-center transition-all",
+              task.status === 'done'
+                ? "border-emerald-500 bg-emerald-50 text-emerald-500 dark:bg-emerald-900/20"
+                : "border-slate-300 dark:border-slate-600 bg-transparent"
+            )}
+          >
+            {task.status === 'done' && (
+              <span className="material-icons text-xs">check</span>
+            )}
+          </button>
+        </div>
+      </div>
     )
   }
 )

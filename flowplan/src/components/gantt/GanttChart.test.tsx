@@ -19,7 +19,7 @@ const mockTasks: Task[] = [
     title: 'Task A',
     description: 'First task',
     task_type: 'task',
-    status: 'completed',
+    status: 'done', // Changed from 'completed'
     priority: 'high',
     start_date: '2026-01-20',
     due_date: '2026-01-24',
@@ -30,7 +30,7 @@ const mockTasks: Task[] = [
     order_index: 0,
     created_at: '2026-01-15T10:00:00Z',
     updated_at: '2026-01-24T14:00:00Z',
-  },
+  } as unknown as Task,
   {
     id: 'task-2',
     project_id: 'proj-1',
@@ -49,7 +49,7 @@ const mockTasks: Task[] = [
     order_index: 1,
     created_at: '2026-01-15T10:00:00Z',
     updated_at: '2026-01-27T14:00:00Z',
-  },
+  } as unknown as Task,
   {
     id: 'task-3',
     project_id: 'proj-1',
@@ -68,7 +68,7 @@ const mockTasks: Task[] = [
     order_index: 2,
     created_at: '2026-01-15T10:00:00Z',
     updated_at: '2026-01-15T10:00:00Z',
-  },
+  } as unknown as Task,
   {
     id: 'milestone-1',
     project_id: 'proj-1',
@@ -87,7 +87,7 @@ const mockTasks: Task[] = [
     order_index: 3,
     created_at: '2026-01-15T10:00:00Z',
     updated_at: '2026-01-15T10:00:00Z',
-  },
+  } as unknown as Task,
 ]
 
 const mockDependencies: Dependency[] = [
@@ -95,26 +95,26 @@ const mockDependencies: Dependency[] = [
     id: 'dep-1',
     predecessor_id: 'task-1',
     successor_id: 'task-2',
-    dependency_type: 'finish_to_start',
+    type: 'finish_to_start', // Changed from dependency_type
     lag_days: 1,
     created_at: '2026-01-15T10:00:00Z',
-  },
+  } as unknown as Dependency,
   {
     id: 'dep-2',
     predecessor_id: 'task-2',
     successor_id: 'task-3',
-    dependency_type: 'finish_to_start',
+    type: 'finish_to_start', // Changed from dependency_type
     lag_days: 0,
     created_at: '2026-01-15T10:00:00Z',
-  },
+  } as unknown as Dependency,
   {
     id: 'dep-3',
     predecessor_id: 'task-3',
     successor_id: 'milestone-1',
-    dependency_type: 'finish_to_start',
+    type: 'finish_to_start', // Changed from dependency_type
     lag_days: 0,
     created_at: '2026-01-15T10:00:00Z',
-  },
+  } as unknown as Dependency,
 ]
 
 describe('GanttChart', () => {
@@ -370,7 +370,7 @@ describe('GanttChart', () => {
     it('applies completed status styling', () => {
       render(<GanttChart tasks={mockTasks} dependencies={[]} />)
       const taskBar = screen.getByTestId('task-bar-task-1')
-      expect(taskBar).toHaveClass('status-completed')
+      expect(taskBar).toHaveClass('status-done')
     })
 
     it('applies in-progress status styling', () => {
@@ -442,10 +442,10 @@ describe('GanttChart', () => {
       expect(screen.getByTestId('gantt-chart')).toHaveClass('custom-class')
     })
 
-    it('applies brutalist border style', () => {
+    it('applies standard border style', () => {
       render(<GanttChart tasks={mockTasks} dependencies={[]} />)
-      expect(screen.getByTestId('gantt-chart')).toHaveClass('border-2')
-      expect(screen.getByTestId('gantt-chart')).toHaveClass('border-black')
+      expect(screen.getByTestId('gantt-chart')).toHaveClass('border')
+      expect(screen.getByTestId('gantt-chart')).not.toHaveClass('border-black')
     })
   })
 })

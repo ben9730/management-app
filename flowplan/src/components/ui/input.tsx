@@ -9,7 +9,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, 'size'> {
   variant?: 'default' | 'error' | 'success'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
@@ -19,9 +19,11 @@ export interface InputProps
   leftIcon?: React.ReactNode
   rightIcon?: React.ReactNode
   wrapperClassName?: string
+  multiline?: boolean
+  rows?: number
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
+const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
   (
     {
       className,
@@ -37,6 +39,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       type = 'text',
       disabled,
       id,
+      multiline = false,
+      rows = 3,
       ...props
     },
     ref
@@ -44,34 +48,40 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || React.useId()
     const errorId = error ? `${inputId}-error` : undefined
 
-    // Determine effective variant based on error state
-    const effectiveVariant = error ? 'error' : variant
-
     const baseStyles =
-      'w-full border-2 bg-white font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2'
+      'w-full border bg-slate-50 text-slate-900 rounded-xl transition-all duration-200 placeholder:text-slate-400 placeholder:font-medium font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white'
 
     const variants = {
-      default:
-        'border-black focus:ring-black placeholder:text-gray-400',
-      error:
-        'border-red-500 focus:ring-red-500 placeholder:text-gray-400',
-      success:
-        'border-green-500 focus:ring-green-500 placeholder:text-gray-400',
+      default: 'border-slate-200 focus:border-blue-500',
+      error: 'border-red-300 focus:border-red-500 bg-red-50/30',
+      success: 'border-green-300 focus:border-green-500 bg-green-50/30',
     }
 
     const sizes = {
-      sm: 'px-2 py-1 text-sm',
-      md: 'px-3 py-2 text-base',
-      lg: 'px-4 py-3 text-lg',
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2.5 text-base',
+      lg: 'px-5 py-4 text-lg',
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-gray-100'
+      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400'
       : ''
 
-    const iconPadding = {
-      left: leftIcon ? 'pl-10' : '',
-      right: rightIcon ? 'pr-10' : '',
+    const commonProps = {
+      id: inputId,
+      disabled,
+      'aria-invalid': error ? ('true' as const) : undefined,
+      'aria-describedby': errorId,
+      className: cn(
+        baseStyles,
+        variants[error ? 'error' : variant],
+        sizes[size],
+        disabledStyles,
+        leftIcon && !multiline && 'pl-10',
+        rightIcon && !multiline && 'pr-10',
+        className
+      ),
+      ...props,
     }
 
     return (
@@ -79,48 +89,45 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1 block text-sm font-bold uppercase tracking-wider text-black"
+            className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500"
           >
             {label}
           </label>
         )}
         <div className="relative">
-          {leftIcon && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          {leftIcon && !multiline && (
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               {leftIcon}
             </div>
           )}
-          <input
-            ref={ref}
-            id={inputId}
-            type={type}
-            disabled={disabled}
-            aria-invalid={error ? 'true' : undefined}
-            aria-describedby={errorId}
-            className={cn(
-              baseStyles,
-              variants[effectiveVariant],
-              sizes[size],
-              disabledStyles,
-              iconPadding.left,
-              iconPadding.right,
-              className
-            )}
-            {...props}
-          />
-          {rightIcon && (
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          {multiline ? (
+            <textarea
+              ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+              rows={rows}
+              {...(commonProps as any)}
+            />
+          ) : (
+            <input
+              ref={ref as React.ForwardedRef<HTMLInputElement>}
+              type={type}
+              {...commonProps}
+            />
+          )}
+          {rightIcon && !multiline && (
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
               {rightIcon}
             </div>
           )}
         </div>
         {error && (
-          <p id={errorId} className="mt-1 text-sm text-red-500">
-            {error}
-          </p>
+          <div aria-live="polite">
+            <p id={errorId} className="mt-1.5 text-xs text-red-500 font-bold">
+              {error}
+            </p>
+          </div>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-1.5 text-xs text-slate-400 font-medium">{helperText}</p>
         )}
       </div>
     )

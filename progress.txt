@@ -1,610 +1,82 @@
 # FlowPlan - Progress Report
 ## AI-Native Audit Management System
 
-Last Updated: 2026-01-28 07:25 (Session 7 - Israel Time)
+Last Updated: 2026-01-29 11:05 (Israel Time)
+
+## 🔄 SESSION 15: Pixel-Perfect UI Redesign (FlowPlan Premium) 🏗️
+
+### Objective
+Upgrade the application UI to a professional, pixel-perfect design matching the "FlowPlan" brand identity provided in the design prompt and images.
+
+### Planned Changes
+1.  **Theme & Tokens**:
+    *   Primary background: #F8FAFC.
+    *   Typography: 'Assistant' (RTL).
+    *   Border Radius: 12px.
+    *   Shadows: Soft/Subtle.
+2.  **Dashboard Layout**:
+    *   White Header with "FlowPlan BETA" logo.
+    *   KPI Cards (Critical Path, Remaining Days, Task Completion, Progress %).
+    *   Accordion-style Task Groups (Stages).
+    *   Refined Task Rows.
+3.  **Modals**:
+    *   Light theme for Task Creation (Purple primary button #8B5CF6).
+    *   Dark theme for Task Details (#1E293B background).
+
+### Status: COMPLETED ✅
+- [x] Updated `globals.css` with new design tokens (Assistant font, slate theme).
+- [x] Redesigned Dashboard Header and Hero Area (FlowPlan Logo, 4 KPI cards).
+- [x] Updated Task Groups (Accordion) and Rows (Pill badges, clean borders).
+- [x] Refactored Modals (Light Task Form, Dark Navy Details Sidebar).
+- [x] Verified via TDD (All 6 design-upgrade tests passed).
+
+## 🔄 SESSION 16: About Page & Personal Branding 🧑‍💻
+### Objective
+Create a professional "About" page for Ben Gutman using personal assets.
+
+### Changes
+- [x] Created `/about` page with "Modern SaaS" dark aesthetic.
+- [x] Integrated personal photo and International Center of AI internship logo.
+- [x] Bilingual summary (Hebrew/English) initially, then refined to English-only professional summary.
+- [x] Enlarged internship logo and centered professional bio.
+- [x] Added navigation link in the main header.
+
+## 🔄 SESSION 17: Dark Mode Architecture & Stability 🌙
+### Objective
+Enforce Dark Mode as the primary and only theme for a consistent high-end feel.
+
+### Changes
+- [x] Set `className="dark"` on `<html>` tag as the global default.
+- [x] Removed `ThemeToggle` component to lock the UI in dark mode.
+- [x] Added `suppressHydrationWarning` to `<body>` to prevent extension-related mismatch errors.
+- [x] Verified dark-only environment via TDD.
 
 ---
 
-## ✅ COMPLETED TASKS
-
-### 1. Project Setup
-- [x] Next.js 15 project with TypeScript
-- [x] Tailwind CSS configuration
-- [x] Vitest + React Testing Library setup
-- [x] Path aliases (@/ mapping)
-
-### 2. Core Types (types/entities.ts)
-- [x] Project, Task, Dependency types
-- [x] AuditFinding, CalendarException types
-- [x] TeamMember, EmployeeTimeOff types
-- [x] ProjectPhase, TaskAssignment types
-- [x] Scheduling result types (SchedulingResult, WorkingDayConfig, ResourceAvailability)
-
-### 3. Scheduling Service (TDD - 38 tests)
-- [x] Israeli calendar support (Sun-Thu workweek)
-- [x] Working day calculations (isWorkingDay, addWorkingDays, subtractWorkingDays)
-- [x] CPM Forward Pass (ES/EF calculation)
-- [x] CPM Backward Pass (LS/LF calculation)
-- [x] Slack/Float calculation
-- [x] Critical path identification
-- [x] Resource-aware scheduling (employee time off, part-time workers)
-- [x] Topological sort for task dependencies
-
-### 4. Database Schema (Supabase migrations)
-- [x] 9 tables defined with indexes
-- [x] Row Level Security (RLS) policies
-- [x] Triggers for updated_at timestamps
-- [x] Phase task count update triggers
-
-### 5. Utility Functions (TDD - 41 tests)
-- [x] cn() - Class name merging
-- [x] Date formatting (ISO, Display, Hebrew)
-- [x] Hebrew day names
-- [x] Color helpers for priorities/statuses
-- [x] Debounce function
-- [x] Percentage calculation
-
-### 6. UI Components (TDD)
-
-#### Button Component (16 tests)
-- [x] Variants: default, secondary, destructive, outline, ghost
-- [x] Sizes: sm, md, lg
-- [x] Loading state with spinner
-- [x] asChild support with Slot
-- [x] Full width option
-- [x] Disabled state
-
-#### Card Component
-- [x] Card, CardHeader, CardTitle, CardDescription
-- [x] CardContent, CardFooter
-- [x] Brutalist design style
-
-#### Badge Component
-- [x] Variants: critical, high, medium, low, success, secondary
-
-#### TaskCard Component (41 tests)
-- [x] Task title, WBS number display
-- [x] Priority badge (CRITICAL, HIGH, MEDIUM, LOW)
-- [x] Critical path indicator (■/□)
-- [x] Slack value display
-- [x] Assignee avatar and name
-- [x] Due date with overdue styling
-- [x] Progress bar
-- [x] Status display
-- [x] Click and status change interactions
-- [x] Milestone vs task type icons
-- [x] Compact mode
-- [x] Accessibility (ARIA roles, labels)
-
-#### PhaseSection Component (36 tests)
-- [x] Phase name, description display
-- [x] Progress bar with percentage
-- [x] Status badges (Pending, Active, Completed)
-- [x] Date range display
-- [x] Collapsible behavior
-- [x] Task list rendering
-- [x] Critical path task highlighting
-- [x] Slack values display
-- [x] Assignee display
-- [x] Empty state
-- [x] Add task button
-- [x] Accessibility
-
-#### GanttChart Component (38 tests)
-- [x] Timeline header with months and days
-- [x] Task bars with correct width and position
-- [x] Progress fill inside task bars
-- [x] Milestone diamond markers
-- [x] Critical path highlighting
-- [x] Dependency arrows (SVG)
-- [x] Today marker line
-- [x] Zoom controls (+/-)
-- [x] View modes (day, week, month)
-- [x] Status-based coloring
-- [x] Task tooltips on hover
-- [x] Scroll to today
-- [x] Click interactions
-- [x] Keyboard accessibility
-
-#### Input Component (43 tests)
-- [x] Multiple input types (text, password, email, number, search, date)
-- [x] Variants: default, error, success
-- [x] Sizes: sm, md, lg
-- [x] Label and helper text
-- [x] Error messages with styling
-- [x] Left/right icons with padding
-- [x] Disabled and readonly states
-- [x] Full width option
-- [x] Ref forwarding
-- [x] Accessibility (aria-invalid, aria-describedby)
-
-#### Select Component (37 tests)
-- [x] Options rendering
-- [x] Placeholder support
-- [x] Option groups (optgroup)
-- [x] Disabled options
-- [x] Variants: default, error, success
-- [x] Sizes: sm, md, lg
-- [x] Label and helper text
-- [x] Error messages with styling
-- [x] Chevron icon
-- [x] Disabled state
-- [x] Full width option
-- [x] Ref forwarding
-- [x] Accessibility
-
-#### Modal Component (30 tests)
-- [x] Open/close states
-- [x] Title and description
-- [x] Close button (optional)
-- [x] Overlay click to close (optional)
-- [x] Escape key to close (optional)
-- [x] Footer slot
-- [x] Sizes: sm, md, lg, xl, full
-- [x] Brutalist border styling
-- [x] Focus trap
-- [x] Portal rendering
-- [x] Accessibility (dialog role, aria-modal, aria-labelledby)
-
-#### TaskForm Component (38 tests)
-- [x] Title, description inputs
-- [x] Priority select (low, medium, high, critical)
-- [x] Duration and estimated hours
-- [x] Start date picker
-- [x] Create/Edit modes
-- [x] Form validation (required title, min duration)
-- [x] Error messages with aria-live
-- [x] Loading state
-- [x] Cancel and submit actions
-- [x] Accessibility
-
-#### ProjectForm Component (38 tests)
-- [x] Project name, description inputs
-- [x] Status select (active, completed, archived)
-- [x] Start date and end date pickers
-- [x] Date range validation (end after start)
-- [x] Create/Edit modes
-- [x] Form validation
-- [x] Error messages with aria-live
-- [x] Loading state
-- [x] Accessibility
-
-#### TeamMemberForm Component (41 tests)
-- [x] Name, email inputs with validation
-- [x] Role select (admin, member)
-- [x] Employment type (full_time, part_time, contractor)
-- [x] Work hours per day
-- [x] Hourly rate (optional)
-- [x] Work days checkboxes (Israeli default: Sun-Thu)
-- [x] Email format validation
-- [x] At least one work day validation
-- [x] Create/Edit modes
-- [x] Loading state
-- [x] Accessibility
-
-### 7. Dashboard Page
-- [x] Layout with header and navigation
-- [x] Project header with status badge
-- [x] Stats cards (Progress, Tasks, Days Remaining, Critical Tasks)
-- [x] View toggle (Phases / Gantt)
-- [x] Phase sections with tasks
-- [x] Gantt chart view
-- [x] Task detail sidebar
-- [x] Demo data for showcase
-
-### 8. Service Layer (TDD)
-
-#### Projects Service (21 tests)
-- [x] createProject with validation
-- [x] getProject by ID
-- [x] getProjects with filters (status, owner)
-- [x] updateProject with timestamp
-- [x] deleteProject
-- [x] Default values (Israeli workweek, ILS currency)
-- [x] Validation (name, organization_id, working_days, budget)
-
-#### Tasks Service (28 tests)
-- [x] createTask with validation
-- [x] getTask by ID
-- [x] getTasks with filters (phase, status, priority, type)
-- [x] updateTask with timestamp
-- [x] deleteTask
-- [x] reorderTasks for drag-and-drop
-- [x] Validation (title, project_id, progress, estimated_hours)
-
-#### Dependencies Service (22 tests)
-- [x] createDependency with validation
-- [x] getDependency by ID
-- [x] getDependencies for project
-- [x] getDependenciesForTask (predecessor/successor)
-- [x] updateDependency
-- [x] deleteDependency
-- [x] Validation (predecessor/successor different, valid type)
-
-#### Team Members Service (25 tests)
-- [x] createTeamMember with validation
-- [x] getTeamMember by ID
-- [x] getTeamMembers with filters (active, role)
-- [x] getTeamMembersByProject
-- [x] updateTeamMember with timestamp
-- [x] deleteTeamMember
-- [x] Validation (email format, hourly_rate, capacity)
-
-#### Phases Service (22 tests) - NEW
-- [x] createPhase with validation
-- [x] getPhase by ID
-- [x] getPhases for project (ordered by phase_order)
-- [x] updatePhase (name, status, dates)
-- [x] deletePhase
-- [x] reorderPhases for drag-and-drop
-- [x] Validation (project_id, name, phase_order, date range)
-
-#### Time Off Service (19 tests) - NEW
-- [x] createTimeOff with validation
-- [x] getTimeOff by ID
-- [x] getTimeOffs with date range filter
-- [x] getTimeOffsByUser with filters
-- [x] updateTimeOff (dates, status)
-- [x] deleteTimeOff
-- [x] Validation (user_id, dates, type, status)
-
-#### Audit Findings Service (19 tests) - NEW
-- [x] createAuditFinding with validation
-- [x] getAuditFinding by ID
-- [x] getAuditFindings for project (via tasks)
-- [x] getAuditFindingsByTask
-- [x] updateAuditFinding (severity, status, root_cause, capa)
-- [x] deleteAuditFinding
-- [x] Validation (task_id, finding, severity, status)
-
-### 9. React Query Hooks (TDD)
-
-#### useProjects Hook (13 tests)
-- [x] useProjects - fetch projects list with filters
-- [x] useProject - fetch single project by ID
-- [x] useCreateProject - create with cache invalidation
-- [x] useUpdateProject - update with cache sync
-- [x] useDeleteProject - delete with cache cleanup
-
-#### useTasks Hook (11 tests)
-- [x] useTasks - fetch tasks list with filters
-- [x] useTask - fetch single task by ID
-- [x] useCreateTask - create with cache invalidation
-- [x] useUpdateTask - update with cache sync
-- [x] useDeleteTask - delete with cache cleanup
-
-#### useDependencies Hook (17 tests) - NEW
-- [x] useDependencies - fetch all dependencies for project
-- [x] useDependency - fetch single dependency by ID
-- [x] useDependenciesForTask - fetch dependencies for specific task
-- [x] useCreateDependency - create with cache invalidation
-- [x] useUpdateDependency - update with cache sync
-- [x] useDeleteDependency - delete with cache cleanup
-
-#### useTeamMembers Hook (20 tests) - NEW
-- [x] useTeamMembers - fetch members for organization
-- [x] useTeamMember - fetch single member by ID
-- [x] useTeamMembersByProject - fetch members assigned to project
-- [x] useCreateTeamMember - create with cache invalidation
-- [x] useUpdateTeamMember - update with cache sync
-- [x] useDeleteTeamMember - delete with cache cleanup
-
-#### usePhases Hook (18 tests) - NEW
-- [x] usePhases - fetch phases for project
-- [x] usePhase - fetch single phase by ID
-- [x] useCreatePhase - create with cache invalidation
-- [x] useUpdatePhase - update with cache sync
-- [x] useDeletePhase - delete with cache cleanup
-- [x] useReorderPhases - reorder phases with cache refresh
-
-#### useTimeOff Hook (18 tests) - NEW
-- [x] useTimeOffs - fetch time offs with date filter
-- [x] useTimeOff - fetch single time off by ID
-- [x] useTimeOffsByUser - fetch time offs for specific user
-- [x] useCreateTimeOff - create with cache invalidation
-- [x] useUpdateTimeOff - update with cache sync
-- [x] useDeleteTimeOff - delete with cache cleanup
-
-#### useAuditFindings Hook (18 tests) - NEW
-- [x] useAuditFindings - fetch findings for project
-- [x] useAuditFinding - fetch single finding by ID
-- [x] useAuditFindingsByTask - fetch findings for specific task
-- [x] useCreateAuditFinding - create with cache invalidation
-- [x] useUpdateAuditFinding - update with cache sync
-- [x] useDeleteAuditFinding - delete with cache cleanup
-
-### 10. CRDT + Offline (Phase 5 - IN PROGRESS)
-
-#### Offline Storage Service (19 tests) - NEW
-- [x] IndexedDB-based offline storage with fallback in-memory implementation
-- [x] Document storage (save, load, delete, loadAll)
-- [x] Sync queue for offline operations (queueOperation, getPendingOperations, removeOperation)
-- [x] Queue management (getQueueCount, clearQueue)
-- [x] Metadata storage (setMetadata, getMetadata)
-- [x] Document versioning (setDocumentVersion, getDocumentVersion)
-- [x] Online/offline status tracking
-- [x] Storage management (clearAll, estimateStorageSize, close)
-- [x] Conflict detection (detectConflicts)
-- [x] Conflict resolution (resolveConflicts with last-write-wins / first-write-wins strategies)
-
-#### Sync Service with Yjs (42 tests) - UPDATED
-- [x] Yjs document with WebSocket provider
-- [x] Document maps for tasks, projects, team members, audit findings
-- [x] Undo/Redo manager with UndoManager
-- [x] Snapshot creation and restoration
-- [x] Awareness state for multi-user presence (cursor, name, color)
-- [x] Connection status tracking (connected, syncing, pendingChanges)
-- [x] Status change subscriptions
-- [x] Document change subscriptions
-- [x] Transaction support for atomic operations
-- [x] y-indexeddb persistence provider integration
-- [x] Persistence status tracking (enabled, synced, name)
-- [x] waitForPersistence() for sync readiness
-- [x] clearPersistence() for data cleanup
-- [x] Persistence provider cleanup on disconnect
-
-#### Sync React Hooks (12 tests) - NEW
-- [x] SyncProvider - context provider for sync services
-- [x] useSyncContext - access sync service and offline storage
-- [x] useSyncStatus - subscribe to sync status (connected, syncing, pendingChanges, lastSyncTime)
-- [x] useSyncDocument - document operations (setTask, deleteTask, transaction, undo, redo)
-- [x] useOfflineStatus - offline status (isOnline, queueCount, forceSync)
-- [x] useAwareness - multi-user presence (states, setLocalState, localState)
-- [x] Browser online/offline event handling
-
-#### OfflineSyncStatus Component (25 tests) - NEW
-- [x] Online/Offline status indicator with color coding (green/red/yellow)
-- [x] Connection states: Online, Offline, Syncing, Connecting
-- [x] Pending changes count display
-- [x] Queue count for offline operations
-- [x] Sync button for manual sync with disabled states
-- [x] Last sync time display with relative formatting
-- [x] WebSocket connected/disconnected indicator
-- [x] Error message display
-- [x] Compact mode for minimal UI
-- [x] Accessibility (aria-labels, button labels)
-
-#### Offline Integration Tests (18 tests) - NEW
-- [x] Offline data persistence (local storage while offline)
-- [x] Operation queuing when offline
-- [x] Data preservation across sync service recreation
-- [x] Separation of offline storage from CRDT document
-- [x] Sync recovery after connectivity restored
-- [x] Multiple operations processing in order
-- [x] Delete operations during recovery
-- [x] Sync status change tracking
-- [x] Conflict detection between local and remote operations
-- [x] Last-write-wins conflict resolution strategy
-- [x] First-write-wins conflict resolution strategy
-- [x] CRDT automatic conflict resolution
-- [x] Undo/Redo history preservation
-- [x] Edge cases (empty queue, rapid transitions, large batches)
-
----
-
-## 📊 TEST SUMMARY
-
-| File | Tests | Status |
-|------|-------|--------|
-| scheduling.test.ts | 38 | ✅ Pass |
-| utils.test.ts | 41 | ✅ Pass |
-| button.test.tsx | 16 | ✅ Pass |
-| TaskCard.test.tsx | 39 | ✅ Pass |
-| PhaseSection.test.tsx | 36 | ✅ Pass |
-| GanttChart.test.tsx | 38 | ✅ Pass |
-| input.test.tsx | 43 | ✅ Pass |
-| select.test.tsx | 37 | ✅ Pass |
-| modal.test.tsx | 30 | ✅ Pass |
-| TaskForm.test.tsx | 38 | ✅ Pass |
-| ProjectForm.test.tsx | 38 | ✅ Pass |
-| TeamMemberForm.test.tsx | 41 | ✅ Pass |
-| projects.test.ts | 21 | ✅ Pass |
-| tasks.test.ts | 28 | ✅ Pass |
-| dependencies.test.ts | 22 | ✅ Pass |
-| team-members.test.ts | 25 | ✅ Pass |
-| phases.test.ts | 22 | ✅ Pass |
-| time-off.test.ts | 19 | ✅ Pass |
-| audit-findings.test.ts | 19 | ✅ Pass |
-| use-projects.test.ts | 13 | ✅ Pass |
-| use-tasks.test.ts | 11 | ✅ Pass |
-| use-dependencies.test.ts | 17 | ✅ Pass |
-| use-team-members.test.ts | 20 | ✅ Pass |
-| use-phases.test.ts | 18 | ✅ Pass |
-| use-time-off.test.ts | 18 | ✅ Pass |
-| use-audit-findings.test.ts | 18 | ✅ Pass |
-| offline-storage.test.ts | 19 | ✅ Pass |
-| sync.test.ts | 42 | ✅ Pass |
-| use-sync.test.ts | 12 | ✅ Pass |
-| OfflineSyncStatus.test.tsx | 25 | ✅ Pass |
-| offline-integration.test.ts | 18 | ✅ Pass |
-| document-upload.test.ts | 28 | ✅ Pass |
-| document-parser.test.ts | 27 | ✅ Pass |
-| embeddings.test.ts | 23 | ✅ Pass |
-| rag.test.ts | 29 | ✅ Pass |
-| AIChat.test.tsx | 45 | ✅ Pass |
-| SourceCitationsPanel.test.tsx | 30 | ✅ Pass |
-| **TOTAL** | **1004** | **✅ All Pass** |
-
----
-
-## 📋 PRD PHASE PROGRESS
-
-### Phase 1: Setup ✅ COMPLETE
-- [x] Next.js 15 + Supabase project
-- [x] 9 tables schema defined
-- [x] Auth basic
-
-### Phase 2: Tasks + CPM ✅ COMPLETE
-- [x] CRUD tasks
-- [x] Project phases
-- [x] SchedulingService (CPM)
-- [x] Critical Path display
-
-### Phase 3: Team + Resources ✅ COMPLETE
-- [x] Team members management
-- [x] Work hours configuration
-- [x] Time off/vacation tracking
-- [x] Task assignments
-
-### Phase 4: Audit Findings ✅ COMPLETE
-- [x] Findings + CAPA
-- [x] Severity filtering
-- [x] Root cause tracking
-- [x] Status management (open/in_progress/closed)
-
-### Phase 5: CRDT + Offline ✅ COMPLETE
-- [x] Yjs integration (Sync Service with 42 tests)
-- [x] Offline Storage Service (IndexedDB + fallback)
-- [x] Sync React Hooks (SyncProvider, useSyncStatus, etc.)
-- [x] y-indexeddb persistence for Yjs documents
-- [x] OfflineSyncStatus UI component (25 tests)
-- [x] Offline integration tests (18 tests)
-
-### Phase 6: Grounded AI ✅ COMPLETE
-- [x] Document Upload Service (28 tests)
-  - File upload to Supabase Storage
-  - Supported types: PDF, Word, Excel, TXT, CSV
-  - File size validation (50MB limit)
-  - Batch upload with progress tracking
-- [x] Document Parser Service (27 tests)
-  - Plain text and CSV parsing
-  - PDF, Word, Excel parsing (mock for MVP)
-  - Document chunking for RAG
-  - Metadata extraction
-- [x] Vector Embeddings Service (23 tests)
-  - OpenAI text-embedding-3-small integration
-  - Supabase pgvector storage
-  - Semantic similarity search
-  - Batch embedding generation
-- [x] RAG Service with Source Attribution (29 tests)
-  - Retrieval Augmented Generation
-  - Source attribution (FR-032 CRITICAL) ✅
-  - Grounding enforcement (no hallucination)
-  - Hebrew/English language support
-  - Context formatting with citations
-- [x] AI Chat Interface UI Component (45 tests)
-  - Chat input with send button
-  - Message display (user/assistant)
-  - Loading state indicators
-  - Source citations display
-  - Error handling
-  - RTL support (Hebrew)
-  - Accessibility (ARIA)
-- [x] Source Citations Panel Component (30 tests)
-  - Citation list with relevance scores
-  - Expand/collapse excerpts
-  - Document link callbacks
-  - Sorting (by relevance/name)
-  - Statistics display
-  - Compact mode
-
----
-
-## 🔄 SESSION 7: Interactive UI Integration
-
-### Dashboard Page Rewrite
-- [x] Rewrote `src/app/page.tsx` with interactive Hebrew dashboard
-- [x] Local state management for tasks, phases, project
-- [x] CRUD operations (create, edit, delete tasks)
-- [x] Project settings modal
-- [x] View toggle (phases view / Gantt chart)
-- [x] Task detail sidebar with full info display
-- [x] Hebrew RTL support throughout
-
-### TypeScript Fixes
-- [x] Fixed TeamMember initial data (removed non-existent properties)
-- [x] Fixed Task creation (actual_hours: 0, slack: 0 - not nullable)
-- [x] Fixed component prop names (initialValues instead of initialData)
-- [x] Fixed PhaseSection to use taskAssignees Record
-- [x] Removed non-existent GanttChart startDate/endDate props
-
-### Components Integration
-- [x] Using PhaseSection component for task lists
-- [x] Using GanttChart component for timeline view
-- [x] Using TaskForm for create/edit modals
-- [x] Using ProjectForm for project settings
-- [x] Using Modal, Card, Badge, Button components
-
-### Build Status
-- ✅ Next.js 16.1.4 production build successful
-- ✅ All 1004 tests passing
-- ✅ Ready for local development
-
-### Remaining for Production Deployment
-1. Configure `.env.local` with Supabase credentials
-2. Run `001_initial_schema.sql` in Supabase
-3. Replace local state with React Query hooks (useProjects, useTasks, etc.)
-4. Add Supabase Auth flow
-5. Build Team page (`/team` route)
-
----
-
-## 🏗️ PROJECT STRUCTURE
-
-```
-flowplan/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx          # Main layout with header/footer
-│   │   ├── page.tsx            # Dashboard page
-│   │   └── globals.css         # Global styles
-│   ├── components/
-│   │   ├── ui/
-│   │   │   ├── button.tsx      # Button component
-│   │   │   ├── card.tsx        # Card components
-│   │   │   ├── badge.tsx       # Badge component
-│   │   │   ├── input.tsx       # Input component
-│   │   │   ├── select.tsx      # Select component
-│   │   │   └── modal.tsx       # Modal component
-│   │   ├── forms/
-│   │   │   ├── TaskForm.tsx    # Task form component
-│   │   │   ├── ProjectForm.tsx # Project form component
-│   │   │   └── TeamMemberForm.tsx # Team member form
-│   │   ├── tasks/
-│   │   │   └── TaskCard.tsx    # Task card component
-│   │   ├── phases/
-│   │   │   └── PhaseSection.tsx # Phase section component
-│   │   └── gantt/
-│   │       └── GanttChart.tsx  # Gantt chart component
-│   ├── services/
-│   │   ├── scheduling.ts       # CPM scheduling service
-│   │   ├── projects.ts         # Projects CRUD
-│   │   ├── tasks.ts            # Tasks CRUD
-│   │   ├── dependencies.ts     # Dependencies CRUD
-│   │   ├── team-members.ts     # Team members CRUD
-│   │   ├── phases.ts           # Phases CRUD
-│   │   ├── time-off.ts         # Time off CRUD
-│   │   └── audit-findings.ts   # Audit findings CRUD
-│   ├── hooks/
-│   │   ├── use-projects.ts     # Projects React Query hooks
-│   │   ├── use-tasks.ts        # Tasks React Query hooks
-│   │   ├── use-dependencies.ts # Dependencies React Query hooks
-│   │   ├── use-team-members.ts # Team members React Query hooks
-│   │   ├── use-phases.ts       # Phases React Query hooks
-│   │   ├── use-time-off.ts     # Time off React Query hooks
-│   │   └── use-audit-findings.ts # Audit findings React Query hooks
-│   ├── lib/
-│   │   ├── utils.ts            # Utility functions
-│   │   └── supabase.ts         # Supabase client
-│   ├── types/
-│   │   ├── entities.ts         # Entity types
-│   │   └── database.ts         # Database types
-│   └── test/
-│       └── setup.ts            # Test setup
-├── supabase/
-│   └── migrations/
-│       └── 001_initial_schema.sql
-├── vitest.config.ts
-└── package.json
-```
-
----
-
-## 📝 NOTES
-
-- Using TDD (Test-Driven Development) workflow throughout
-- Brutalist UI design style as per PRD
-- Israeli calendar support (Sunday-Thursday workweek)
-- All components tested with React Testing Library
-- Critical Path Method (CPM) fully implemented with resource awareness
-- Phase 4 (Audit Findings) complete - full CRUD with CAPA support
+## 🚀 FUTURE ROADMAP: Detailed Next Steps
+
+### 🔄 SESSION 18: Supabase Integration & Production Data
+**Goal**: Transition from static local state to persistent cloud database.
+- [ ] Connect `page.tsx` CRUD operations to Supabase services.
+- [ ] Implement `useTasks` and `usePhases` custom hooks with TanStack Query.
+- [ ] Enable optimistic UI updates for instant feedback.
+- [ ] Setup database migration scripts in Supabase Dashboard.
+
+### 🔄 SESSION 19: Security & Authentication (Auth)
+**Goal**: Secure the application and personalize the user experience.
+- [ ] Integrate Supabase Auth (Sign-in, Registration).
+- [ ] Create pixel-perfect login interface (Premium Dark Theme).
+- [ ] Implement route protection (middleware) for the dashboard.
+- [ ] Connect authenticated users to their team profile.
+
+### 🔄 SESSION 20: Team & Resource Workspace (/team)
+**Goal**: Centralized management of audit resources and availability.
+- [ ] Build `/team` route and interactive member management page.
+- [ ] Interface for configuring work hours and vacations.
+- [ ] Visual workload indicators for project resource balancing.
+
+### 🔄 SESSION 21: Audit Findings & CAPA Dashboard (/findings)
+**Goal**: High-level audit oversight and corrective action tracking.
+- [ ] Build `/findings` route for comprehensive audit oversight.
+- [ ] Implementation of severity filters and priority sorting.
+- [ ] Export system for automated audit reports (PDF/Excel).

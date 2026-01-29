@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,7 +118,8 @@
         }
 
         /* Lists */
-        ul, ol {
+        ul,
+        ol {
             margin: 15px 0 15px 20px;
         }
 
@@ -134,7 +136,8 @@
             page-break-inside: avoid;
         }
 
-        th, td {
+        th,
+        td {
             border: 2px solid #0a0a0a;
             padding: 12px;
             text-align: right;
@@ -356,12 +359,14 @@
                 padding: 0;
                 background: #fff;
             }
+
             .page-break {
                 page-break-before: always;
             }
         }
     </style>
 </head>
+
 <body>
 
     <!-- ==================== COVER ==================== -->
@@ -627,200 +632,214 @@
 
     <h2>1. projects</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> projects (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  name          <span class="string">TEXT NOT NULL</span>,
-  description   <span class="string">TEXT</span>,
-  status        <span class="string">TEXT DEFAULT 'active'</span>,  <span class="comment">-- active, completed, archived</span>
-  start_date    <span class="string">DATE</span>,
-  end_date      <span class="string">DATE</span>,
-  created_by    <span class="string">UUID REFERENCES auth.users(id)</span>,
-  created_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
-  updated_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>
-);
+        <span class="keyword">CREATE TABLE</span> projects (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        name <span class="string">TEXT NOT NULL</span>,
+        description <span class="string">TEXT</span>,
+        status <span class="string">TEXT DEFAULT 'active'</span>, <span class="comment">-- active, completed,
+            archived</span>
+        start_date <span class="string">DATE</span>,
+        end_date <span class="string">DATE</span>,
+        created_by <span class="string">UUID REFERENCES auth.users(id)</span>,
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        updated_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>
+        );
     </div>
 
     <h2>2. tasks</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> tasks (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  project_id    <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
-  phase_id      <span class="string">UUID REFERENCES project_phases(id)</span>,  <span class="comment">-- Optional: link to phase</span>
-  title         <span class="string">TEXT NOT NULL</span>,
-  description   <span class="string">TEXT</span>,
-  status        <span class="string">TEXT DEFAULT 'pending'</span>,  <span class="comment">-- pending, in_progress, done</span>
-  priority      <span class="string">TEXT DEFAULT 'medium'</span>,  <span class="comment">-- low, medium, high, critical</span>
-  assignee_id   <span class="string">UUID REFERENCES auth.users(id)</span>,
+        <span class="keyword">CREATE TABLE</span> tasks (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        project_id <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
+        phase_id <span class="string">UUID REFERENCES project_phases(id)</span>, <span class="comment">-- Optional: link
+            to phase</span>
+        title <span class="string">TEXT NOT NULL</span>,
+        description <span class="string">TEXT</span>,
+        status <span class="string">TEXT DEFAULT 'pending'</span>, <span class="comment">-- pending, in_progress,
+            done</span>
+        priority <span class="string">TEXT DEFAULT 'medium'</span>, <span class="comment">-- low, medium, high,
+            critical</span>
+        assignee_id <span class="string">UUID REFERENCES auth.users(id)</span>,
 
-  <span class="comment">-- Scheduling fields (CPM)</span>
-  duration      <span class="string">INTEGER DEFAULT 1</span>,        <span class="comment">-- Duration in working days</span>
-  estimated_hours <span class="string">DECIMAL(6,2)</span>,          <span class="comment">-- Total hours needed (for resource planning)</span>
-  start_date    <span class="string">DATE</span>,
-  end_date      <span class="string">DATE</span>,
-  es            <span class="string">DATE</span>,                      <span class="comment">-- Early Start</span>
-  ef            <span class="string">DATE</span>,                      <span class="comment">-- Early Finish</span>
-  ls            <span class="string">DATE</span>,                      <span class="comment">-- Late Start</span>
-  lf            <span class="string">DATE</span>,                      <span class="comment">-- Late Finish</span>
-  slack         <span class="string">INTEGER DEFAULT 0</span>,        <span class="comment">-- Slack = LS - ES</span>
-  is_critical   <span class="string">BOOLEAN DEFAULT false</span>,   <span class="comment">-- On Critical Path?</span>
+        <span class="comment">-- Scheduling fields (CPM)</span>
+        duration <span class="string">INTEGER DEFAULT 1</span>, <span class="comment">-- Duration in working days</span>
+        estimated_hours <span class="string">DECIMAL(6,2)</span>, <span class="comment">-- Total hours needed (for
+            resource planning)</span>
+        start_date <span class="string">DATE</span>,
+        end_date <span class="string">DATE</span>,
+        es <span class="string">DATE</span>, <span class="comment">-- Early Start</span>
+        ef <span class="string">DATE</span>, <span class="comment">-- Early Finish</span>
+        ls <span class="string">DATE</span>, <span class="comment">-- Late Start</span>
+        lf <span class="string">DATE</span>, <span class="comment">-- Late Finish</span>
+        slack <span class="string">INTEGER DEFAULT 0</span>, <span class="comment">-- Slack = LS - ES</span>
+        is_critical <span class="string">BOOLEAN DEFAULT false</span>, <span class="comment">-- On Critical Path?</span>
 
-  created_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
-  updated_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>
-);
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        updated_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>
+        );
     </div>
 
     <h2>3. dependencies</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> dependencies (
-  id              <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  predecessor_id  <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
-  successor_id    <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
-  type            <span class="string">TEXT DEFAULT 'FS'</span>,  <span class="comment">-- FS, SS, FF, SF</span>
-  lag_days        <span class="string">INTEGER DEFAULT 0</span>,
-  created_at      <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        <span class="keyword">CREATE TABLE</span> dependencies (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        predecessor_id <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
+        successor_id <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
+        type <span class="string">TEXT DEFAULT 'FS'</span>, <span class="comment">-- FS, SS, FF, SF</span>
+        lag_days <span class="string">INTEGER DEFAULT 0</span>,
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
 
-  <span class="keyword">UNIQUE</span>(predecessor_id, successor_id)
-);
+        <span class="keyword">UNIQUE</span>(predecessor_id, successor_id)
+        );
     </div>
 
     <h2>4. audit_findings</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> audit_findings (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  task_id       <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
-  severity      <span class="string">TEXT NOT NULL</span>,  <span class="comment">-- critical, high, medium, low</span>
-  finding       <span class="string">TEXT NOT NULL</span>,
-  root_cause    <span class="string">TEXT</span>,
-  capa          <span class="string">TEXT</span>,         <span class="comment">-- Corrective Action / Preventive Action</span>
-  due_date      <span class="string">DATE</span>,
-  status        <span class="string">TEXT DEFAULT 'open'</span>,  <span class="comment">-- open, in_progress, closed</span>
-  created_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>
-);
+        <span class="keyword">CREATE TABLE</span> audit_findings (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        task_id <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
+        severity <span class="string">TEXT NOT NULL</span>, <span class="comment">-- critical, high, medium, low</span>
+        finding <span class="string">TEXT NOT NULL</span>,
+        root_cause <span class="string">TEXT</span>,
+        capa <span class="string">TEXT</span>, <span class="comment">-- Corrective Action / Preventive Action</span>
+        due_date <span class="string">DATE</span>,
+        status <span class="string">TEXT DEFAULT 'open'</span>, <span class="comment">-- open, in_progress,
+            closed</span>
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>
+        );
     </div>
 
     <h2>5. calendar_exceptions</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> calendar_exceptions (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  project_id    <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
-  date          <span class="string">DATE NOT NULL</span>,
-  type          <span class="string">TEXT NOT NULL</span>,  <span class="comment">-- holiday, non_working</span>
-  name          <span class="string">TEXT</span>,          <span class="comment">-- e.g., "יום כיפור"</span>
+        <span class="keyword">CREATE TABLE</span> calendar_exceptions (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        project_id <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
+        date <span class="string">DATE NOT NULL</span>,
+        type <span class="string">TEXT NOT NULL</span>, <span class="comment">-- holiday, non_working</span>
+        name <span class="string">TEXT</span>, <span class="comment">-- e.g., "יום כיפור"</span>
 
-  <span class="keyword">UNIQUE</span>(project_id, date)
-);
+        <span class="keyword">UNIQUE</span>(project_id, date)
+        );
     </div>
 
     <h2>6. team_members (עובדים)</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> team_members (
-  id                <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  user_id           <span class="string">UUID REFERENCES auth.users(id) ON DELETE CASCADE</span>,
-  project_id        <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
+        <span class="keyword">CREATE TABLE</span> team_members (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        user_id <span class="string">UUID REFERENCES auth.users(id) ON DELETE CASCADE</span>,
+        project_id <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
 
-  <span class="comment">-- Employment details</span>
-  employment_type   <span class="string">TEXT DEFAULT 'full_time'</span>,  <span class="comment">-- full_time, part_time, contractor</span>
-  work_hours_per_day <span class="string">DECIMAL(4,2) DEFAULT 8.0</span>, <span class="comment">-- Hours available per day</span>
-  work_days         <span class="string">INTEGER[] DEFAULT '{1,2,3,4,5}'</span>, <span class="comment">-- Days of week (1=Sun, 7=Sat)</span>
+        <span class="comment">-- Employment details</span>
+        employment_type <span class="string">TEXT DEFAULT 'full_time'</span>, <span class="comment">-- full_time,
+            part_time, contractor</span>
+        work_hours_per_day <span class="string">DECIMAL(4,2) DEFAULT 8.0</span>, <span class="comment">-- Hours
+            available per day</span>
+        work_days <span class="string">INTEGER[] DEFAULT '{1,2,3,4,5}'</span>, <span class="comment">-- Days of week
+            (1=Sun, 7=Sat)</span>
 
-  role              <span class="string">TEXT DEFAULT 'member'</span>,  <span class="comment">-- admin, member</span>
-  hourly_rate       <span class="string">DECIMAL(10,2)</span>,         <span class="comment">-- Optional: for cost calculation</span>
+        role <span class="string">TEXT DEFAULT 'member'</span>, <span class="comment">-- admin, member</span>
+        hourly_rate <span class="string">DECIMAL(10,2)</span>, <span class="comment">-- Optional: for cost
+            calculation</span>
 
-  created_at        <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
 
-  <span class="keyword">UNIQUE</span>(user_id, project_id)
-);
+        <span class="keyword">UNIQUE</span>(user_id, project_id)
+        );
     </div>
 
     <h2>7. employee_time_off (חופשות)</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> employee_time_off (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  user_id       <span class="string">UUID REFERENCES auth.users(id) ON DELETE CASCADE</span>,
+        <span class="keyword">CREATE TABLE</span> employee_time_off (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        user_id <span class="string">UUID REFERENCES auth.users(id) ON DELETE CASCADE</span>,
 
-  start_date    <span class="string">DATE NOT NULL</span>,
-  end_date      <span class="string">DATE NOT NULL</span>,
-  type          <span class="string">TEXT NOT NULL</span>,  <span class="comment">-- vacation, sick, personal, other</span>
-  status        <span class="string">TEXT DEFAULT 'approved'</span>,  <span class="comment">-- pending, approved, rejected</span>
-  notes         <span class="string">TEXT</span>,
+        start_date <span class="string">DATE NOT NULL</span>,
+        end_date <span class="string">DATE NOT NULL</span>,
+        type <span class="string">TEXT NOT NULL</span>, <span class="comment">-- vacation, sick, personal, other</span>
+        status <span class="string">TEXT DEFAULT 'approved'</span>, <span class="comment">-- pending, approved,
+            rejected</span>
+        notes <span class="string">TEXT</span>,
 
-  created_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
 
-  <span class="keyword">CONSTRAINT</span> valid_dates <span class="keyword">CHECK</span> (end_date >= start_date)
-);
+        <span class="keyword">CONSTRAINT</span> valid_dates <span class="keyword">CHECK</span> (end_date >= start_date)
+        );
     </div>
 
     <h2>8. project_phases (שלבי פרויקט)</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> project_phases (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  project_id    <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
+        <span class="keyword">CREATE TABLE</span> project_phases (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        project_id <span class="string">UUID REFERENCES projects(id) ON DELETE CASCADE</span>,
 
-  name          <span class="string">TEXT NOT NULL</span>,
-  description   <span class="string">TEXT</span>,
-  phase_order   <span class="string">INTEGER NOT NULL</span>,      <span class="comment">-- Sort order: 1, 2, 3...</span>
-  status        <span class="string">TEXT DEFAULT 'pending'</span>,  <span class="comment">-- pending, active, completed</span>
+        name <span class="string">TEXT NOT NULL</span>,
+        description <span class="string">TEXT</span>,
+        phase_order <span class="string">INTEGER NOT NULL</span>, <span class="comment">-- Sort order: 1, 2, 3...</span>
+        status <span class="string">TEXT DEFAULT 'pending'</span>, <span class="comment">-- pending, active,
+            completed</span>
 
-  start_date    <span class="string">DATE</span>,
-  end_date      <span class="string">DATE</span>,
+        start_date <span class="string">DATE</span>,
+        end_date <span class="string">DATE</span>,
 
-  <span class="comment">-- Calculated fields (from tasks)</span>
-  total_tasks   <span class="string">INTEGER DEFAULT 0</span>,
-  completed_tasks <span class="string">INTEGER DEFAULT 0</span>,
+        <span class="comment">-- Calculated fields (from tasks)</span>
+        total_tasks <span class="string">INTEGER DEFAULT 0</span>,
+        completed_tasks <span class="string">INTEGER DEFAULT 0</span>,
 
-  created_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
 
-  <span class="keyword">UNIQUE</span>(project_id, phase_order)
-);
+        <span class="keyword">UNIQUE</span>(project_id, phase_order)
+        );
     </div>
 
     <h2>9. task_assignments (הקצאות שעות)</h2>
     <div class="code-block">
-<span class="keyword">CREATE TABLE</span> task_assignments (
-  id            <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
-  task_id       <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
-  user_id       <span class="string">UUID REFERENCES auth.users(id) ON DELETE CASCADE</span>,
+        <span class="keyword">CREATE TABLE</span> task_assignments (
+        id <span class="string">UUID PRIMARY KEY DEFAULT gen_random_uuid()</span>,
+        task_id <span class="string">UUID REFERENCES tasks(id) ON DELETE CASCADE</span>,
+        user_id <span class="string">UUID REFERENCES auth.users(id) ON DELETE CASCADE</span>,
 
-  allocated_hours <span class="string">DECIMAL(6,2) NOT NULL</span>,  <span class="comment">-- Hours allocated for this task</span>
-  actual_hours    <span class="string">DECIMAL(6,2) DEFAULT 0</span>, <span class="comment">-- Hours actually spent</span>
+        allocated_hours <span class="string">DECIMAL(6,2) NOT NULL</span>, <span class="comment">-- Hours allocated for
+            this task</span>
+        actual_hours <span class="string">DECIMAL(6,2) DEFAULT 0</span>, <span class="comment">-- Hours actually
+            spent</span>
 
-  start_date    <span class="string">DATE</span>,                    <span class="comment">-- When this person starts the task</span>
-  end_date      <span class="string">DATE</span>,                    <span class="comment">-- When this person finishes</span>
+        start_date <span class="string">DATE</span>, <span class="comment">-- When this person starts the task</span>
+        end_date <span class="string">DATE</span>, <span class="comment">-- When this person finishes</span>
 
-  notes         <span class="string">TEXT</span>,
-  created_at    <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
+        notes <span class="string">TEXT</span>,
+        created_at <span class="string">TIMESTAMPTZ DEFAULT now()</span>,
 
-  <span class="keyword">UNIQUE</span>(task_id, user_id)
-);
+        <span class="keyword">UNIQUE</span>(task_id, user_id)
+        );
     </div>
 
     <h2>ERD מפושט</h2>
     <div class="diagram">
-                              ┌──────────────────┐
-                              │   auth.users     │
-                              └────────┬─────────┘
-                                       │
+        ┌──────────────────┐
+        │ auth.users │
+        └────────┬─────────┘
+        │
         ┌──────────────────────────────┼──────────────────────────┐
-        │                              │                          │
-        1:N                            1:N                        1:N
-        ▼                              ▼                          ▼
-┌─────────────────┐            ┌──────────────┐          ┌──────────────────┐
-│ employee_time_off│            │ team_members │          │ task_assignments │
-└─────────────────┘            └──────────────┘          └──────────────────┘
-                                       │                          │
-                                       N:1                        N:1
-                                       ▼                          ▼
-┌─────────────┐       ┌────────────────┐       ┌─────────────┐
-│   projects  │──1:N──│ project_phases │──1:N──│    tasks    │
-└─────────────┘       └────────────────┘       └─────────────┘
-      │                                              │    │
-      │                                              │    1:N
-      1:N                                     N:M(self)   ▼
-      │                                              │  ┌──────────────────┐
-      ▼                                              ▼  │  audit_findings  │
-┌─────────────────┐                          ┌──────────────┐───────────────┘
-│ calendar_except │                          │ dependencies │
-└─────────────────┘                          └──────────────┘
+        │ │ │
+        1:N 1:N 1:N
+        ▼ ▼ ▼
+        ┌─────────────────┐ ┌──────────────┐ ┌──────────────────┐
+        │ employee_time_off│ │ team_members │ │ task_assignments │
+        └─────────────────┘ └──────────────┘ └──────────────────┘
+        │ │
+        N:1 N:1
+        ▼ ▼
+        ┌─────────────┐ ┌────────────────┐ ┌─────────────┐
+        │ projects │──1:N──│ project_phases │──1:N──│ tasks │
+        └─────────────┘ └────────────────┘ └─────────────┘
+        │ │ │
+        │ │ 1:N
+        1:N N:M(self) ▼
+        │ │ ┌──────────────────┐
+        ▼ ▼ │ audit_findings │
+        ┌─────────────────┐ ┌──────────────┐───────────────┘
+        │ calendar_except │ │ dependencies │
+        └─────────────────┘ └──────────────┘
     </div>
 
     <!-- ==================== SECTION 6: SCHEDULING ENGINE ==================== -->
@@ -914,47 +933,53 @@
 
     <h2>TypeScript Pseudocode</h2>
     <div class="code-block">
-<span class="keyword">class</span> SchedulingService {
+        <span class="keyword">class</span> SchedulingService {
 
-  <span class="keyword">async</span> calculateCriticalPath(projectId: string) {
-    <span class="comment">// 1. Get all data</span>
-    <span class="keyword">const</span> tasks = <span class="keyword">await</span> this.getTasks(projectId);
-    <span class="keyword">const</span> deps = <span class="keyword">await</span> this.getDependencies(projectId);
-    <span class="keyword">const</span> holidays = <span class="keyword">await</span> this.getHolidays(projectId);
-    <span class="keyword">const</span> teamMembers = <span class="keyword">await</span> this.getTeamMembers(projectId);
-    <span class="keyword">const</span> timeOff = <span class="keyword">await</span> this.getTimeOff(projectId);
+        <span class="keyword">async</span> calculateCriticalPath(projectId: string) {
+        <span class="comment">// 1. Get all data</span>
+        <span class="keyword">const</span> tasks = <span class="keyword">await</span> this.getTasks(projectId);
+        <span class="keyword">const</span> deps = <span class="keyword">await</span> this.getDependencies(projectId);
+        <span class="keyword">const</span> holidays = <span class="keyword">await</span> this.getHolidays(projectId);
+        <span class="keyword">const</span> teamMembers = <span class="keyword">await</span>
+        this.getTeamMembers(projectId);
+        <span class="keyword">const</span> timeOff = <span class="keyword">await</span> this.getTimeOff(projectId);
 
-    <span class="comment">// 2. Forward Pass (with resource availability)</span>
-    <span class="keyword">for</span> (<span class="keyword">const</span> task <span class="keyword">of</span> this.topologicalSort(tasks, deps)) {
-      <span class="keyword">const</span> assignee = teamMembers.find(m => m.userId === task.assigneeId);
-      <span class="keyword">const</span> unavailableDays = this.getUnavailableDays(task.assigneeId, timeOff, holidays);
+        <span class="comment">// 2. Forward Pass (with resource availability)</span>
+        <span class="keyword">for</span> (<span class="keyword">const</span> task <span class="keyword">of</span>
+        this.topologicalSort(tasks, deps)) {
+        <span class="keyword">const</span> assignee = teamMembers.find(m => m.userId === task.assigneeId);
+        <span class="keyword">const</span> unavailableDays = this.getUnavailableDays(task.assigneeId, timeOff,
+        holidays);
 
-      task.es = this.calculateEarlyStart(task, deps, unavailableDays);
-      task.ef = this.addWorkingDays(task.es, task.duration, unavailableDays, assignee);
-    }
+        task.es = this.calculateEarlyStart(task, deps, unavailableDays);
+        task.ef = this.addWorkingDays(task.es, task.duration, unavailableDays, assignee);
+        }
 
-    <span class="comment">// 3. Backward Pass</span>
-    <span class="keyword">for</span> (<span class="keyword">const</span> task <span class="keyword">of</span> this.topologicalSort(tasks, deps).reverse()) {
-      <span class="keyword">const</span> unavailableDays = this.getUnavailableDays(task.assigneeId, timeOff, holidays);
-      task.lf = this.calculateLateFinish(task, deps, unavailableDays);
-      task.ls = this.subtractWorkingDays(task.lf, task.duration, unavailableDays);
-    }
+        <span class="comment">// 3. Backward Pass</span>
+        <span class="keyword">for</span> (<span class="keyword">const</span> task <span class="keyword">of</span>
+        this.topologicalSort(tasks, deps).reverse()) {
+        <span class="keyword">const</span> unavailableDays = this.getUnavailableDays(task.assigneeId, timeOff,
+        holidays);
+        task.lf = this.calculateLateFinish(task, deps, unavailableDays);
+        task.ls = this.subtractWorkingDays(task.lf, task.duration, unavailableDays);
+        }
 
-    <span class="comment">// 4. Calculate Slack & Mark Critical</span>
-    <span class="keyword">for</span> (<span class="keyword">const</span> task <span class="keyword">of</span> tasks) {
-      task.slack = this.workingDaysBetween(task.es, task.ls, holidays);
-      task.is_critical = task.slack === 0;
-    }
+        <span class="comment">// 4. Calculate Slack & Mark Critical</span>
+        <span class="keyword">for</span> (<span class="keyword">const</span> task <span class="keyword">of</span> tasks)
+        {
+        task.slack = this.workingDaysBetween(task.es, task.ls, holidays);
+        task.is_critical = task.slack === 0;
+        }
 
-    <span class="keyword">return</span> tasks;
-  }
+        <span class="keyword">return</span> tasks;
+        }
 
-  <span class="comment">// Calculate effective duration based on work hours</span>
-  calculateEffectiveDuration(estimatedHours: number, member: TeamMember): number {
-    <span class="keyword">const</span> daysNeeded = Math.ceil(estimatedHours / member.workHoursPerDay);
-    <span class="keyword">return</span> daysNeeded;
-  }
-}
+        <span class="comment">// Calculate effective duration based on work hours</span>
+        calculateEffectiveDuration(estimatedHours: number, member: TeamMember): number {
+        <span class="keyword">const</span> daysNeeded = Math.ceil(estimatedHours / member.workHoursPerDay);
+        <span class="keyword">return</span> daysNeeded;
+        }
+        }
     </div>
 
     <!-- ==================== SECTION 7: AI ARCHITECTURE ==================== -->
@@ -1036,61 +1061,61 @@
 
     <h2>מסך ראשי: Task List עם שלבים</h2>
     <div class="diagram">
-┌────────────────────────────────────────────────────────────┐
-│  FLOWPLAN                      [+ חדש]  [צוות]  [AI]  [👤]│
-├────────────────────────────────────────────────────────────┤
-│  פרויקט: ביקורת Q1 2026             [שלב ▼]  [סינון ▼]   │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│  ▼ שלב 1: הכנה (3/5 משימות)                    [75%] ████░│
-│  ├────────────────────────────────────────────────────┤   │
-│  │ ✓ [MEDIUM] איסוף מסמכים                            │   │
-│  │ ✓ [MEDIUM] הכנת תכנית ביקורת                       │   │
-│  │ ✓ [LOW] הזמנת חדר ישיבות                           │   │
-│  │ □ [HIGH] תיאום עם מנהל אתר                         │   │
-│  │ □ [MEDIUM] הכנת רשימת תיוג                         │   │
-│  └────────────────────────────────────────────────────┘   │
-│                                                            │
-│  ▼ שלב 2: ביצוע ביקורת (1/4 משימות)            [25%] █░░░│
-│  ├────────────────────────────────────────────────────┤   │
-│  │ ■ [CRITICAL] בדיקת מערכת כיבוי אש                  │   │
-│  │   תאריך יעד: 15/02  │  דני (4h/d) │  Slack: 0     │   │
-│  │ □ [HIGH] בדיקת נהלי בטיחות                         │   │
-│  │   תאריך יעד: 20/02  │  מיכל (8h/d) │  Slack: 3    │   │
-│  │ □ [HIGH] ראיון עובדים                              │   │
-│  │ □ [MEDIUM] תיעוד ממצאים                            │   │
-│  └────────────────────────────────────────────────────┘   │
-│                                                            │
-│  ▷ שלב 3: סיכום (0/2 משימות)                   [0%]  ░░░░│
-│                                                            │
-├────────────────────────────────────────────────────────────┤
-│  ■ = Critical Path  │  (4h/d) = משרה חלקית               │
-└────────────────────────────────────────────────────────────┘
+        ┌────────────────────────────────────────────────────────────┐
+        │ FLOWPLAN [+ חדש] [צוות] [AI] [👤]│
+        ├────────────────────────────────────────────────────────────┤
+        │ פרויקט: ביקורת Q1 2026 [שלב ▼] [סינון ▼] │
+        ├────────────────────────────────────────────────────────────┤
+        │ │
+        │ ▼ שלב 1: הכנה (3/5 משימות) [75%] ████░│
+        │ ├────────────────────────────────────────────────────┤ │
+        │ │ ✓ [MEDIUM] איסוף מסמכים │ │
+        │ │ ✓ [MEDIUM] הכנת תכנית ביקורת │ │
+        │ │ ✓ [LOW] הזמנת חדר ישיבות │ │
+        │ │ □ [HIGH] תיאום עם מנהל אתר │ │
+        │ │ □ [MEDIUM] הכנת רשימת תיוג │ │
+        │ └────────────────────────────────────────────────────┘ │
+        │ │
+        │ ▼ שלב 2: ביצוע ביקורת (1/4 משימות) [25%] █░░░│
+        │ ├────────────────────────────────────────────────────┤ │
+        │ │ ■ [CRITICAL] בדיקת מערכת כיבוי אש │ │
+        │ │ תאריך יעד: 15/02 │ דני (4h/d) │ Slack: 0 │ │
+        │ │ □ [HIGH] בדיקת נהלי בטיחות │ │
+        │ │ תאריך יעד: 20/02 │ מיכל (8h/d) │ Slack: 3 │ │
+        │ │ □ [HIGH] ראיון עובדים │ │
+        │ │ □ [MEDIUM] תיעוד ממצאים │ │
+        │ └────────────────────────────────────────────────────┘ │
+        │ │
+        │ ▷ שלב 3: סיכום (0/2 משימות) [0%] ░░░░│
+        │ │
+        ├────────────────────────────────────────────────────────────┤
+        │ ■ = Critical Path │ (4h/d) = משרה חלקית │
+        └────────────────────────────────────────────────────────────┘
     </div>
 
     <h2>מסך צוות</h2>
     <div class="diagram">
-┌────────────────────────────────────────────────────────────┐
-│  FLOWPLAN > ביקורת Q1 2026 > צוות                         │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│  ┌───────────┬────────────┬──────────┬─────────────────┐  │
-│  │ שם        │ סוג משרה   │ שעות/יום │ ימי עבודה       │  │
-│  ├───────────┼────────────┼──────────┼─────────────────┤  │
-│  │ דני כהן   │ משרה חלקית │ 4        │ א'-ד'           │  │
-│  │ מיכל לוי  │ משרה מלאה  │ 8        │ א'-ה'           │  │
-│  │ יוסי אברהם│ קבלן       │ 6        │ א'-ה'           │  │
-│  └───────────┴────────────┴──────────┴─────────────────┘  │
-│                                                            │
-│  ┌────────────────────────────────────────────────────┐   │
-│  │ חופשות קרובות                                      │   │
-│  ├────────────────────────────────────────────────────┤   │
-│  │ דני כהן: 15-17/02 (חופשה)                          │   │
-│  │ מיכל לוי: 20/02 (יום מחלה)                         │   │
-│  └────────────────────────────────────────────────────┘   │
-│                                                            │
-│                                           [+ הוסף עובד]   │
-└────────────────────────────────────────────────────────────┘
+        ┌────────────────────────────────────────────────────────────┐
+        │ FLOWPLAN > ביקורת Q1 2026 > צוות │
+        ├────────────────────────────────────────────────────────────┤
+        │ │
+        │ ┌───────────┬────────────┬──────────┬─────────────────┐ │
+        │ │ שם │ סוג משרה │ שעות/יום │ ימי עבודה │ │
+        │ ├───────────┼────────────┼──────────┼─────────────────┤ │
+        │ │ דני כהן │ משרה חלקית │ 4 │ א'-ד' │ │
+        │ │ מיכל לוי │ משרה מלאה │ 8 │ א'-ה' │ │
+        │ │ יוסי אברהם│ קבלן │ 6 │ א'-ה' │ │
+        │ └───────────┴────────────┴──────────┴─────────────────┘ │
+        │ │
+        │ ┌────────────────────────────────────────────────────┐ │
+        │ │ חופשות קרובות │ │
+        │ ├────────────────────────────────────────────────────┤ │
+        │ │ דני כהן: 15-17/02 (חופשה) │ │
+        │ │ מיכל לוי: 20/02 (יום מחלה) │ │
+        │ └────────────────────────────────────────────────────┘ │
+        │ │
+        │ [+ הוסף עובד] │
+        └────────────────────────────────────────────────────────────┘
     </div>
 
     <h2>חוקי UI</h2>
@@ -1452,6 +1477,7 @@
             <th>שלב</th>
             <th>תוצרים</th>
             <th>אבן דרך</th>
+            <th>סטטוס</th>
         </tr>
         <tr>
             <td><strong>1. Setup</strong></td>
@@ -1463,6 +1489,7 @@
                 </ul>
             </td>
             <td>Skeleton פעיל</td>
+            <td><span class="tag core">DONE</span></td>
         </tr>
         <tr>
             <td><strong>2. Tasks + CPM</strong></td>
@@ -1475,6 +1502,7 @@
                 </ul>
             </td>
             <td>MVP פנימי</td>
+            <td><span class="tag core">DONE</span></td>
         </tr>
         <tr>
             <td><strong>3. Team + Resources</strong></td>
@@ -1487,6 +1515,7 @@
                 </ul>
             </td>
             <td>Resource-Aware</td>
+            <td><span class="tag core">DONE</span></td>
         </tr>
         <tr>
             <td><strong>4. Audit Findings</strong></td>
@@ -1497,6 +1526,7 @@
                 </ul>
             </td>
             <td>Audit Flow שלם</td>
+            <td><span class="tag core">DONE</span></td>
         </tr>
         <tr>
             <td><strong>5. CRDT + Offline</strong></td>
@@ -1507,6 +1537,7 @@
                 </ul>
             </td>
             <td>Field-ready</td>
+            <td><span class="tag core">DONE</span></td>
         </tr>
         <tr>
             <td><strong>6. Grounded AI</strong></td>
@@ -1517,6 +1548,76 @@
                 </ul>
             </td>
             <td>AI Enabled</td>
+            <td><span class="tag core">DONE</span></td>
+        </tr>
+        <tr>
+            <td><strong>7. Modern SaaS UI</strong></td>
+            <td>
+                <ul style="margin: 0;">
+                    <li>עיצוב Premium Dark</li>
+                    <li>KPI Cards & Hero Area</li>
+                    <li>שימוש בפורמט FlowPlan</li>
+                </ul>
+            </td>
+            <td>Premium Feel</td>
+            <td><span class="tag core">DONE</span></td>
+        </tr>
+        <tr>
+            <td><strong>8. Personal Branding</strong></td>
+            <td>
+                <ul style="margin: 0;">
+                    <li>עמוד אודות (About)</li>
+                    <li>שילוב תמונות ולוגו</li>
+                </ul>
+            </td>
+            <td>About Page</td>
+            <td><span class="tag core">DONE</span></td>
+        </tr>
+        <tr>
+            <td><strong>9. Supabase Integration</strong></td>
+            <td>
+                <ul style="margin: 0;">
+                    <li>חיבור CRUD ל-Services</li>
+                    <li>מיגרציית נתונים</li>
+                    <li>Real-time Sync</li>
+                </ul>
+            </td>
+            <td>Cloud Persistence</td>
+            <td><span class="tag warning">PLANNED</span></td>
+        </tr>
+        <tr>
+            <td><strong>10. Authentication</strong></td>
+            <td>
+                <ul style="margin: 0;">
+                    <li>מערכת לוגין/הרשמה</li>
+                    <li>הגנת נתיבים (Middleware)</li>
+                </ul>
+            </td>
+            <td>Identity Ready</td>
+            <td><span class="tag warning">PLANNED</span></td>
+        </tr>
+        <tr>
+            <td><strong>11. Team Workspace</strong></td>
+            <td>
+                <ul style="margin: 0;">
+                    <li>ניהול חברי צוות ב-UI</li>
+                    <li>הגדרת זמינות וקיבולת</li>
+                </ul>
+            </td>
+            <td>Resource Hub</td>
+            <td><span class="tag warning">PLANNED</span></td>
+        </tr>
+        <tr>
+            <td><strong>12. Findings Center</strong></td>
+            <td>
+                <ul style="margin: 0;">
+                    <li>ניהול ממצאי ביקורת</li>
+                    <li>מעקב CAPA</li>
+                    <li>הפקת דוחות (Export)</li>
+                </ul>
+            </td>
+            <td>Full Audit Flow</td>
+            <td><span class="tag warning">PLANNED</span></td>
         </tr>
     </table>
 
@@ -1527,4 +1628,5 @@
     </div>
 
 </body>
+
 </html>
