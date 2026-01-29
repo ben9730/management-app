@@ -188,7 +188,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t-2 border-[#c3c6d4]">
+      <div className="flex justify-end gap-3 pt-4 border-t-2 border-slate-200 dark:border-slate-600">
         <Button
           type="button"
           variant="secondary"

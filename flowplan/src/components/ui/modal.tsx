@@ -136,7 +136,7 @@ const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'relative w-full bg-white shadow-2xl rounded-2xl overflow-hidden fp-animate-slide-up',
+          'relative w-full bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-hidden fp-animate-slide-up',
           sizes[size],
           className
         )}
@@ -148,7 +148,7 @@ const Modal: React.FC<ModalProps> = ({
               {title && (
                 <h2
                   id={titleId}
-                  className="text-xl font-black text-slate-800 tracking-tight"
+                  className="text-xl font-black text-slate-800 dark:text-white tracking-tight"
                 >
                   {title}
                 </h2>
@@ -164,7 +164,7 @@ const Modal: React.FC<ModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Close modal"
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <span className="text-2xl leading-none">&times;</span>
               </button>
@@ -179,7 +179,7 @@ const Modal: React.FC<ModalProps> = ({
         {footer && (
           <div
             data-testid="modal-footer"
-            className="p-6 pt-2 bg-slate-50/50"
+            className="p-6 pt-2 bg-slate-50/50 dark:bg-slate-900/50"
           >
             {footer}
           </div>

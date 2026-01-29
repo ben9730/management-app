@@ -28,19 +28,12 @@ vi.mock('@/services/projects')
 
 const mockProject: Project = {
   id: 'proj-1',
-  organization_id: 'org-1',
   name: 'Test Project',
   description: 'Test description',
   status: 'active',
-  methodology: 'waterfall',
   start_date: '2026-01-15',
-  target_end_date: '2026-03-31',
-  actual_end_date: null,
-  budget_amount: 100000,
-  budget_currency: 'ILS',
-  owner_id: 'user-1',
-  working_days: [0, 1, 2, 3, 4],
-  default_work_hours: 9,
+  end_date: '2026-03-31',
+  created_by: 'user-1',
   created_at: '2026-01-10T00:00:00Z',
   updated_at: '2026-01-10T00:00:00Z',
 }
@@ -184,17 +177,13 @@ describe('useProjects Hook', () => {
       })
 
       result.current.mutate({
-        organization_id: 'org-1',
         name: 'New Project',
-        owner_id: 'user-1',
       })
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
       expect(projectsService.createProject).toHaveBeenCalledWith({
-        organization_id: 'org-1',
         name: 'New Project',
-        owner_id: 'user-1',
       })
     })
 
@@ -209,9 +198,7 @@ describe('useProjects Hook', () => {
       })
 
       result.current.mutate({
-        organization_id: 'org-1',
         name: 'Failing Project',
-        owner_id: 'user-1',
       })
 
       await waitFor(() => expect(result.current.isError).toBe(true))

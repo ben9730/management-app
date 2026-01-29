@@ -49,12 +49,12 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
     const errorId = error ? `${inputId}-error` : undefined
 
     const baseStyles =
-      'w-full border bg-slate-50 text-slate-900 rounded-xl transition-all duration-200 placeholder:text-slate-400 placeholder:font-medium font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white'
+      'w-full border bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-medium font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-600'
 
     const variants = {
-      default: 'border-slate-200 focus:border-blue-500',
-      error: 'border-red-300 focus:border-red-500 bg-red-50/30',
-      success: 'border-green-300 focus:border-green-500 bg-green-50/30',
+      default: 'border-slate-200 dark:border-slate-600 focus:border-blue-500',
+      error: 'border-red-300 focus:border-red-500 bg-red-50/30 dark:bg-red-900/30',
+      success: 'border-green-300 focus:border-green-500 bg-green-50/30 dark:bg-green-900/30',
     }
 
     const sizes = {
@@ -64,7 +64,7 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400'
+      ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
       : ''
 
     const commonProps = {

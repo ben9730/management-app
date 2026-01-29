@@ -2,44 +2,30 @@
  * Projects Service
  *
  * CRUD operations for projects using Supabase.
+ * Updated to match actual database schema.
  */
 
 import { supabase } from '@/lib/supabase'
 import type { Project } from '@/types/entities'
 
 export interface CreateProjectInput {
-  organization_id: string
   name: string
   description?: string | null
   status?: Project['status']
-  methodology?: Project['methodology']
   start_date?: string | null
-  target_end_date?: string | null
-  budget_amount?: number | null
-  budget_currency?: string
-  owner_id: string
-  working_days?: number[]
-  default_work_hours?: number
+  end_date?: string | null
 }
 
 export interface UpdateProjectInput {
   name?: string
   description?: string | null
   status?: Project['status']
-  methodology?: Project['methodology']
   start_date?: string | null
-  target_end_date?: string | null
-  actual_end_date?: string | null
-  budget_amount?: number | null
-  budget_currency?: string
-  owner_id?: string
-  working_days?: number[]
-  default_work_hours?: number
+  end_date?: string | null
 }
 
 export interface ProjectsFilter {
   status?: Project['status']
-  owner_id?: string
 }
 
 interface ServiceResult<T> {
@@ -52,26 +38,6 @@ function validateCreateInput(input: CreateProjectInput): string | null {
   if (!input.name || input.name.trim() === '') {
     return 'Project name is required'
   }
-
-  if (!input.organization_id) {
-    return 'Organization ID is required'
-  }
-
-  if (!input.owner_id) {
-    return 'Owner ID is required'
-  }
-
-  if (input.working_days) {
-    const invalidDays = input.working_days.filter((d) => d < 0 || d > 6)
-    if (invalidDays.length > 0) {
-      return 'Invalid working_days values. Must be 0-6 (Sunday-Saturday)'
-    }
-  }
-
-  if (input.budget_amount !== undefined && input.budget_amount !== null && input.budget_amount < 0) {
-    return 'Invalid budget_amount. Must be a positive number'
-  }
-
   return null
 }
 
@@ -87,20 +53,18 @@ export async function createProject(
     return { data: null, error: { message: validationError } }
   }
 
-  // Set defaults
+  // Fetch current user to set created_by (if available)
+  const { data: authData } = await supabase.auth.getUser()
+  const user = authData?.user
+
+  // Only include fields that exist in the database schema
   const projectData = {
-    organization_id: input.organization_id,
     name: input.name.trim(),
     description: input.description ?? null,
-    status: input.status ?? 'planning',
-    methodology: input.methodology ?? 'waterfall',
+    status: input.status ?? 'active',
     start_date: input.start_date ?? null,
-    target_end_date: input.target_end_date ?? null,
-    budget_amount: input.budget_amount ?? null,
-    budget_currency: input.budget_currency ?? 'ILS',
-    owner_id: input.owner_id,
-    working_days: input.working_days ?? [0, 1, 2, 3, 4], // Israeli workweek
-    default_work_hours: input.default_work_hours ?? 9,
+    end_date: input.end_date ?? null,
+    created_by: user?.id || null,
   }
 
   const { data, error } = await supabase
@@ -134,23 +98,16 @@ export async function getProject(id: string): Promise<ServiceResult<Project>> {
 }
 
 /**
- * Get all projects for an organization
+ * Get all projects (optionally filtered by status)
  */
 export async function getProjects(
-  organizationId: string,
+  _organizationId?: string, // Kept for API compatibility but not used in simplified schema
   filter?: ProjectsFilter
 ): Promise<ServiceResult<Project[]>> {
-  let query = supabase
-    .from('projects')
-    .select('*')
-    .eq('organization_id', organizationId)
+  let query = supabase.from('projects').select('*')
 
   if (filter?.status) {
     query = query.eq('status', filter.status)
-  }
-
-  if (filter?.owner_id) {
-    query = query.eq('owner_id', filter.owner_id)
   }
 
   const { data, error } = await query.order('created_at', { ascending: false })
@@ -169,10 +126,14 @@ export async function updateProject(
   id: string,
   updates: UpdateProjectInput
 ): Promise<ServiceResult<Project>> {
-  const updateData = {
-    ...updates,
-    updated_at: new Date().toISOString(),
-  }
+  // Only include fields that exist in the database schema
+  const updateData: Record<string, unknown> = {}
+
+  if (updates.name !== undefined) updateData.name = updates.name
+  if (updates.description !== undefined) updateData.description = updates.description
+  if (updates.status !== undefined) updateData.status = updates.status
+  if (updates.start_date !== undefined) updateData.start_date = updates.start_date
+  if (updates.end_date !== undefined) updateData.end_date = updates.end_date
 
   const { data, error } = await supabase
     .from('projects')

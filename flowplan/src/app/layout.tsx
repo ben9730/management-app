@@ -3,6 +3,7 @@ import { DM_Sans } from 'next/font/google'
 import './globals.css'
 
 import { Navbar } from '@/components/Navbar'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -29,14 +30,16 @@ export default function RootLayout({
         className={`${dmSans.variable} font-sans antialiased bg-background text-foreground min-h-screen transition-colors duration-200`}
         suppressHydrationWarning
       >
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
+        <QueryProvider>
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
 
-          <main className="flex-1">
-            {children}
-          </main>
+            <main className="flex-1">
+              {children}
+            </main>
 
-        </div>
+          </div>
+        </QueryProvider>
       </body>
     </html>
   )

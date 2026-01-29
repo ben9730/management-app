@@ -35,21 +35,12 @@ export interface BaseEntity {
 
 export interface Project extends BaseEntity {
   name: string
-  organization_id: string
-  methodology: string
   description: string | null
   status: ProjectStatus
-  start_date: Date | null
-  end_date: Date | null
-  target_end_date: Date | null
-  actual_end_date: Date | null
-  budget_amount: number | null
-  budget_currency: string
-  owner_id: string
-  working_days: number[]
-  default_work_hours: number
-  created_by: string
-  updated_at: Date
+  start_date: Date | string | null
+  end_date: Date | string | null
+  created_by: string | null
+  updated_at: Date | string
 }
 
 export interface CreateProjectInput {

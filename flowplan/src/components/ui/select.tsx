@@ -51,12 +51,12 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const errorId = error ? `${selectId}-error` : undefined
 
     const baseStyles =
-      'w-full appearance-none border bg-slate-50 text-slate-900 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white pr-10'
+      'w-full appearance-none border bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-600 pr-10'
 
     const variants = {
-      default: 'border-slate-200 focus:border-blue-500',
-      error: 'border-red-300 focus:border-red-500 bg-red-50/30',
-      success: 'border-green-300 focus:border-green-500 bg-green-50/30',
+      default: 'border-slate-200 dark:border-slate-600 focus:border-blue-500',
+      error: 'border-red-300 focus:border-red-500 bg-red-50/30 dark:bg-red-900/30',
+      success: 'border-green-300 focus:border-green-500 bg-green-50/30 dark:bg-green-900/30',
     }
 
     const sizes = {
@@ -66,7 +66,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     }
 
     const disabledStyles = disabled
-      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400'
+      ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
       : 'cursor-pointer'
 
     // Group options if needed

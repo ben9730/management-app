@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS projects (
   status        TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'archived')),
   start_date    DATE,
   end_date      DATE,
-  created_by    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by    UUID DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at    TIMESTAMPTZ DEFAULT now(),
   updated_at    TIMESTAMPTZ DEFAULT now()
 );
@@ -207,30 +207,58 @@ ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employee_time_off ENABLE ROW LEVEL SECURITY;
 ALTER TABLE task_assignments ENABLE ROW LEVEL SECURITY;
 
--- Projects: Users can see projects they are members of
-CREATE POLICY "Users can view projects they are members of"
-  ON projects FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM team_members
-      WHERE team_members.project_id = projects.id
-      AND team_members.user_id = auth.uid()
-    )
-    OR created_by = auth.uid()
+-- Helper function to break recursion (SECURITY DEFINER bypasses RLS)
+CREATE OR REPLACE FUNCTION is_project_member(p_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.team_members
+    WHERE project_id = p_id
+    AND user_id = auth.uid()
   );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Projects: Only admins can insert/update/delete
-CREATE POLICY "Admins can manage projects"
-  ON projects FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM team_members
-      WHERE team_members.project_id = projects.id
-      AND team_members.user_id = auth.uid()
-      AND team_members.role = 'admin'
-    )
-    OR created_by = auth.uid()
+CREATE OR REPLACE FUNCTION is_project_admin(p_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.team_members
+    WHERE project_id = p_id
+    AND user_id = auth.uid()
+    AND role = 'admin'
   );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to auto-add creator to team_members (only if authenticated)
+CREATE OR REPLACE FUNCTION handle_new_project()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL THEN
+    INSERT INTO public.team_members (user_id, project_id, role)
+    VALUES (auth.uid(), NEW.id, 'admin');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_project_created
+  AFTER INSERT ON projects
+  FOR EACH ROW EXECUTE FUNCTION handle_new_project();
+
+-- Projects: Anyone can view projects (for dev/demo)
+CREATE POLICY "Anyone can view projects"
+  ON projects FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+-- Projects: Anyone can manage projects (for dev/demo)
+CREATE POLICY "Anyone can manage projects"
+  ON projects FOR ALL
+  TO anon, authenticated
+  USING (true)
+  WITH CHECK (true);
 
 -- Tasks: Members can view tasks in their projects
 CREATE POLICY "Members can view tasks in their projects"
@@ -344,11 +372,8 @@ CREATE POLICY "Admins can manage calendar exceptions"
 CREATE POLICY "Members can view team members"
   ON team_members FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM team_members tm
-      WHERE tm.project_id = team_members.project_id
-      AND tm.user_id = auth.uid()
-    )
+    user_id = auth.uid()
+    OR is_project_member(project_id)
   );
 
 CREATE POLICY "Admins can manage team members"

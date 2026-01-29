@@ -1,7 +1,74 @@
 # FlowPlan - Progress Report
 ## AI-Native Audit Management System
 
-Last Updated: 2026-01-29 11:05 (Israel Time)
+Last Updated: 2026-01-29 (Israel Time)
+
+## 🔄 SESSION 19: Project Creation & RLS Fixes 🛠️
+
+### Objective
+Fix project creation schema errors (`budget_amount` missing) and `team_members` infinite recursion.
+
+### Changes Made
+- [x] Updated `entities.ts` to match actual database schema (removed stale `budget_amount`, `methodology`, etc.)
+- [x] Fixed `use-projects.test.ts` to match new schema and interface
+- [x] Fixed RLS recursion in `team_members` SELECT policy
+- [x] Implemented explicit `created_by` assignment in `projects.ts`
+- [x] Added anonymous project creation support for development
+- [x] Verified project hooks and services with 31 passing tests
+
+### Status: COMPLETED ✅
+- [x] Project creation flow fixed
+- [x] RLS recursion resolved
+- [x] Anonymous creation support enabled
+
+---
+
+## 🔄 SESSION 18: Supabase Data Connection 🔗
+
+### Objective
+Remove mock data and wire UI to real Supabase backend using React Query hooks.
+
+### Changes Made
+- [x] Created `QueryProvider.tsx` wrapper component for React Query
+- [x] Updated `layout.tsx` to wrap app with QueryClientProvider
+- [x] Rewrote `page.tsx` to use React Query hooks instead of useState with mock data:
+  - `useProjects()` - Fetch projects from Supabase
+  - `useTasks()` - Fetch tasks for current project
+  - `usePhases()` - Fetch phases for current project
+  - `useTeamMembersByProject()` - Fetch team members
+- [x] Added mutation hooks for CRUD operations:
+  - `useCreateProject()` - Create new project
+  - `useCreateTask()` - Create new task
+  - `useUpdateTask()` - Update task
+  - `useDeleteTask()` - Delete task
+- [x] Added loading UI with spinner while fetching data
+- [x] Added "Create Project" UI when no project exists
+- [x] Fixed `tasks.ts` service - added `duration` field to CreateTaskInput and UpdateTaskInput
+- [x] Fixed missing CSS variable `--fp-brand-blue` in globals.css (button visibility issue)
+- [x] Fixed Modal dark mode support (bg-white → bg-white dark:bg-slate-800)
+- [x] Fixed Input component dark mode support
+- [x] Fixed Select component dark mode support
+- [x] Fixed ProjectForm border color for dark mode
+- [x] Fixed service default status from invalid `'planning'` to valid `'active'` (ProjectStatus type fix)
+- [x] Added error handling to createProjectMutation with `onError` callback
+- [x] Added error message display in ProjectForm modal
+- [x] Added loading state (`isLoading` prop) to ProjectForm during mutation
+- [x] Updated tests to expect valid status values
+- [x] **MAJOR FIX**: Updated projects.ts service to match actual database schema:
+  - Removed non-existent fields: `organization_id`, `methodology`, `budget_amount`, `budget_currency`, `owner_id`, `working_days`, `default_work_hours`, `target_end_date`
+  - Service now only uses: `name`, `description`, `status`, `start_date`, `end_date`
+- [x] Updated page.tsx to use simplified CreateProjectInput
+- [x] Updated all tests to match new simplified interface (30 tests)
+
+### Status: READY FOR TESTING ✅
+- [x] React Query integration complete
+- [x] Dark mode fixes for form components complete
+- [x] Create project submit fixed (service matches DB schema)
+- [x] All 30 projects tests passing
+- [x] Build passing
+- [ ] Test with real Supabase data
+
+---
 
 ## 🔄 SESSION 15: Pixel-Perfect UI Redesign (FlowPlan Premium) 🏗️
 

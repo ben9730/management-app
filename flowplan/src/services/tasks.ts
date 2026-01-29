@@ -15,6 +15,7 @@ export interface CreateTaskInput {
   task_type?: Task['task_type']
   status?: Task['status']
   priority?: Task['priority']
+  duration?: number
   start_date?: string | null
   due_date?: string | null
   estimated_hours?: number | null
@@ -31,6 +32,7 @@ export interface UpdateTaskInput {
   task_type?: Task['task_type']
   status?: Task['status']
   priority?: Task['priority']
+  duration?: number
   start_date?: string | null
   due_date?: string | null
   estimated_hours?: number | null
