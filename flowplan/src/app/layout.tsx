@@ -23,7 +23,10 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
       </head>
-      <body className={`${dmSans.variable} font-sans antialiased bg-background text-foreground min-h-screen transition-colors duration-200`}>
+      <body
+        className={`${dmSans.variable} font-sans antialiased bg-background text-foreground min-h-screen transition-colors duration-200`}
+        suppressHydrationWarning
+      >
         <div className="min-h-screen flex flex-col">
           {/* Header */}
           <header className="border-b border-slate-200 dark:border-slate-800 bg-surface sticky top-0 z-50">
@@ -39,10 +42,11 @@ export default function RootLayout({
                   </span>
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
+                  <NavLink href="/">לוח בקרה</NavLink>
+                  <NavLink href="/about">אודות</NavLink>
                   <NavLink href="#">ממצאים</NavLink>
                   <NavLink href="#">צוות</NavLink>
                   <NavLink href="#">פרויקטים</NavLink>
-                  <NavLink href="#" active>לוח בקרה</NavLink>
                 </nav>
               </div>
 
