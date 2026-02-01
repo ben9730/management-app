@@ -47,7 +47,7 @@ function getDateRange(tasks: Task[]): { start: Date; end: Date } {
 
   for (const task of tasks) {
     const start = parseDate(task.start_date)
-    const end = parseDate(task.due_date)
+    const end = parseDate(task.end_date)
 
     if (start && (!minDate || start < minDate)) {
       minDate = start
@@ -156,7 +156,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
     // Calculate task positions
     const taskPositions: TaskPosition[] = tasks.map((task, index) => {
       const taskStart = parseDate(task.start_date)
-      const taskEnd = parseDate(task.due_date)
+      const taskEnd = parseDate(task.end_date)
 
       if (!taskStart || !taskEnd) {
         return { task, left: 0, width: dayWidth, top: index * ROW_HEIGHT }
@@ -308,11 +308,6 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                   )}
                   style={{ height: ROW_HEIGHT }}
                 >
-                  {task.wbs_number && (
-                    <span className="text-xs font-mono text-[var(--fp-text-tertiary)] mr-2 w-8">
-                      {task.wbs_number}
-                    </span>
-                  )}
                   <span className="text-sm truncate flex-1 text-[var(--fp-text-primary)]">{task.title}</span>
                 </div>
               ))}
@@ -399,8 +394,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
 
               {/* Task Bars */}
               {taskPositions.map(({ task, left, width, top }) => {
-                const isCritical = criticalPathTaskIds.includes(task.id)
-                const isMilestone = task.task_type === 'milestone'
+                const isCritical = criticalPathTaskIds.includes(task.id) || task.is_critical
 
                 return (
                   <div
@@ -410,12 +404,11 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     className={cn(
                       'absolute cursor-pointer transition-all group',
                       isCritical && 'critical-path',
-                      isMilestone && 'milestone',
                       `status-${task.status}`
                     )}
                     style={{
                       left,
-                      width: isMilestone ? ROW_HEIGHT - 12 : width,
+                      width,
                       top: top + 6,
                       height: ROW_HEIGHT - 12,
                     }}
@@ -423,38 +416,21 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     onMouseEnter={() => setHoveredTaskId(task.id)}
                     onMouseLeave={() => setHoveredTaskId(null)}
                   >
-                    {isMilestone ? (
-                      <div
-                        className={cn(
-                          'w-full h-full rotate-45 transform origin-center shadow-sm hover:shadow-md transition-shadow',
-                          isCritical ? 'bg-[var(--fp-critical)]' : 'bg-[var(--fp-text-primary)]'
-                        )}
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          'w-full h-full rounded-md relative overflow-hidden shadow-sm hover:shadow-md transition-shadow',
-                          task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
-                            task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
-                              task.status === 'pending' ? 'bg-[var(--fp-status-pending)]' :
-                                'bg-[var(--fp-brand-primary)]',
-                          isCritical && 'ring-2 ring-[var(--fp-critical)] ring-offset-1'
-                        )}
-                      >
-
-                        {/* Progress Fill (Darker shade overlay) */}
-                        <div
-                          data-testid={`task-progress-${task.id}`}
-                          className="absolute inset-y-0 left-0 bg-black/10"
-                          style={{ width: `${task.progress_percent}%` }}
-                        />
-
-                        {/* Task Title */}
-                        <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium truncate z-10 text-white drop-shadow-sm">
-                          {task.title}
-                        </span>
-                      </div>
-                    )}
+                    <div
+                      className={cn(
+                        'w-full h-full rounded-md relative overflow-hidden shadow-sm hover:shadow-md transition-shadow',
+                        task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
+                          task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
+                            task.status === 'pending' ? 'bg-[var(--fp-status-pending)]' :
+                              'bg-[var(--fp-brand-primary)]',
+                        isCritical && 'ring-2 ring-[var(--fp-critical)] ring-offset-1'
+                      )}
+                    >
+                      {/* Task Title */}
+                      <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium truncate z-10 text-white drop-shadow-sm">
+                        {task.title}
+                      </span>
+                    </div>
                   </div>
                 )
               })}
@@ -516,13 +492,10 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
           >
             <div className="font-bold mb-1">{hoveredTask.title}</div>
             <div className="flex items-center gap-2 text-[var(--fp-text-secondary)]">
-              <span>{formatDateDisplay(hoveredTask.start_date)} - {formatDateDisplay(hoveredTask.due_date)}</span>
+              <span>{formatDateDisplay(hoveredTask.start_date)} - {formatDateDisplay(hoveredTask.end_date)}</span>
             </div>
-            <div className="mt-1 flex items-center gap-2">
-              <div className="w-16 h-1.5 bg-[var(--fp-bg-tertiary)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--fp-status-success)]" style={{ width: `${hoveredTask.progress_percent}%` }}></div>
-              </div>
-              <span>{hoveredTask.progress_percent}%</span>
+            <div className="mt-1 text-[var(--fp-text-secondary)]">
+              <span>Duration: {hoveredTask.duration} days</span>
             </div>
           </div>
         )}

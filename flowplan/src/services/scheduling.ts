@@ -120,18 +120,21 @@ export class SchedulingService {
    * Count working days between two dates
    */
   workingDaysBetween(
-    start: Date,
-    end: Date,
+    start: Date | string,
+    end: Date | string,
     workDays: number[],
     holidays: Date[]
   ): number {
-    if (this.toDateString(start) === this.toDateString(end)) {
+    const startDate = start instanceof Date ? start : new Date(start)
+    const endDate = end instanceof Date ? end : new Date(end)
+
+    if (this.toDateString(startDate) === this.toDateString(endDate)) {
       return 0
     }
 
     let count = 0
-    let currentDate = new Date(start)
-    const endStr = this.toDateString(end)
+    let currentDate = new Date(startDate)
+    const endStr = this.toDateString(endDate)
 
     while (this.toDateString(currentDate) !== endStr) {
       currentDate = this.addDays(currentDate, 1)
@@ -391,8 +394,9 @@ export class SchedulingService {
     // Find project end date (max EF)
     let projectEnd: Date | null = null
     for (const task of processedTasks) {
-      if (task.ef && (!projectEnd || task.ef > projectEnd)) {
-        projectEnd = task.ef
+      const taskEf = this.toDate(task.ef)
+      if (taskEf && (!projectEnd || taskEf > projectEnd)) {
+        projectEnd = taskEf
       }
     }
 
@@ -519,8 +523,9 @@ export class SchedulingService {
     // Find project end date
     let projectEnd: Date | null = null
     for (const task of resultTasks) {
-      if (task.ef && (!projectEnd || task.ef > projectEnd)) {
-        projectEnd = task.ef
+      const taskEf = this.toDate(task.ef)
+      if (taskEf && (!projectEnd || taskEf > projectEnd)) {
+        projectEnd = taskEf
       }
     }
 
@@ -553,8 +558,15 @@ export class SchedulingService {
   // Helper Methods
   // ==========================================
 
-  private addDays(date: Date, days: number): Date {
-    const result = new Date(date)
+  private toDate(value: Date | string | null): Date | null {
+    if (!value) return null
+    if (value instanceof Date) return value
+    return new Date(value)
+  }
+
+  private addDays(date: Date | string, days: number): Date {
+    const d = date instanceof Date ? date : new Date(date)
+    const result = new Date(d)
     result.setDate(result.getDate() + days)
     return result
   }

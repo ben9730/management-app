@@ -10,12 +10,13 @@ import { PhaseSection } from '@/components/phases/PhaseSection'
 import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
+import { PhaseForm } from '@/components/forms/PhaseForm'
 import { Plus, Clock, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react'
 
 // React Query hooks
 import { useProjects, useCreateProject } from '@/hooks/use-projects'
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/use-tasks'
-import { usePhases } from '@/hooks/use-phases'
+import { usePhases, useCreatePhase } from '@/hooks/use-phases'
 import { useTeamMembersByProject } from '@/hooks/use-team-members'
 
 // Default organization ID (will be replaced with auth later)
@@ -48,6 +49,7 @@ export default function DashboardPage() {
   const createTaskMutation = useCreateTask()
   const updateTaskMutation = useUpdateTask()
   const deleteTaskMutation = useDeleteTask()
+  const createPhaseMutation = useCreatePhase()
 
   // UI State
   const [viewMode, setViewMode] = useState<ViewMode>('phases')
@@ -57,6 +59,9 @@ export default function DashboardPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isPhaseModalOpen, setIsPhaseModalOpen] = useState(false)
+  const [phaseErrorMessage, setPhaseErrorMessage] = useState<string | null>(null)
+  const [taskErrorMessage, setTaskErrorMessage] = useState<string | null>(null)
 
   // Loading state
   const isLoading = isLoadingProjects || (projectId && (isLoadingTasks || isLoadingPhases || isLoadingTeam))
@@ -76,7 +81,7 @@ export default function DashboardPage() {
 
   // Get tasks for a phase
   const getTasksForPhase = useCallback((phaseId: string) => {
-    return tasks.filter(t => t.phase_id === phaseId).sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+    return tasks.filter(t => t.phase_id === phaseId)
   }, [tasks])
 
   // Get team member name
@@ -106,7 +111,6 @@ export default function DashboardPage() {
       id: taskId,
       updates: {
         status: newStatus,
-        progress_percent: newStatus === 'done' ? 100 : task.progress_percent,
       }
     })
   }, [tasks, updateTaskMutation])
@@ -136,6 +140,7 @@ export default function DashboardPage() {
     title: string; description?: string; priority: Task['priority']
     duration: number; estimated_hours?: number; start_date?: string
   }) => {
+    setTaskErrorMessage(null) // Clear previous errors
     if (editingTask) {
       // Update existing task
       updateTaskMutation.mutate({
@@ -153,6 +158,11 @@ export default function DashboardPage() {
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
+          setTaskErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to update task:', error)
+          setTaskErrorMessage(error instanceof Error ? error.message : 'שגיאה בעדכון המשימה')
         }
       })
     } else {
@@ -167,12 +177,16 @@ export default function DashboardPage() {
         estimated_hours: data.estimated_hours || null,
         start_date: data.start_date || null,
         status: 'pending',
-        task_type: 'task',
       }, {
         onSuccess: () => {
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
+          setTaskErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to create task:', error)
+          setTaskErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת המשימה')
         }
       })
     }
@@ -201,6 +215,30 @@ export default function DashboardPage() {
       }
     })
   }, [createProjectMutation])
+
+  // Handle phase form submit (for creating new phases)
+  const handlePhaseFormSubmit = useCallback((data: {
+    name: string; description?: string; start_date?: string; end_date?: string
+  }) => {
+    setPhaseErrorMessage(null) // Clear previous errors
+    createPhaseMutation.mutate({
+      project_id: projectId,
+      name: data.name,
+      description: data.description || null,
+      phase_order: phases.length + 1,
+      start_date: data.start_date || null,
+      end_date: data.end_date || null,
+    }, {
+      onSuccess: () => {
+        setIsPhaseModalOpen(false)
+        setPhaseErrorMessage(null)
+      },
+      onError: (error) => {
+        console.error('Failed to create phase:', error)
+        setPhaseErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת השלב')
+      }
+    })
+  }, [projectId, phases.length, createPhaseMutation])
 
   // Loading UI
   if (isLoading) {
@@ -270,6 +308,14 @@ export default function DashboardPage() {
             >
               <span className="material-icons text-lg">add</span>
               משימה חדשה
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+              onClick={() => setIsPhaseModalOpen(true)}
+            >
+              <span className="material-icons text-lg">layers</span>
+              שלב חדש
             </Button>
             <Button
               variant="outline"
@@ -376,8 +422,17 @@ export default function DashboardPage() {
           <div className="flex-1">
             {phases.length === 0 ? (
               <div className="text-center py-16 bg-surface rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <span className="material-icons text-3xl text-primary">layers</span>
+                </div>
                 <p className="text-slate-500 dark:text-slate-400 text-lg mb-4">אין שלבים בפרויקט זה עדיין</p>
-                <p className="text-slate-400 text-sm">צור שלבים ב-Supabase כדי להתחיל להוסיף משימות</p>
+                <p className="text-slate-400 text-sm mb-6">צור שלב ראשון כדי להתחיל להוסיף משימות</p>
+                <Button
+                  className="bg-primary hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold"
+                  onClick={() => setIsPhaseModalOpen(true)}
+                >
+                  צור שלב ראשון
+                </Button>
               </div>
             ) : viewMode === 'phases' ? (
               <div className="space-y-4 fp-stagger">
@@ -431,7 +486,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">לוח זמנים</div>
-                        <div className="text-sm font-bold">{formatDate(selectedTask.start_date)} - {formatDate(selectedTask.due_date)}</div>
+                        <div className="text-sm font-bold">{formatDate(selectedTask.start_date)} - {formatDate(selectedTask.end_date)}</div>
                       </div>
                     </div>
                     {selectedTask.assignee_id && (
@@ -490,10 +545,22 @@ export default function DashboardPage() {
       {/* Task Modal */}
       <Modal
         isOpen={isTaskModalOpen}
-        onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
+        onClose={() => {
+          if (!createTaskMutation.isPending && !updateTaskMutation.isPending) {
+            setIsTaskModalOpen(false)
+            setEditingTask(null)
+            setSelectedPhaseId(null)
+            setTaskErrorMessage(null)
+          }
+        }}
         title={editingTask ? 'עריכת משימה' : 'משימה חדשה'}
         size="md"
       >
+        {taskErrorMessage && (
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+            {taskErrorMessage}
+          </div>
+        )}
         <TaskForm
           mode={editingTask ? 'edit' : 'create'}
           initialValues={editingTask ? {
@@ -505,7 +572,15 @@ export default function DashboardPage() {
             start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined
           } : undefined}
           onSubmit={handleTaskFormSubmit}
-          onCancel={() => { setIsTaskModalOpen(false); setEditingTask(null); setSelectedPhaseId(null) }}
+          onCancel={() => {
+            if (!createTaskMutation.isPending && !updateTaskMutation.isPending) {
+              setIsTaskModalOpen(false)
+              setEditingTask(null)
+              setSelectedPhaseId(null)
+              setTaskErrorMessage(null)
+            }
+          }}
+          isLoading={createTaskMutation.isPending || updateTaskMutation.isPending}
         />
       </Modal>
 
@@ -533,6 +608,36 @@ export default function DashboardPage() {
           onSubmit={handleProjectFormSubmit}
           onCancel={() => !createProjectMutation.isPending && setIsProjectModalOpen(false)}
           isLoading={createProjectMutation.isPending}
+        />
+      </Modal>
+
+      {/* Phase Modal */}
+      <Modal
+        isOpen={isPhaseModalOpen}
+        onClose={() => {
+          if (!createPhaseMutation.isPending) {
+            setIsPhaseModalOpen(false)
+            setPhaseErrorMessage(null)
+          }
+        }}
+        title="שלב חדש"
+        size="md"
+      >
+        {phaseErrorMessage && (
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+            {phaseErrorMessage}
+          </div>
+        )}
+        <PhaseForm
+          mode="create"
+          onSubmit={handlePhaseFormSubmit}
+          onCancel={() => {
+            if (!createPhaseMutation.isPending) {
+              setIsPhaseModalOpen(false)
+              setPhaseErrorMessage(null)
+            }
+          }}
+          isLoading={createPhaseMutation.isPending}
         />
       </Modal>
     </div>

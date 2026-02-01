@@ -1,12 +1,55 @@
 # FlowPlan Development Plan
 
-Last Updated: 2026-01-29 (Session 18 - Israel Time)
+Last Updated: 2026-02-01 (Session 22 - Israel Time)
 
 ---
 
-## Current Phase: Phase 19 - Supabase Data Connection 🔗
+## Current Phase: Phase 22 - RLS Infinite Recursion Fix 🛠️
 
-### Phase 19 Status: COMPLETED ✅
+### Phase 22 Status: MIGRATION READY ✅
+
+#### Issue Fixed:
+- Supabase RLS error: "infinite recursion detected in policy for relation team_members"
+- `team_members` table had a self-referencing policy causing the loop
+- Anonymous/development users couldn't access data
+
+#### Root Cause:
+The "Admins can manage team members" policy in `001_initial_schema.sql` referenced `team_members` from within a policy ON `team_members`, triggering infinite RLS checks.
+
+#### Solution:
+Created `supabase/migrations/002_fix_team_members_rls.sql`:
+1. Fixed `team_members` policy to use `is_project_admin()` SECURITY DEFINER function
+2. Added dev/demo "Anyone can..." policies for ALL tables
+3. Dropped restrictive member-only policies for development mode
+
+#### Action Required:
+Run `002_fix_team_members_rls.sql` in Supabase Dashboard SQL Editor
+
+---
+
+## Phase 21 - Phase Creation Error Handling: COMPLETED ✅
+
+#### Issue Fixed:
+- "צור שלב" button wasn't working - no action on click
+- Missing error handling in `handlePhaseFormSubmit`
+
+#### Changes:
+- Added `phaseErrorMessage` state variable
+- Added `onError` callback to phase mutation
+- Added error display in Phase Modal
+- Clear error on modal close
+
+---
+
+## Phase 20 - Phase Management: COMPLETED ✅
+
+- Added PhaseForm component with TDD (29 tests)
+- Auto-create default "כללי" phase on project creation
+- Integrated PhaseForm modal into dashboard
+
+---
+
+## Phase 19 - Supabase Data Connection: COMPLETED ✅
 
 #### Completed:
 - [x] Created `QueryProvider.tsx` wrapper component

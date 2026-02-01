@@ -46,6 +46,12 @@ vi.mock('@/lib/supabase', () => ({
   supabase: mockSupabase,
 }))
 
+// Mock phases service for default phase creation
+const mockCreatePhase = vi.fn()
+vi.mock('./phases', () => ({
+  createPhase: (...args: unknown[]) => mockCreatePhase(...args),
+}))
+
 // Mock project matching simplified schema
 const mockProject: Partial<Project> = {
   id: 'proj-1',
@@ -66,6 +72,8 @@ describe('Projects Service', () => {
       data: { user: { id: 'user-1' } },
       error: null,
     })
+    // Default phase mock - succeeds silently
+    mockCreatePhase.mockResolvedValue({ data: { id: 'phase-1' }, error: null })
   })
 
   describe('createProject', () => {
@@ -180,6 +188,68 @@ describe('Projects Service', () => {
         end_date: null,
         created_by: 'user-1',
       }))
+    })
+
+    it('creates default "כללי" phase after project creation', async () => {
+      const input: CreateProjectInput = {
+        name: 'New Project',
+      }
+
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { ...mockProject, id: 'proj-new', name: 'New Project' },
+        error: null,
+      })
+
+      await createProject(input)
+
+      expect(mockCreatePhase).toHaveBeenCalledWith({
+        project_id: 'proj-new',
+        name: 'כללי',
+        description: 'שלב ברירת מחדל',
+        phase_order: 1,
+      })
+    })
+
+    it('returns project even if default phase creation fails', async () => {
+      const input: CreateProjectInput = {
+        name: 'Project With Failed Phase',
+      }
+
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { ...mockProject, id: 'proj-fail', name: 'Project With Failed Phase' },
+        error: null,
+      })
+      mockCreatePhase.mockRejectedValueOnce(new Error('Phase creation failed'))
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const result = await createProject(input)
+
+      expect(result.data).toBeDefined()
+      expect(result.data?.name).toBe('Project With Failed Phase')
+      expect(result.error).toBeNull()
+      expect(consoleWarnSpy).toHaveBeenCalled()
+
+      consoleWarnSpy.mockRestore()
+    })
+
+    it('default phase has status "active" and phase_order 1', async () => {
+      const input: CreateProjectInput = {
+        name: 'Another Project',
+      }
+
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { ...mockProject, id: 'proj-another' },
+        error: null,
+      })
+
+      await createProject(input)
+
+      expect(mockCreatePhase).toHaveBeenCalledWith(
+        expect.objectContaining({
+          phase_order: 1,
+        })
+      )
     })
   })
 

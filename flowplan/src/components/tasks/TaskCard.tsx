@@ -97,9 +97,6 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         {/* Title & Info (Middle) */}
         <div className="flex-grow min-w-0">
           <div className="flex items-center gap-2">
-            {task.wbs_number && (
-              <span className="text-slate-400 text-xs font-medium">{task.wbs_number}</span>
-            )}
             <h4 className={cn(
               "font-semibold text-foreground truncate",
               task.status === 'done' && "text-slate-400 line-through"
@@ -115,7 +112,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         {/* Meta Info (Left side) */}
         <div className="flex items-center gap-6">
           <div className="hidden md:block text-slate-500 dark:text-slate-400 text-sm">
-            {formatDateDisplay(task.due_date || task.end_date)}
+            {formatDateDisplay(task.end_date)}
           </div>
 
           {/* Status Badge */}

@@ -2,6 +2,9 @@
  * Tasks Service
  *
  * CRUD operations for tasks using Supabase.
+ * Schema columns: id, project_id, phase_id, title, description, status, priority,
+ *                 assignee_id, duration, estimated_hours, start_date, end_date,
+ *                 es, ef, ls, lf, slack, is_critical, created_at, updated_at
  */
 
 import { supabase } from '@/lib/supabase'
@@ -12,46 +15,32 @@ export interface CreateTaskInput {
   phase_id?: string | null
   title: string
   description?: string | null
-  task_type?: Task['task_type']
   status?: Task['status']
   priority?: Task['priority']
+  assignee_id?: string | null
   duration?: number
-  start_date?: string | null
-  due_date?: string | null
   estimated_hours?: number | null
-  actual_hours?: number
-  progress_percent?: number
-  wbs_number?: string | null
-  order_index?: number
+  start_date?: string | null
+  end_date?: string | null
 }
 
 export interface UpdateTaskInput {
   phase_id?: string | null
   title?: string
   description?: string | null
-  task_type?: Task['task_type']
   status?: Task['status']
   priority?: Task['priority']
+  assignee_id?: string | null
   duration?: number
-  start_date?: string | null
-  due_date?: string | null
   estimated_hours?: number | null
-  actual_hours?: number
-  progress_percent?: number
-  wbs_number?: string | null
-  order_index?: number
+  start_date?: string | null
+  end_date?: string | null
 }
 
 export interface TasksFilter {
   phase_id?: string
   status?: Task['status']
   priority?: Task['priority']
-  task_type?: Task['task_type']
-}
-
-export interface TaskOrderUpdate {
-  id: string
-  order_index: number
 }
 
 interface ServiceResult<T> {
@@ -77,33 +66,6 @@ function validateCreateInput(input: CreateTaskInput): string | null {
     return 'Invalid estimated_hours. Must be a positive number'
   }
 
-  if (
-    input.progress_percent !== undefined &&
-    (input.progress_percent < 0 || input.progress_percent > 100)
-  ) {
-    return 'Invalid progress_percent. Must be between 0 and 100'
-  }
-
-  return null
-}
-
-function validateUpdateInput(input: UpdateTaskInput): string | null {
-  if (
-    input.progress_percent !== undefined &&
-    (input.progress_percent < 0 || input.progress_percent > 100)
-  ) {
-    return 'Invalid progress_percent. Must be between 0 and 100'
-  }
-
-  return null
-}
-
-function validateTaskOrders(taskOrders: TaskOrderUpdate[]): string | null {
-  for (const order of taskOrders) {
-    if (order.order_index < 0) {
-      return 'Invalid order_index. Must be non-negative'
-    }
-  }
   return null
 }
 
@@ -119,22 +81,19 @@ export async function createTask(
     return { data: null, error: { message: validationError } }
   }
 
-  // Set defaults
+  // Set defaults - only include columns that exist in the schema
   const taskData = {
     project_id: input.project_id,
     phase_id: input.phase_id ?? null,
     title: input.title.trim(),
     description: input.description ?? null,
-    task_type: input.task_type ?? 'task',
     status: input.status ?? 'pending',
     priority: input.priority ?? 'medium',
-    start_date: input.start_date ?? null,
-    due_date: input.due_date ?? null,
+    assignee_id: input.assignee_id ?? null,
+    duration: input.duration ?? 1,
     estimated_hours: input.estimated_hours ?? null,
-    actual_hours: input.actual_hours ?? 0,
-    progress_percent: input.progress_percent ?? 0,
-    wbs_number: input.wbs_number ?? null,
-    order_index: input.order_index ?? 0,
+    start_date: input.start_date ?? null,
+    end_date: input.end_date ?? null,
   }
 
   const { data, error } = await supabase
@@ -188,11 +147,7 @@ export async function getTasks(
     query = query.eq('priority', filter.priority)
   }
 
-  if (filter?.task_type) {
-    query = query.eq('task_type', filter.task_type)
-  }
-
-  const { data, error } = await query.order('order_index', { ascending: true })
+  const { data, error } = await query.order('created_at', { ascending: true })
 
   if (error) {
     return { data: null, error: { message: error.message, code: error.code } }
@@ -208,12 +163,6 @@ export async function updateTask(
   id: string,
   updates: UpdateTaskInput
 ): Promise<ServiceResult<Task>> {
-  // Validate input
-  const validationError = validateUpdateInput(updates)
-  if (validationError) {
-    return { data: null, error: { message: validationError } }
-  }
-
   const updateData = {
     ...updates,
     updated_at: new Date().toISOString(),
@@ -241,38 +190,6 @@ export async function deleteTask(id: string): Promise<ServiceResult<void>> {
 
   if (error) {
     return { data: null, error: { message: error.message, code: error.code } }
-  }
-
-  return { data: null, error: null }
-}
-
-/**
- * Reorder tasks by updating their order_index values
- */
-export async function reorderTasks(
-  taskOrders: TaskOrderUpdate[]
-): Promise<ServiceResult<void>> {
-  // Validate input
-  const validationError = validateTaskOrders(taskOrders)
-  if (validationError) {
-    return { data: null, error: { message: validationError } }
-  }
-
-  // Update each task's order_index
-  for (const order of taskOrders) {
-    const { error } = await supabase
-      .from('tasks')
-      .update({ order_index: order.order_index, updated_at: new Date().toISOString() } as never)
-      .eq('id', order.id)
-      .select()
-      .single()
-
-    if (error) {
-      return {
-        data: null,
-        error: { message: error.message, code: error.code },
-      }
-    }
   }
 
   return { data: null, error: null }

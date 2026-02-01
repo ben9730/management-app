@@ -54,14 +54,11 @@ export interface CreateProjectInput {
 // 2. Task
 // ============================================
 
-export type TaskType = 'task' | 'milestone'
-
 export interface Task extends BaseEntity {
   project_id: string
   phase_id: string | null
   title: string
   description: string | null
-  task_type: TaskType
   status: TaskStatus
   priority: TaskPriority
   assignee_id: string | null
@@ -69,23 +66,16 @@ export interface Task extends BaseEntity {
   // Scheduling fields (CPM)
   duration: number // Duration in working days
   estimated_hours: number | null // Total hours needed
-  actual_hours: number // Hours actually spent
   start_date: Date | string | null
   end_date: Date | string | null
-  due_date: Date | string | null
-  es: Date | null // Early Start
-  ef: Date | null // Early Finish
-  ls: Date | null // Late Start
-  lf: Date | null // Late Finish
+  es: Date | string | null // Early Start
+  ef: Date | string | null // Early Finish
+  ls: Date | string | null // Late Start
+  lf: Date | string | null // Late Finish
   slack: number // Slack = LS - ES (in working days)
   is_critical: boolean // On Critical Path?
 
-  // Display fields
-  progress_percent: number
-  wbs_number: string | null
-  order_index: number
-
-  updated_at: Date
+  updated_at: Date | string
 }
 
 export interface CreateTaskInput {
