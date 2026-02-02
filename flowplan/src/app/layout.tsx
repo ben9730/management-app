@@ -4,6 +4,7 @@ import './globals.css'
 
 import { Navbar } from '@/components/Navbar'
 import { QueryProvider } from '@/components/providers/QueryProvider'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -31,14 +32,16 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <QueryProvider>
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
+          <AuthProvider>
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
 
-            <main className="flex-1">
-              {children}
-            </main>
+              <main className="flex-1">
+                {children}
+              </main>
 
-          </div>
+            </div>
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>
