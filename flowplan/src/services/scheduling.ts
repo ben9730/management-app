@@ -454,8 +454,8 @@ export class SchedulingService {
         current = this.addDays(current, 1)
       }
 
-      const existing = userTimeOff.get(to.user_id) || []
-      userTimeOff.set(to.user_id, [...existing, ...dates])
+      const existing = userTimeOff.get(to.team_member_id) || []
+      userTimeOff.set(to.team_member_id, [...existing, ...dates])
     }
 
     // Create user work days map

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Select, SelectOption } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { TaskPriority } from '@/types/entities'
+import type { TaskPriority, TeamMember } from '@/types/entities'
 
 export interface TaskFormData {
   title: string
@@ -30,6 +30,8 @@ export interface TaskFormProps {
   mode?: 'create' | 'edit'
   isLoading?: boolean
   className?: string
+  /** Team members available for assignment */
+  teamMembers?: TeamMember[]
 }
 
 interface FormErrors {
@@ -51,7 +53,28 @@ const TaskForm: React.FC<TaskFormProps> = ({
   mode = 'create',
   isLoading = false,
   className,
+  teamMembers,
 }) => {
+  // Build assignee options from team members
+  const assigneeOptions: SelectOption[] = React.useMemo(() => {
+    if (!teamMembers || teamMembers.length === 0) return []
+
+    const options: SelectOption[] = [
+      { value: '', label: 'Unassigned' },
+    ]
+
+    teamMembers.forEach((member) => {
+      const displayName = member.display_name ||
+        `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+        member.email
+      options.push({
+        value: member.id,
+        label: displayName,
+      })
+    })
+
+    return options
+  }, [teamMembers])
   const [formData, setFormData] = React.useState<TaskFormData>({
     title: initialValues?.title || '',
     description: initialValues?.description || '',
@@ -108,6 +131,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         description: formData.description || undefined,
         estimated_hours: formData.estimated_hours || undefined,
         start_date: formData.start_date || undefined,
+        assignee_id: formData.assignee_id || undefined,
       })
     }
   }
@@ -214,6 +238,21 @@ const TaskForm: React.FC<TaskFormProps> = ({
           data-testid="task-estimated-hours-input"
         />
       </div>
+
+      {/* Assignee Selection - Only show if team members are provided */}
+      {assigneeOptions.length > 0 && (
+        <Select
+          label="Assignee"
+          id="assignee_id"
+          name="assignee_id"
+          value={formData.assignee_id || ''}
+          options={assigneeOptions}
+          onChange={handleChange}
+          disabled={isLoading}
+          fullWidth
+          data-testid="task-assignee-select"
+        />
+      )}
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-6">

@@ -45,10 +45,22 @@ function isOverdue(dueDate: Date | string | null): boolean {
   return due < today
 }
 
-function getInitials(firstName?: string | null, lastName?: string | null): string {
-  const first = firstName?.charAt(0) || ''
-  const last = lastName?.charAt(0) || ''
-  return `${first}${last}`.toUpperCase() || '?'
+function getInitials(member?: TeamMember | null): string {
+  if (!member) return '?'
+  // Try display_name first
+  if (member.display_name) {
+    const parts = member.display_name.trim().split(' ')
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase()
+    }
+    return member.display_name.charAt(0).toUpperCase()
+  }
+  // Fall back to first_name/last_name
+  const first = member.first_name?.charAt(0) || ''
+  const last = member.last_name?.charAt(0) || ''
+  if (first || last) return `${first}${last}`.toUpperCase()
+  // Last resort: email
+  return member.email?.charAt(0).toUpperCase() || '?'
 }
 
 const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
@@ -93,7 +105,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
       >
         {/* Assignee Avatar (Right side) */}
         <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0">
-          {assignee ? getInitials(assignee.first_name, assignee.last_name) : '?'}
+          {getInitials(assignee)}
         </div>
 
         {/* Title & Info (Middle) */}

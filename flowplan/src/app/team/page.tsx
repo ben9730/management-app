@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/modal'
 import { TeamMemberList } from '@/components/team/TeamMemberList'
 import { TimeOffCalendar } from '@/components/team/TimeOffCalendar'
 import { TeamMemberForm, TeamMemberFormData } from '@/components/forms/TeamMemberForm'
+import { TimeOffForm, TimeOffFormData } from '@/components/forms/TimeOffForm'
 import type { TeamMember, UserRole } from '@/types/entities'
 
 // Hooks
@@ -21,7 +22,7 @@ import {
   useUpdateTeamMember,
   useDeleteTeamMember,
 } from '@/hooks/use-team-members'
-import { useTimeOffs } from '@/hooks/use-time-off'
+import { useTimeOffs, useCreateTimeOff } from '@/hooks/use-time-off'
 
 // Default organization ID (will be replaced with auth later)
 const DEFAULT_ORG_ID = 'org-default'
@@ -58,10 +59,12 @@ export default function TeamPage() {
   const createMemberMutation = useCreateTeamMember()
   const updateMemberMutation = useUpdateTeamMember()
   const deleteMemberMutation = useDeleteTeamMember()
+  const createTimeOffMutation = useCreateTimeOff()
 
   // UI State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
+  const [isTimeOffModalOpen, setIsTimeOffModalOpen] = useState(false)
 
   // Get the ID of member being deleted
   const deletingMemberId = deleteMemberMutation.isPending
@@ -171,6 +174,42 @@ export default function TeamPage() {
     refetchMembers()
   }, [refetchMembers])
 
+  // Handle add time off
+  const handleAddTimeOff = useCallback(() => {
+    setIsTimeOffModalOpen(true)
+  }, [])
+
+  // Handle time off form submit
+  const handleTimeOffSubmit = useCallback(
+    (data: TimeOffFormData) => {
+      createTimeOffMutation.mutate(
+        {
+          team_member_id: data.team_member_id,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          type: data.type,
+          notes: data.notes || null,
+        },
+        {
+          onSuccess: () => {
+            setIsTimeOffModalOpen(false)
+          },
+          onError: (error) => {
+            console.error('Failed to create time off:', error)
+          },
+        }
+      )
+    },
+    [createTimeOffMutation]
+  )
+
+  // Handle time off form cancel
+  const handleTimeOffCancel = useCallback(() => {
+    if (!createTimeOffMutation.isPending) {
+      setIsTimeOffModalOpen(false)
+    }
+  }, [createTimeOffMutation.isPending])
+
   // Transform team members data to match expected format for display
   // The service returns organization-level members, but our components expect project-level format
   const displayMembers: TeamMember[] = teamMembers.map((member) => ({
@@ -226,6 +265,7 @@ export default function TeamPage() {
               teamMembers={displayMembers}
               isLoading={isLoadingTimeOffs}
               error={timeOffsError?.message || null}
+              onAddTimeOff={handleAddTimeOff}
             />
           </div>
         </div>
@@ -244,6 +284,21 @@ export default function TeamPage() {
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
           isLoading={createMemberMutation.isPending || updateMemberMutation.isPending}
+        />
+      </Modal>
+
+      {/* Add Time Off Modal */}
+      <Modal
+        isOpen={isTimeOffModalOpen}
+        onClose={handleTimeOffCancel}
+        title="Add Time Off"
+        size="md"
+      >
+        <TimeOffForm
+          teamMembers={displayMembers}
+          onSubmit={handleTimeOffSubmit}
+          onCancel={handleTimeOffCancel}
+          isLoading={createTimeOffMutation.isPending}
         />
       </Modal>
     </div>

@@ -9,9 +9,9 @@
 | פריט | מצב |
 |------|-----|
 | **Build** | ✅ מצליח |
-| **Tests** | ✅ 1049+ tests עוברים (10 חדשים) |
+| **Tests** | ✅ 1075+ tests עוברים (26 חדשים) |
 | **Coverage** | ✅ מעל 80% |
-| **סשן אחרון** | #4 - תיקון באגי Team Workspace |
+| **סשן אחרון** | #5 - Add Time Off & Task Assignment |
 | **משימה הבאה** | Phase B: יצירת Findings Center |
 
 ---
@@ -249,6 +249,119 @@
 
 ## 📝 לוג סשנים (Session Log)
 
+### Session #6 (03/02/2026) - Fix Production Bugs: Time Off RLS & Task Assignee Dropdown
+
+**What was done**:
+- Fixed Bug 1: Time Off RLS 403 Forbidden error on INSERT
+- Fixed Bug 2: Assignee dropdown not showing in TaskForm on dashboard
+- Created new RLS migration for employee_time_off table
+- Updated dashboard to fetch organization-level team members
+- Added 12 new tests following TDD methodology
+
+**Bug 1: Time Off RLS Error (403 Forbidden)**
+- **Problem**: POST to employee_time_off failed with "new row violates row-level security policy"
+- **Root Cause**: The existing RLS policy might not have been applied to the database, or INSERT needs explicit WITH CHECK clause
+- **Solution**: Created migration `004_fix_time_off_rls.sql` with explicit policies:
+  - Separate SELECT, INSERT, UPDATE, DELETE policies
+  - Explicit WITH CHECK (true) for INSERT operations
+  - GRANT permissions for anon and authenticated roles
+
+**Bug 2: Task Assignment Dropdown Not Showing**
+- **Problem**: Assignee dropdown not visible when creating new task from dashboard
+- **Root Cause**: Dashboard used `useTeamMembersByProject` which queries `project_members` junction table. If no team members are assigned to the project, the array is empty.
+- **Solution**: Updated `page.tsx` to also fetch organization-level team members using `useTeamMembers(DEFAULT_ORG_ID)`. The dashboard now combines org-level and project-level members.
+
+**Files Created**:
+- `flowplan/supabase/migrations/004_fix_time_off_rls.sql` - New RLS migration
+- `flowplan/src/components/forms/TaskForm.teamMembers.test.tsx` - 8 tests for assignee dropdown
+- `flowplan/src/app/page.teamMembers.test.tsx` - 4 tests for dashboard team members
+
+**Files Modified**:
+- `flowplan/src/app/page.tsx` - Fetch org-level team members for task assignment
+- `TRACKING.md` - Updated session log
+
+**TDD Methodology**:
+- Wrote tests first (RED phase) - 12 tests
+- Verified tests pass (some were already GREEN due to existing implementation)
+- Implemented fixes (GREEN phase)
+- All 12 new tests passing
+
+**Test Coverage**:
+- TaskForm Team Members: 8 tests
+- Dashboard Team Members: 4 tests
+- Total new tests: 12
+
+**Next Steps**:
+- Apply migration 004 to Supabase production
+- Phase B: Create Findings Center (`/findings`)
+
+---
+
+### סשן #5 (03/02/2026) - Add Time Off Form & Task Assignment Feature
+
+**מה נעשה**:
+- ✅ יצירת TimeOffForm component עם TDD (14 tests)
+- ✅ הוספת Assignee selection ל-TaskForm (12 tests)
+- ✅ שילוב TimeOffForm בדף Team עם Modal
+- ✅ הוספת כפתור "Add Time Off" ל-TimeOffCalendar
+- ✅ כל 26 tests חדשים עוברים
+
+**פיצ'רים שהוספו**:
+
+1. **Time Off Form** (`TimeOffForm.tsx`)
+   - בחירת חבר צוות מ-dropdown
+   - בחירת תאריכי התחלה וסיום
+   - בחירת סוג חופשה (Vacation, Sick, Personal, Other)
+   - שדה הערות אופציונלי
+   - ולידציה מלאה (חבר צוות נדרש, תאריכים נדרשים, תאריך סיום אחרי התחלה)
+   - מצב Edit לעריכת חופשות קיימות
+   - Loading state
+
+2. **Task Assignment**
+   - Dropdown לבחירת assignee ב-TaskForm
+   - מוצג רק כאשר teamMembers prop מועבר
+   - תמיכה ב-"Unassigned" option
+   - Pre-selection במצב Edit
+   - assignee_id נשמר עם המשימה
+
+3. **TimeOffCalendar Updates**
+   - כפתור "Add Time Off" בכותרת
+   - כפתור "Add Time Off" גם ב-empty state
+   - callback prop `onAddTimeOff`
+
+4. **Team Page Integration**
+   - Modal להוספת חופשה חדשה
+   - שילוב עם useCreateTimeOff hook
+   - Loading state בזמן שמירה
+
+**קבצים שנוצרו**:
+- `flowplan/src/components/forms/TimeOffForm.tsx`
+- `flowplan/src/components/forms/TimeOffForm.test.tsx`
+- `flowplan/src/components/forms/TaskForm.assignee.test.tsx`
+
+**קבצים ששונו**:
+- `flowplan/src/components/forms/TaskForm.tsx` - הוספת assignee dropdown
+- `flowplan/src/components/team/TimeOffCalendar.tsx` - הוספת Add button
+- `flowplan/src/app/team/page.tsx` - שילוב TimeOffForm modal
+- `TRACKING.md` - עדכון לוג סשנים
+
+**TDD Methodology**:
+- כתיבת tests תחילה (RED) - 26 tests
+- אימות שהבדיקות נכשלות
+- מימוש מינימלי (GREEN)
+- אימות שהבדיקות עוברות
+- All 26 new tests passing
+
+**Test Coverage**:
+- TimeOffForm: 14 tests
+- TaskForm Assignee: 12 tests
+- Total new tests: 26
+
+**צעדים הבאים**:
+- Phase B: יצירת Findings Center (`/findings`)
+
+---
+
 ### סשן #4 (03/02/2026) - תיקון באגי Production ב-Team Workspace ✅
 
 **מה נעשה**:
@@ -389,6 +502,85 @@
 ### חסימות
 
 - אין חסימות כרגע ✅
+
+---
+
+## 🔌 מחקר MCP Servers (Model Context Protocol)
+
+מחקר על שירותי MCP שיכולים לעזור בפיתוח האפליקציה.
+
+### 1. Supabase MCP Server (מומלץ מאוד 🌟)
+
+**התקנה:**
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
+    }
+  }
+}
+```
+
+**יכולות:**
+- ניהול פרויקטים וארגונים
+- חיפוש בדוקומנטציה של Supabase
+- פעולות Database: טבלאות, migrations, SQL queries
+- Debugging & monitoring: לוגים, התראות אבטחה
+- Edge Functions deployment
+- Database branching לבדיקות בטוחות
+- ניהול Storage
+
+**אזהרות אבטחה:**
+- **לא לחבר ל-Production!** רק לסביבת פיתוח
+- השתמש ב-read-only mode אם חייב לחבר לנתונים אמיתיים
+- הגבל לפרויקט ספציפי (project scoping)
+
+**מקורות:** [Supabase MCP Docs](https://supabase.com/docs/guides/getting-started/mcp) | [GitHub](https://github.com/supabase-community/supabase-mcp)
+
+---
+
+### 2. Playwright MCP Server (בדיקות דפדפן 🎭)
+
+**התקנה ל-Claude Code:**
+```bash
+claude mcp add playwright npx @playwright/mcp@latest
+```
+
+**יכולות:**
+- אוטומציה של דפדפן (Chromium, Firefox, WebKit)
+- ניווט, לחיצות, מילוי טפסים
+- יצירת PDF
+- אינטראקציות מבוססות Vision/coordinates
+- עבודה עם Accessibility Tree (מהיר ודטרמיניסטי)
+- תמיכה ב-143 מכשירים (iPhone, iPad, Pixel, Desktop)
+
+**מקורות:** [GitHub - microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp) | [ExecuteAutomation](https://github.com/executeautomation/mcp-playwright)
+
+---
+
+### 3. MCP Servers מומלצים נוספים
+
+| Server | תיאור | שימוש |
+|--------|-------|-------|
+| **GitHub MCP** | ניהול repos, PRs, issues, CI/CD | גרסת בקרה ואוטומציה |
+| **Context7** | דוקומנטציה עדכנית בזמן אמת | React, Next.js, Vue |
+| **Sequential Thinking** | פתרון בעיות מורכבות | ארכיטקטורה, debugging |
+| **PostgreSQL MCP** | עבודה ישירה עם Postgres | queries, schema design |
+| **Figma MCP** | Design-to-code | המרת עיצובים לקוד |
+| **Brave Search MCP** | חיפוש פרטי | מחקר ומידע עדכני |
+| **File System MCP** | פעולות קבצים מאובטחות | refactoring, ניהול קוד |
+
+**מקורות:** [Top 10 MCP Servers](https://apidog.com/blog/top-10-mcp-servers-for-claude-code/) | [Best MCP Servers 2026](https://www.builder.io/blog/best-mcp-servers-2026) | [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers)
+
+---
+
+### המלצות לפרויקט FlowPlan
+
+1. **Supabase MCP** - חובה להתקין. יאפשר לי לבדוק ולנהל את מסד הנתונים ישירות
+2. **Playwright MCP** - לבדיקות E2E אוטומטיות בדפדפן
+3. **Context7** - לדוקומנטציה עדכנית של Next.js 16 ו-React 19
 
 ---
 

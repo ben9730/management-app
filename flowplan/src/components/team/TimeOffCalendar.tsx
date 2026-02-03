@@ -8,8 +8,9 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import type { EmployeeTimeOff, TeamMember, TimeOffStatus, TimeOffType } from '@/types/entities'
-import { Loader2, Calendar, AlertCircle } from 'lucide-react'
+import { Loader2, Calendar, AlertCircle, Plus } from 'lucide-react'
 
 export interface TimeOffCalendarProps {
   timeOffs: EmployeeTimeOff[]
@@ -18,6 +19,8 @@ export interface TimeOffCalendarProps {
   error?: string | null
   filterStatus?: TimeOffStatus
   className?: string
+  /** Callback when "Add Time Off" button is clicked */
+  onAddTimeOff?: () => void
 }
 
 // Time off type labels (Hebrew)
@@ -81,6 +84,7 @@ const TimeOffCalendar: React.FC<TimeOffCalendarProps> = ({
   error = null,
   filterStatus,
   className,
+  onAddTimeOff,
 }) => {
   // Create member lookup map
   const memberMap = React.useMemo(() => {
@@ -157,9 +161,22 @@ const TimeOffCalendar: React.FC<TimeOffCalendarProps> = ({
   if (filteredTimeOffs.length === 0) {
     return (
       <div className={cn('flex flex-col', className)}>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-          Time Off Calendar
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            Time Off Calendar
+          </h2>
+          {onAddTimeOff && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onAddTimeOff}
+              data-testid="add-timeoff-button"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Time Off
+            </Button>
+          )}
+        </div>
         <div className="flex flex-col items-center justify-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-3">
             <Calendar className="w-6 h-6 text-primary" />
@@ -167,9 +184,19 @@ const TimeOffCalendar: React.FC<TimeOffCalendarProps> = ({
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
             No time off scheduled
           </h3>
-          <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm mb-4">
             No time off entries are currently scheduled for the team.
           </p>
+          {onAddTimeOff && (
+            <Button
+              variant="ghost"
+              onClick={onAddTimeOff}
+              data-testid="add-timeoff-empty-button"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Time Off
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -182,9 +209,22 @@ const TimeOffCalendar: React.FC<TimeOffCalendarProps> = ({
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
           Time Off Calendar
         </h2>
-        <span className="text-sm text-slate-500 dark:text-slate-400">
-          {filteredTimeOffs.length} {filteredTimeOffs.length === 1 ? 'entry' : 'entries'}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-500 dark:text-slate-400">
+            {filteredTimeOffs.length} {filteredTimeOffs.length === 1 ? 'entry' : 'entries'}
+          </span>
+          {onAddTimeOff && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onAddTimeOff}
+              data-testid="add-timeoff-button"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Time Off List */}
@@ -203,7 +243,7 @@ const TimeOffCalendar: React.FC<TimeOffCalendarProps> = ({
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <h4 className="font-semibold text-slate-900 dark:text-white">
-                    {getMemberName(timeOff.user_id)}
+                    {getMemberName(timeOff.team_member_id)}
                   </h4>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
                     {TYPE_LABELS[timeOff.type]}

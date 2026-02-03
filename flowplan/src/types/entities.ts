@@ -198,7 +198,7 @@ export interface CreateTeamMemberInput {
 // ============================================
 
 export interface EmployeeTimeOff extends BaseEntity {
-  user_id: string
+  team_member_id: string
   start_date: Date
   end_date: Date
   type: TimeOffType
@@ -207,7 +207,7 @@ export interface EmployeeTimeOff extends BaseEntity {
 }
 
 export interface CreateEmployeeTimeOffInput {
-  user_id: string
+  team_member_id: string
   start_date: Date
   end_date: Date
   type: TimeOffType

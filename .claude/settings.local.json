@@ -16,7 +16,24 @@
       "Bash(npx vitest:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run lint:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(claude mcp list)",
+      "Bash(claude mcp add supabase --transport http --url \"https://mcp.supabase.com/mcp\")",
+      "Bash(claude mcp add --help)",
+      "Bash(claude mcp add --transport http supabase https://mcp.supabase.com/mcp --scope project)",
+      "Bash(claude mcp add --scope project playwright -- npx @playwright/mcp@latest)",
+      "Bash(claude mcp add --scope project context7 -- npx @context7/mcp@latest)",
+      "mcp__playwright__browser_navigate",
+      "Bash(npm run dev:*)",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_close",
+      "Bash(claude mcp:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__list_tables"
     ]
   }
 }

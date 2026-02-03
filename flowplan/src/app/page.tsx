@@ -17,7 +17,7 @@ import { Plus, Clock, Calendar, User, AlertTriangle, Loader2 } from 'lucide-reac
 import { useProjects, useCreateProject } from '@/hooks/use-projects'
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/use-tasks'
 import { usePhases, useCreatePhase } from '@/hooks/use-phases'
-import { useTeamMembersByProject } from '@/hooks/use-team-members'
+import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-members'
 
 // Default organization ID (will be replaced with auth later)
 const DEFAULT_ORG_ID = 'org-default'
@@ -42,7 +42,25 @@ export default function DashboardPage() {
   // Fetch data for the current project
   const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(projectId, undefined)
   const { data: phases = [], isLoading: isLoadingPhases } = usePhases(projectId)
-  const { data: teamMembers = [], isLoading: isLoadingTeam } = useTeamMembersByProject(projectId)
+
+  // Fetch team members: Use organization-level members for task assignment
+  // This ensures team members show up in the assignee dropdown even if not yet
+  // assigned to the specific project via project_members table
+  const { data: projectTeamMembers = [], isLoading: isLoadingProjectTeam } = useTeamMembersByProject(projectId)
+  const { data: orgTeamMembers = [], isLoading: isLoadingOrgTeam } = useTeamMembers(DEFAULT_ORG_ID)
+
+  // Combine team members: prefer org-level members, fall back to project members
+  // This provides a better UX where users can assign any org member to a task
+  const teamMembers = useMemo(() => {
+    // If we have org-level members, use them
+    if (orgTeamMembers.length > 0) {
+      return orgTeamMembers
+    }
+    // Otherwise fall back to project-assigned members
+    return projectTeamMembers
+  }, [orgTeamMembers, projectTeamMembers])
+
+  const isLoadingTeam = isLoadingProjectTeam || isLoadingOrgTeam
 
   // Mutations
   const createProjectMutation = useCreateProject()
@@ -84,11 +102,17 @@ export default function DashboardPage() {
     return tasks.filter(t => t.phase_id === phaseId)
   }, [tasks])
 
-  // Get team member name
-  const getTeamMemberName = useCallback((userId: string | null) => {
-    if (!userId) return undefined
-    const member = teamMembers.find(m => m.id === userId)
-    return member ? `${member.first_name} ${member.last_name}` : undefined
+  // Get team member name - supports both display_name and first_name/last_name
+  const getTeamMemberName = useCallback((memberId: string | null) => {
+    if (!memberId) return undefined
+    const member = teamMembers.find(m => m.id === memberId)
+    if (!member) return undefined
+    // Prefer display_name, fall back to first_name + last_name
+    if (member.display_name) return member.display_name
+    if (member.first_name || member.last_name) {
+      return `${member.first_name || ''} ${member.last_name || ''}`.trim()
+    }
+    return member.email // Last resort: show email
   }, [teamMembers])
 
   // Build taskAssignees map for PhaseSection
@@ -138,7 +162,7 @@ export default function DashboardPage() {
   // Handle task form submit
   const handleTaskFormSubmit = useCallback((data: {
     title: string; description?: string; priority: Task['priority']
-    duration: number; estimated_hours?: number; start_date?: string
+    duration: number; estimated_hours?: number; start_date?: string; assignee_id?: string
   }) => {
     setTaskErrorMessage(null) // Clear previous errors
     if (editingTask) {
@@ -152,6 +176,7 @@ export default function DashboardPage() {
           duration: data.duration,
           estimated_hours: data.estimated_hours || null,
           start_date: data.start_date || null,
+          assignee_id: data.assignee_id || null,
         }
       }, {
         onSuccess: () => {
@@ -176,6 +201,7 @@ export default function DashboardPage() {
         duration: data.duration,
         estimated_hours: data.estimated_hours || null,
         start_date: data.start_date || null,
+        assignee_id: data.assignee_id || null,
         status: 'pending',
       }, {
         onSuccess: () => {
@@ -569,8 +595,10 @@ export default function DashboardPage() {
             priority: editingTask.priority,
             duration: editingTask.duration,
             estimated_hours: editingTask.estimated_hours || undefined,
-            start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined
+            start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined,
+            assignee_id: editingTask.assignee_id || undefined
           } : undefined}
+          teamMembers={teamMembers}
           onSubmit={handleTaskFormSubmit}
           onCancel={() => {
             if (!createTaskMutation.isPending && !updateTaskMutation.isPending) {
