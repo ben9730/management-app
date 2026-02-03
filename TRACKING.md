@@ -249,6 +249,48 @@
 
 ## 📝 לוג סשנים (Session Log)
 
+### Session #7 (03/02/2026) - MCP Integration & Bug Fixes
+
+**What was done:**
+- ✅ Connected Supabase MCP server for direct database access
+- ✅ Connected Playwright MCP server for automated browser testing
+- ✅ Fixed %NaN bug in phase progress display (PhaseSection.tsx)
+- ✅ Tested full application flow with Playwright automation
+- ✅ Verified Time Off feature works (added test entry successfully)
+- ✅ Verified Task Assignment displays correctly (shows initials T1, BG)
+
+**MCP Servers Configured:**
+
+| Server | Status | Purpose |
+|--------|--------|---------|
+| Supabase | ✅ Connected | Database queries, migrations, debugging |
+| Playwright | ✅ Connected | Automated browser testing |
+| Context7 | ❌ Failed | Documentation (not critical) |
+
+**Bug Fixed: %NaN in Phase Progress**
+- **Problem**: Phase sections showed "NaN%" instead of actual percentage
+- **Root Cause**: Code used `phase.task_count` and `phase.completed_task_count` but database columns are `total_tasks` and `completed_tasks`
+- **Solution**: Updated PhaseSection.tsx to use correct column names with fallbacks:
+```typescript
+const totalTasks = phase.total_tasks ?? phase.task_count ?? 0
+const completedTasks = phase.completed_tasks ?? phase.completed_task_count ?? 0
+```
+
+**Files Modified:**
+- `flowplan/src/components/phases/PhaseSection.tsx` - Fixed NaN percentage bug
+- `.mcp.json` - Added Supabase MCP authentication
+
+**Playwright Testing Results:**
+- ✅ Dashboard loads correctly
+- ✅ Navigation to /team works
+- ✅ Time Off form submission works
+- ✅ Task assignment shows correct initials
+
+**Next Steps:**
+- Phase B: Create Findings Center (`/findings`)
+
+---
+
 ### Session #6 (03/02/2026) - Fix Production Bugs: Time Off RLS & Task Assignee Dropdown
 
 **What was done**:
