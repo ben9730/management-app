@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **📋 Work Tracking**: See [TRACKING.md](../TRACKING.md) for project progress, implementation status, session logs, and work phases. All development tracking is centralized there.
+
 ## Project Overview
 
 FlowPlan is an AI-native audit management system built for Hebrew-speaking users. It provides project/task management with Critical Path Method (CPM) scheduling, Gantt charts, and offline-first capabilities.

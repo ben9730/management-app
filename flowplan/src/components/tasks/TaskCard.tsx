@@ -45,8 +45,10 @@ function isOverdue(dueDate: Date | string | null): boolean {
   return due < today
 }
 
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+function getInitials(firstName?: string | null, lastName?: string | null): string {
+  const first = firstName?.charAt(0) || ''
+  const last = lastName?.charAt(0) || ''
+  return `${first}${last}`.toUpperCase() || '?'
 }
 
 const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(

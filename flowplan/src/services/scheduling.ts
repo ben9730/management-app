@@ -366,7 +366,8 @@ export class SchedulingService {
    * Calculate effective duration based on work hours per day
    */
   calculateEffectiveDuration(estimatedHours: number, member: TeamMember): number {
-    const daysNeeded = estimatedHours / member.work_hours_per_day
+    const workHoursPerDay = member.work_hours_per_day || 8 // Default to 8 hours/day
+    const daysNeeded = estimatedHours / workHoursPerDay
     return Math.ceil(daysNeeded)
   }
 
@@ -460,7 +461,9 @@ export class SchedulingService {
     // Create user work days map
     const userWorkDays = new Map<string, number[]>()
     for (const member of teamMembers) {
-      userWorkDays.set(member.user_id, member.work_days)
+      if (member.user_id) {
+        userWorkDays.set(member.user_id, member.work_days || [0, 1, 2, 3, 4])
+      }
     }
 
     // Process tasks with resource constraints

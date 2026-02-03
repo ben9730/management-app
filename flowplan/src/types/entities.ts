@@ -150,30 +150,47 @@ export interface CreateCalendarExceptionInput {
 }
 
 // ============================================
-// 6. Team Member
+// 6. Team Member (Organization-level)
 // ============================================
 
+// Organization-level team member (new schema)
+export type TeamMemberRole = 'admin' | 'manager' | 'member' | 'viewer'
+
 export interface TeamMember extends BaseEntity {
-  user_id: string
-  project_id: string
-  first_name: string
-  last_name: string
+  organization_id?: string | null
+  user_id: string | null
+  project_id?: string | null // Optional for org-level members
+  display_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
   email: string
-  employment_type: EmploymentType
-  work_hours_per_day: number // e.g., 8.0, 4.0
-  work_days: number[] // Days of week (1=Sunday, 7=Saturday)
-  role: UserRole
+  avatar_url?: string | null
+  employment_type?: EmploymentType
+  work_hours_per_day?: number // e.g., 8.0, 4.0
+  work_days?: number[] // Days of week (0=Sunday, 6=Saturday)
+  role: UserRole | TeamMemberRole
   hourly_rate: number | null
+  weekly_capacity_hours?: number
+  skills?: string[]
+  is_active?: boolean
+  updated_at?: Date | string
 }
 
+// Legacy project-level team member input
 export interface CreateTeamMemberInput {
-  user_id: string
-  project_id: string
+  user_id?: string | null
+  project_id?: string | null
+  organization_id?: string
+  display_name?: string
+  email?: string
+  avatar_url?: string | null
   employment_type?: EmploymentType
   work_hours_per_day?: number
   work_days?: number[]
-  role?: UserRole
+  role?: UserRole | TeamMemberRole
   hourly_rate?: number | null
+  weekly_capacity_hours?: number
+  skills?: string[]
 }
 
 // ============================================

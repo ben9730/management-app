@@ -54,9 +54,9 @@ export const Navbar = () => {
     const navLinks = [
         { href: "/", label: "לוח בקרה" },
         { href: "/about", label: "אודות" },
-        { href: "#", label: "ממצאים" },
-        { href: "#", label: "צוות" },
-        { href: "#", label: "פרויקטים" },
+        { href: "/findings", label: "ממצאים" },
+        { href: "/team", label: "צוות" },
+        { href: "/projects", label: "פרויקטים" },
     ];
 
     return (
