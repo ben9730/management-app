@@ -56,10 +56,10 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
     const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
     const contentId = `phase-content-${phase.id}`
 
-    const progressPercent = calculatePercentage(
-      phase.completed_task_count,
-      phase.task_count
-    )
+    // Use database column names (total_tasks, completed_tasks) with fallback to alternatives
+    const totalTasks = phase.total_tasks ?? phase.task_count ?? 0
+    const completedTasks = phase.completed_tasks ?? phase.completed_task_count ?? 0
+    const progressPercent = calculatePercentage(completedTasks, totalTasks)
 
     const handleToggle = () => {
       setIsCollapsed(!isCollapsed)
