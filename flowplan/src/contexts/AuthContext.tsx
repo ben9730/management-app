@@ -46,13 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true)
+    // NOTE: Do NOT set isLoading here!
+    // Setting isLoading=true causes LoginPage to show a spinner and unmount LoginForm.
+    // When the error returns, a NEW LoginForm is mounted with fresh state (no error).
+    // The form's own isSubmitting state handles the loading UI.
     setError(null)
     const result = await authSignIn(email, password)
 
     if (result.error) {
       setError(result.error)
-      setIsLoading(false)
       return { error: result.error }
     }
 
@@ -61,13 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    setIsLoading(true)
+    // NOTE: Do NOT set isLoading here for the same reason as signIn.
+    // The form's own loading state handles the UI.
     setError(null)
     const result = await authSignUp(email, password, fullName)
 
     if (result.error) {
       setError(result.error)
-      setIsLoading(false)
       return { error: result.error }
     }
 

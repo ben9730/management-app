@@ -11,6 +11,48 @@ import type { User, Session } from '@supabase/supabase-js'
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
+ * Translate Supabase auth errors to Hebrew
+ */
+function translateAuthError(error: string): string {
+  const translations: Record<string, string> = {
+    'Invalid email format': 'פורמט אימייל לא תקין',
+    'Password is required': 'נדרשת סיסמה',
+    'Password must be at least 6 characters': 'הסיסמה חייבת להכיל לפחות 6 תווים',
+    'Invalid login credentials': 'פרטי התחברות שגויים',
+    'Email not confirmed': 'האימייל טרם אומת',
+    'User already registered': 'משתמש כבר רשום במערכת',
+    'Invalid password': 'סיסמה שגויה',
+    'Email already registered': 'האימייל כבר רשום במערכת',
+    'Sign in failed': 'ההתחברות נכשלה',
+    'Sign up failed': 'ההרשמה נכשלה',
+    'Sign out failed': 'היציאה נכשלה',
+    'Failed to get session': 'שגיאה בקבלת מידע על המשתמש',
+  }
+
+  // Try exact match first
+  if (translations[error]) {
+    return translations[error]
+  }
+
+  // Try partial matches for common Supabase errors
+  if (error.includes('Invalid login credentials')) {
+    return 'פרטי התחברות שגויים - בדוק את האימייל והסיסמה'
+  }
+  if (error.includes('already registered') || error.includes('already exists')) {
+    return 'המשתמש כבר קיים במערכת - נסה להתחבר'
+  }
+  if (error.includes('Email not confirmed')) {
+    return 'האימייל טרם אומת - בדוק את תיבת הדואר שלך'
+  }
+  if (error.includes('password')) {
+    return 'סיסמה שגויה'
+  }
+
+  // Return original error if no translation found
+  return error
+}
+
+/**
  * Sign in with email and password
  */
 export async function signIn(
@@ -21,14 +63,14 @@ export async function signIn(
   if (!EMAIL_REGEX.test(email)) {
     return {
       data: null,
-      error: { message: 'Invalid email format' },
+      error: { message: translateAuthError('Invalid email format') },
     }
   }
 
   if (!password || password.trim() === '') {
     return {
       data: null,
-      error: { message: 'Password is required' },
+      error: { message: translateAuthError('Password is required') },
     }
   }
 
@@ -39,10 +81,11 @@ export async function signIn(
     })
 
     if (error) {
+      const translatedMessage = translateAuthError(error.message)
       return {
         data: null,
         error: {
-          message: error.message,
+          message: translatedMessage,
           code: error.code,
         },
       }
@@ -56,7 +99,7 @@ export async function signIn(
     return {
       data: null,
       error: {
-        message: error instanceof Error ? error.message : 'Sign in failed',
+        message: translateAuthError(error instanceof Error ? error.message : 'Sign in failed'),
       },
     }
   }
@@ -74,14 +117,14 @@ export async function signUp(
   if (!EMAIL_REGEX.test(email)) {
     return {
       data: null,
-      error: { message: 'Invalid email format' },
+      error: { message: translateAuthError('Invalid email format') },
     }
   }
 
   if (!password || password.length < 6) {
     return {
       data: null,
-      error: { message: 'Password must be at least 6 characters' },
+      error: { message: translateAuthError('Password must be at least 6 characters') },
     }
   }
 
@@ -105,7 +148,7 @@ export async function signUp(
       return {
         data: null,
         error: {
-          message: error.message,
+          message: translateAuthError(error.message),
           code: error.code,
         },
       }
@@ -119,7 +162,7 @@ export async function signUp(
     return {
       data: null,
       error: {
-        message: error instanceof Error ? error.message : 'Sign up failed',
+        message: translateAuthError(error instanceof Error ? error.message : 'Sign up failed'),
       },
     }
   }
@@ -136,7 +179,7 @@ export async function signOut(): Promise<AuthResult<boolean>> {
       return {
         data: null,
         error: {
-          message: error.message,
+          message: translateAuthError(error.message),
           code: error.code,
         },
       }
@@ -150,7 +193,7 @@ export async function signOut(): Promise<AuthResult<boolean>> {
     return {
       data: null,
       error: {
-        message: error instanceof Error ? error.message : 'Sign out failed',
+        message: translateAuthError(error instanceof Error ? error.message : 'Sign out failed'),
       },
     }
   }
@@ -167,7 +210,7 @@ export async function getSession(): Promise<AuthResult<Session>> {
       return {
         data: null,
         error: {
-          message: error.message,
+          message: translateAuthError(error.message),
           code: error.code,
         },
       }
@@ -181,7 +224,7 @@ export async function getSession(): Promise<AuthResult<Session>> {
     return {
       data: null,
       error: {
-        message: error instanceof Error ? error.message : 'Failed to get session',
+        message: translateAuthError(error instanceof Error ? error.message : 'Failed to get session'),
       },
     }
   }

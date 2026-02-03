@@ -1,7 +1,24 @@
 {
+  
   "permissions": {
     "allow": [
       "Bash(npm ls:*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "tool == \"Edit\" || tool == \"Write\"",
+      "hooks": [{
+        "type": "command",
+        "command": "~/.claude/skills/strategic-compact/suggest-compact.sh"
+      }]
+    }],
+    "PostToolUse": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "node \".claude/hooks/document-session.js\""
+      }]
+    }]
   }
 }

@@ -57,7 +57,7 @@ describe('Auth Service', () => {
 
       expect(result.data).toBeNull()
       expect(result.error).toEqual({
-        message: 'Invalid login credentials',
+        message: 'פרטי התחברות שגויים',
         code: 'invalid_credentials',
       })
     })
@@ -66,14 +66,14 @@ describe('Auth Service', () => {
       const result = await signIn('invalid-email', 'password123')
 
       expect(result.data).toBeNull()
-      expect(result.error?.message).toContain('Invalid email')
+      expect(result.error?.message).toContain('פורמט אימייל')
     })
 
     it('should validate password is not empty', async () => {
       const result = await signIn('test@example.com', '')
 
       expect(result.data).toBeNull()
-      expect(result.error?.message).toContain('Password is required')
+      expect(result.error?.message).toContain('נדרשת סיסמה')
     })
   })
 
@@ -114,28 +114,47 @@ describe('Auth Service', () => {
       const result = await signUp('existing@example.com', 'password123', 'Existing User')
 
       expect(result.data).toBeNull()
-      expect(result.error?.message).toBe('User already registered')
+      expect(result.error?.message).toBe('משתמש כבר רשום במערכת')
     })
 
     it('should validate email format', async () => {
       const result = await signUp('invalid-email', 'password123', 'User')
 
       expect(result.data).toBeNull()
-      expect(result.error?.message).toContain('Invalid email')
+      expect(result.error?.message).toContain('פורמט אימייל')
     })
 
     it('should validate password length (min 6 chars)', async () => {
       const result = await signUp('test@example.com', '12345', 'User')
 
       expect(result.data).toBeNull()
-      expect(result.error?.message).toContain('at least 6 characters')
+      expect(result.error?.message).toContain('6 תווים')
     })
 
-    it('should validate full name is provided', async () => {
+    it('should use email username as fallback when full name is empty', async () => {
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@example.com',
+        user_metadata: { full_name: 'test' },
+      }
+
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: mockUser, session: { access_token: 'token' } },
+        error: null,
+      } as any)
+
       const result = await signUp('test@example.com', 'password123', '')
 
-      expect(result.data).toBeNull()
-      expect(result.error?.message).toContain('Full name is required')
+      expect(result.data).toEqual(mockUser)
+      expect(supabase.auth.signUp).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123',
+        options: {
+          data: {
+            full_name: 'test', // Email username as fallback
+          },
+        },
+      })
     })
   })
 
@@ -160,7 +179,7 @@ describe('Auth Service', () => {
       const result = await signOut()
 
       expect(result.data).toBeNull()
-      expect(result.error?.message).toBe('Sign out failed')
+      expect(result.error?.message).toBe('היציאה נכשלה')
     })
   })
 

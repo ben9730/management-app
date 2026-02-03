@@ -8,7 +8,11 @@
       "Bash(npm test:*)",
       "Bash(npm run build:*)",
       "Bash(ls:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(node:*)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(dir:*)",
+      "Bash(npm run test:coverage:*)"
     ]
   }
 }

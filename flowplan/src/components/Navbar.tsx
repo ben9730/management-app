@@ -43,7 +43,8 @@ export const Navbar = () => {
 
     const handleLogout = async () => {
         await signOut();
-        router.push('/login');
+        // Force full page navigation for reliable redirect
+        window.location.href = '/login';
     };
 
     // Get user display info
