@@ -1,0 +1,3 @@
+[    3017ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://txtikabpcguonoaxfpth.supabase.co/rest/v1/project_phases?select=*&project_id=eq.&order=phase_order.asc:0
+[    3083ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://txtikabpcguonoaxfpth.supabase.co/rest/v1/tasks?select=*&project_id=eq.&order=created_at.asc:0
+[   17524ms] [WARNING] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297

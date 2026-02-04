@@ -51,10 +51,16 @@ export const Navbar = () => {
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
     const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
+    // Feature flags - set to true to enable hidden features
+    const FEATURE_FLAGS = {
+        FINDINGS_PAGE: false, // Hidden for now - set to true to re-enable
+    };
+
     const navLinks = [
         { href: "/", label: "לוח בקרה" },
         { href: "/about", label: "אודות" },
-        { href: "/findings", label: "ממצאים" },
+        // Findings page is hidden but code is preserved - change FEATURE_FLAGS.FINDINGS_PAGE to true to re-enable
+        ...(FEATURE_FLAGS.FINDINGS_PAGE ? [{ href: "/findings", label: "ממצאים" }] : []),
         { href: "/team", label: "צוות" },
         { href: "/projects", label: "פרויקטים" },
     ];

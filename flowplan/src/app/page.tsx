@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { cn, calculateEndDate } from '@/lib/utils'
 import type { Project, ProjectPhase, Task, TeamMember } from '@/types/entities'
 import { Button } from '@/components/ui/button'
@@ -11,12 +12,12 @@ import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
 import { PhaseForm } from '@/components/forms/PhaseForm'
-import { Plus, Clock, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react'
+import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown } from 'lucide-react'
 
 // React Query hooks
-import { useProjects, useCreateProject } from '@/hooks/use-projects'
+import { useProjects, useCreateProject, useUpdateProject } from '@/hooks/use-projects'
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/use-tasks'
-import { usePhases, useCreatePhase } from '@/hooks/use-phases'
+import { usePhases, useCreatePhase, useUpdatePhase } from '@/hooks/use-phases'
 import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-members'
 
 // Default organization ID (will be replaced with auth later)
@@ -31,13 +32,64 @@ const formatDate = (date: Date | string | null | undefined): string => {
 
 type ViewMode = 'phases' | 'gantt'
 
+// Loading fallback for Suspense
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-slate-500 dark:text-slate-400 text-lg">טוען נתונים...</p>
+      </div>
+    </div>
+  )
+}
+
+// Main page wrapper with Suspense
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+function DashboardContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
   // Fetch projects for the organization
   const { data: projects = [], isLoading: isLoadingProjects } = useProjects(DEFAULT_ORG_ID)
 
-  // Get the first project (or null if none)
-  const project = projects[0] || null
+  // Get project ID from URL or use first project
+  const urlProjectId = searchParams.get('project')
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(urlProjectId)
+
+  // Find the selected project or default to first one
+  const project = useMemo(() => {
+    if (selectedProjectId) {
+      const found = projects.find(p => p.id === selectedProjectId)
+      if (found) return found
+    }
+    return projects[0] || null
+  }, [projects, selectedProjectId])
+
   const projectId = project?.id || ''
+
+  // Sync URL with selected project
+  useEffect(() => {
+    if (project && project.id !== urlProjectId) {
+      // Update selected state when URL changes
+      if (urlProjectId && projects.find(p => p.id === urlProjectId)) {
+        setSelectedProjectId(urlProjectId)
+      }
+    }
+  }, [urlProjectId, project, projects])
+
+  // Handle project change
+  const handleProjectChange = useCallback((newProjectId: string) => {
+    setSelectedProjectId(newProjectId)
+    router.push(`/?project=${newProjectId}`)
+  }, [router])
 
   // Fetch data for the current project
   const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(projectId, undefined)
@@ -64,10 +116,12 @@ export default function DashboardPage() {
 
   // Mutations
   const createProjectMutation = useCreateProject()
+  const updateProjectMutation = useUpdateProject()
   const createTaskMutation = useCreateTask()
   const updateTaskMutation = useUpdateTask()
   const deleteTaskMutation = useDeleteTask()
   const createPhaseMutation = useCreatePhase()
+  const updatePhaseMutation = useUpdatePhase()
 
   // UI State
   const [viewMode, setViewMode] = useState<ViewMode>('phases')
@@ -78,6 +132,7 @@ export default function DashboardPage() {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isPhaseModalOpen, setIsPhaseModalOpen] = useState(false)
+  const [editingPhase, setEditingPhase] = useState<ProjectPhase | null>(null)
   const [phaseErrorMessage, setPhaseErrorMessage] = useState<string | null>(null)
   const [taskErrorMessage, setTaskErrorMessage] = useState<string | null>(null)
 
@@ -249,53 +304,109 @@ export default function DashboardPage() {
     }
   }, [editingTask, projectId, selectedPhaseId, createTaskMutation, updateTaskMutation])
 
-  // Handle project form submit (for creating first project)
+  // Handle project form submit (for creating or editing project)
   const handleProjectFormSubmit = useCallback((data: {
     name: string; description?: string; status: Project['status']
     start_date?: string; end_date?: string
   }) => {
     setErrorMessage(null) // Clear previous errors
-    createProjectMutation.mutate({
-      name: data.name,
-      description: data.description || null,
-      status: data.status,
-      start_date: data.start_date || null,
-      end_date: data.end_date || null,
-    }, {
-      onSuccess: () => {
-        setIsProjectModalOpen(false)
-        setErrorMessage(null)
-      },
-      onError: (error) => {
-        console.error('Failed to create project:', error)
-        setErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת הפרויקט')
-      }
-    })
-  }, [createProjectMutation])
 
-  // Handle phase form submit (for creating new phases)
+    if (project) {
+      // Update existing project
+      updateProjectMutation.mutate({
+        id: project.id,
+        updates: {
+          name: data.name,
+          description: data.description || null,
+          status: data.status,
+          start_date: data.start_date || null,
+          end_date: data.end_date || null,
+        }
+      }, {
+        onSuccess: () => {
+          setIsProjectModalOpen(false)
+          setErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to update project:', error)
+          setErrorMessage(error instanceof Error ? error.message : 'שגיאה בעדכון הפרויקט')
+        }
+      })
+    } else {
+      // Create new project
+      createProjectMutation.mutate({
+        name: data.name,
+        description: data.description || null,
+        status: data.status,
+        start_date: data.start_date || null,
+        end_date: data.end_date || null,
+      }, {
+        onSuccess: () => {
+          setIsProjectModalOpen(false)
+          setErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to create project:', error)
+          setErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת הפרויקט')
+        }
+      })
+    }
+  }, [project, createProjectMutation, updateProjectMutation])
+
+  // Handle edit phase
+  const handleEditPhase = useCallback((phase: ProjectPhase) => {
+    setEditingPhase(phase)
+    setIsPhaseModalOpen(true)
+  }, [])
+
+  // Handle phase form submit (for creating or editing phases)
   const handlePhaseFormSubmit = useCallback((data: {
     name: string; description?: string; start_date?: string; end_date?: string
   }) => {
     setPhaseErrorMessage(null) // Clear previous errors
-    createPhaseMutation.mutate({
-      project_id: projectId,
-      name: data.name,
-      description: data.description || null,
-      phase_order: phases.length + 1,
-      start_date: data.start_date || null,
-      end_date: data.end_date || null,
-    }, {
-      onSuccess: () => {
-        setIsPhaseModalOpen(false)
-        setPhaseErrorMessage(null)
-      },
-      onError: (error) => {
-        console.error('Failed to create phase:', error)
-        setPhaseErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת השלב')
-      }
-    })
-  }, [projectId, phases.length, createPhaseMutation])
+
+    if (editingPhase) {
+      // Update existing phase
+      updatePhaseMutation.mutate({
+        id: editingPhase.id,
+        updates: {
+          name: data.name,
+          description: data.description || null,
+          start_date: data.start_date || null,
+          end_date: data.end_date || null,
+        }
+      }, {
+        onSuccess: () => {
+          setIsPhaseModalOpen(false)
+          setEditingPhase(null)
+          setPhaseErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to update phase:', error)
+          setPhaseErrorMessage(error instanceof Error ? error.message : 'שגיאה בעדכון השלב')
+        }
+      })
+    } else {
+      // Create new phase
+      createPhaseMutation.mutate({
+        project_id: projectId,
+        name: data.name,
+        description: data.description || null,
+        phase_order: phases.length + 1,
+        start_date: data.start_date || null,
+        end_date: data.end_date || null,
+      }, {
+        onSuccess: () => {
+          setIsPhaseModalOpen(false)
+          setPhaseErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to create phase:', error)
+          setPhaseErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת השלב')
+        }
+      })
+    }
+  }, [editingPhase, projectId, phases.length, createPhaseMutation, updatePhaseMutation])
 
   // Loading UI
   if (isLoading) {
@@ -369,7 +480,10 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               className="bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors"
-              onClick={() => setIsPhaseModalOpen(true)}
+              onClick={() => {
+                setEditingPhase(null)
+                setIsPhaseModalOpen(true)
+              }}
             >
               <span className="material-icons text-lg">layers</span>
               שלב חדש
@@ -420,8 +534,27 @@ export default function DashboardPage() {
               <h1 className="text-3xl font-extrabold mb-2 text-foreground">{project.name}</h1>
               <p className="text-slate-500 dark:text-slate-400 max-w-xl">{project.description}</p>
             </div>
-            <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
-              <div className="text-right">
+            <div className="flex flex-col items-end gap-4">
+              {/* Project Switcher */}
+              {projects.length > 1 && (
+                <div className="relative">
+                  <label htmlFor="project-switcher" className="sr-only">בחר פרויקט</label>
+                  <select
+                    id="project-switcher"
+                    value={project.id}
+                    onChange={(e) => handleProjectChange(e.target.value)}
+                    className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-foreground cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              )}
+              <div className="text-sm text-slate-500 dark:text-slate-400 text-right">
                 <p>התחלה: <span className="font-semibold text-foreground">{formatDate(project.start_date)}</span></p>
                 <p>סיום משוער: <span className="font-semibold text-foreground">{formatDate(project.end_date)}</span></p>
               </div>
@@ -486,7 +619,10 @@ export default function DashboardPage() {
                 <p className="text-slate-400 text-sm mb-6">צור שלב ראשון כדי להתחיל להוסיף משימות</p>
                 <Button
                   className="bg-primary hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold"
-                  onClick={() => setIsPhaseModalOpen(true)}
+                  onClick={() => {
+                    setEditingPhase(null)
+                    setIsPhaseModalOpen(true)
+                  }}
                 >
                   צור שלב ראשון
                 </Button>
@@ -498,7 +634,8 @@ export default function DashboardPage() {
                   return (
                     <PhaseSection key={phase.id} phase={phaseWithStatus} tasks={getTasksForPhase(phase.id)}
                       taskAssignees={taskAssignees} onTaskClick={setSelectedTask}
-                      onTaskStatusChange={handleTaskStatusChange} onAddTask={() => handleAddTask(phase.id)} />
+                      onTaskStatusChange={handleTaskStatusChange} onAddTask={() => handleAddTask(phase.id)}
+                      onEditPhase={handleEditPhase} />
                   )
                 })}
               </div>
@@ -657,7 +794,7 @@ export default function DashboardPage() {
       {/* Project Modal */}
       <Modal
         isOpen={isProjectModalOpen}
-        onClose={() => !createProjectMutation.isPending && setIsProjectModalOpen(false)}
+        onClose={() => !createProjectMutation.isPending && !updateProjectMutation.isPending && setIsProjectModalOpen(false)}
         title={project ? "הגדרות פרויקט" : "פרויקט חדש"}
         size="md"
       >
@@ -676,8 +813,8 @@ export default function DashboardPage() {
             end_date: project.end_date instanceof Date ? project.end_date.toISOString().split('T')[0] : project.end_date || undefined
           } : undefined}
           onSubmit={handleProjectFormSubmit}
-          onCancel={() => !createProjectMutation.isPending && setIsProjectModalOpen(false)}
-          isLoading={createProjectMutation.isPending}
+          onCancel={() => !createProjectMutation.isPending && !updateProjectMutation.isPending && setIsProjectModalOpen(false)}
+          isLoading={createProjectMutation.isPending || updateProjectMutation.isPending}
         />
       </Modal>
 
@@ -685,12 +822,13 @@ export default function DashboardPage() {
       <Modal
         isOpen={isPhaseModalOpen}
         onClose={() => {
-          if (!createPhaseMutation.isPending) {
+          if (!createPhaseMutation.isPending && !updatePhaseMutation.isPending) {
             setIsPhaseModalOpen(false)
+            setEditingPhase(null)
             setPhaseErrorMessage(null)
           }
         }}
-        title="שלב חדש"
+        title={editingPhase ? 'עריכת שלב' : 'שלב חדש'}
         size="md"
       >
         {phaseErrorMessage && (
@@ -699,15 +837,22 @@ export default function DashboardPage() {
           </div>
         )}
         <PhaseForm
-          mode="create"
+          mode={editingPhase ? 'edit' : 'create'}
+          initialValues={editingPhase ? {
+            name: editingPhase.name,
+            description: editingPhase.description || undefined,
+            start_date: editingPhase.start_date instanceof Date ? editingPhase.start_date.toISOString().split('T')[0] : editingPhase.start_date || undefined,
+            end_date: editingPhase.end_date instanceof Date ? editingPhase.end_date.toISOString().split('T')[0] : editingPhase.end_date || undefined
+          } : undefined}
           onSubmit={handlePhaseFormSubmit}
           onCancel={() => {
-            if (!createPhaseMutation.isPending) {
+            if (!createPhaseMutation.isPending && !updatePhaseMutation.isPending) {
               setIsPhaseModalOpen(false)
+              setEditingPhase(null)
               setPhaseErrorMessage(null)
             }
           }}
-          isLoading={createPhaseMutation.isPending}
+          isLoading={createPhaseMutation.isPending || updatePhaseMutation.isPending}
         />
       </Modal>
     </div>

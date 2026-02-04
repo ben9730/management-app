@@ -172,15 +172,29 @@ TypeScript types in `entities.ts` and service inputs must match the actual datab
 
 ## Session Workflow
 
-### After Testing
+### End of Session Checklist (CRITICAL)
 
-Always perform these steps after completing testing:
-1. **Stop the dev server**: Kill any running `npm run dev` processes
-2. **Document in TRACKING.md**: Add a session entry with:
-   - Date and session number
-   - What was implemented/fixed
-   - What was tested
-   - Any remaining issues or next steps
+**Always perform these steps at the END of every session:**
+
+1. **Stop dev server**: Kill any running `npm run dev` processes
+   ```bash
+   # Windows: Use Ctrl+C in terminal or Task Manager
+   # Or find and kill node processes
+   taskkill /F /IM node.exe
+   ```
+
+2. **Close browser sessions**: Close any Playwright/browser automation sessions
+   ```bash
+   # If using Playwright MCP, close the browser
+   mcp__playwright__browser_close
+   ```
+
+3. **Run final build check**: Verify everything compiles
+   ```bash
+   cd flowplan && npm run build
+   ```
+
+4. **Update TRACKING.md**: Add session entry with date, what was done, next steps
 
 ### Documentation Template
 ```markdown
@@ -194,6 +208,10 @@ Always perform these steps after completing testing:
 **Tested**:
 - [ ] Manual testing done
 - [ ] Unit tests passing
+
+**Servers Stopped**:
+- [ ] Dev server (npm run dev)
+- [ ] Playwright browser
 
 **Next Steps**:
 - [ ] Remaining work

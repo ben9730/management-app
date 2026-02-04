@@ -46,7 +46,8 @@
       "Bash(pkill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "mcp__playwright__browser_console_messages"
+      "mcp__playwright__browser_console_messages",
+      "Bash(powershell -Command \"Get-ChildItem ''d:\\\\claude code\\\\memgment proj\\\\flowplan\\\\src\\\\app'' -Directory | Select-Object Name\")"
     ]
   }
 }

@@ -170,9 +170,9 @@ export async function updatePhase(
     return { data: null, error: { message: validationError } }
   }
 
+  // Note: project_phases table does not have updated_at column
   const updateData = {
     ...updates,
-    updated_at: new Date().toISOString(),
   }
 
   const { data, error } = await supabase
