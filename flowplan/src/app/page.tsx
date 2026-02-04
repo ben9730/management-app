@@ -153,7 +153,8 @@ function DashboardContent() {
   // Calculate stats
   const totalTasks = tasks.length
   const completedTasks = tasks.filter(t => t.status === 'done').length
-  const criticalTasks = tasks.filter(t => t.is_critical && t.status !== 'done').length
+  // Count both CPM critical path tasks (is_critical) and user-defined critical priority tasks
+  const criticalTasks = tasks.filter(t => (t.is_critical || t.priority === 'critical') && t.status !== 'done').length
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   // Calculate days remaining
