@@ -47,16 +47,16 @@ function SourceCitationItem({
   onToggle: () => void
 }) {
   return (
-    <div className="border border-gray-300 rounded-sm bg-gray-50">
+    <div className="border border-slate-300 dark:border-slate-600 rounded-sm bg-slate-50 dark:bg-slate-800">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-2 text-right hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between p-2 text-right hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
         aria-expanded={isExpanded}
       >
-        <span className="text-xs text-gray-500">{Math.round(source.relevanceScore * 100)}%</span>
-        <span className="font-medium text-sm truncate flex-1 mx-2">{source.documentName}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{Math.round(source.relevanceScore * 100)}%</span>
+        <span className="font-medium text-sm truncate flex-1 mx-2 text-slate-900 dark:text-slate-100">{source.documentName}</span>
         <svg
-          className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')}
+          className={cn('w-4 h-4 transition-transform text-slate-600 dark:text-slate-400', isExpanded && 'rotate-180')}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -65,9 +65,9 @@ function SourceCitationItem({
         </svg>
       </button>
       {isExpanded && (
-        <div className="p-2 pt-0 text-sm text-gray-600 border-t border-gray-200">
+        <div className="p-2 pt-0 text-sm text-slate-600 dark:text-slate-300 border-t border-slate-200 dark:border-slate-600">
           <p className="italic">&quot;{source.excerpt}&quot;</p>
-          <p className="text-xs text-gray-400 mt-1">Chunk #{source.chunkIndex}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Chunk #{source.chunkIndex}</p>
         </div>
       )}
     </div>
@@ -105,7 +105,7 @@ function ChatMessageItem({
       data-error={message.error || undefined}
     >
       {/* Role label */}
-      <span className="text-xs font-bold text-gray-500 uppercase">
+      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
         {isUser ? 'אתה' : 'AI'}
       </span>
 
@@ -114,10 +114,10 @@ function ChatMessageItem({
         className={cn(
           'rounded-md p-3 border-2',
           isUser
-            ? 'bg-gray-100 border-gray-300'
+            ? 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100'
             : message.error
-            ? 'bg-red-50 border-red-300 text-red-700'
-            : 'bg-white border-black'
+            ? 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300'
+            : 'bg-slate-50 dark:bg-slate-800 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100'
         )}
       >
         <p className="whitespace-pre-wrap">{message.content}</p>
@@ -126,7 +126,7 @@ function ChatMessageItem({
       {/* Sources */}
       {!isUser && message.sources && message.sources.length > 0 && (
         <div className="mt-2 space-y-1">
-          <span className="text-xs font-bold text-gray-500 uppercase">מקורות</span>
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">מקורות</span>
           {message.sources.map((source, index) => (
             <SourceCitationItem
               key={`${source.documentId}-${source.chunkIndex}`}
@@ -140,7 +140,7 @@ function ChatMessageItem({
 
       {/* Token usage */}
       {showUsage && !isUser && message.usage && (
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-slate-400 dark:text-slate-500">
           {message.usage.inputTokens + message.usage.outputTokens} tokens
         </span>
       )}
@@ -152,15 +152,15 @@ function ChatMessageItem({
 function LoadingIndicator() {
   return (
     <div
-      className="flex items-center gap-2 text-gray-500"
+      className="flex items-center gap-2 text-slate-500 dark:text-slate-400"
       role="status"
       aria-busy="true"
       aria-label="ממתין לתשובה"
     >
       <div className="flex gap-1">
-        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
       <span className="text-sm">ממתין לתשובה...</span>
     </div>
@@ -268,18 +268,18 @@ export function AIChat({
     <div
       dir="rtl"
       className={cn(
-        'flex flex-col h-full border-2 border-black bg-white',
+        'flex flex-col h-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900',
         className
       )}
     >
       {/* Header */}
       {(title || hasMessages) && (
-        <div className="flex items-center justify-between px-4 py-2 border-b-2 border-black bg-gray-50">
-          {title && <h2 className="font-bold text-lg">{title}</h2>}
+        <div className="flex items-center justify-between px-4 py-2 border-b-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800">
+          {title && <h2 className="font-bold text-lg text-slate-900 dark:text-slate-100">{title}</h2>}
           {hasMessages && (
             <button
               onClick={clearHistory}
-              className="text-sm text-gray-500 hover:text-gray-700 underline"
+              className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline"
               aria-label="נקה היסטוריה"
             >
               נקה היסטוריה
@@ -295,18 +295,18 @@ export function AIChat({
         aria-live="polite"
         aria-label="הודעות צ'אט"
         data-chat-log
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900"
       >
         {/* Empty state */}
         {!hasMessages && !disabled && (
-          <div className="flex items-center justify-center h-full text-gray-400">
+          <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500">
             <p>שאל שאלה על המסמכים שהועלו לפרויקט</p>
           </div>
         )}
 
         {/* Disabled message */}
         {disabled && disabledMessage && (
-          <div className="flex items-center justify-center h-full text-gray-400">
+          <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500">
             <p>{disabledMessage}</p>
           </div>
         )}
@@ -321,7 +321,7 @@ export function AIChat({
       </div>
 
       {/* Input area */}
-      <div className="border-t-2 border-black p-4">
+      <div className="border-t-2 border-slate-300 dark:border-slate-600 p-4 bg-slate-100 dark:bg-slate-800">
         <div className="flex gap-2">
           <input
             ref={inputRef}
@@ -333,9 +333,11 @@ export function AIChat({
             disabled={isLoading || disabled}
             aria-label="שאלה"
             className={cn(
-              'flex-1 px-3 py-2 border-2 border-black',
-              'focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1',
-              'disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed'
+              'flex-1 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-md',
+              'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100',
+              'placeholder:text-slate-400 dark:placeholder:text-slate-500',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary',
+              'disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed'
             )}
           />
           <button
@@ -343,11 +345,11 @@ export function AIChat({
             disabled={!canSend}
             aria-label={isLoading ? 'שולח...' : 'שלח'}
             className={cn(
-              'px-4 py-2 font-bold border-2 border-black',
+              'px-4 py-2 font-bold border-2 rounded-md',
               'transition-colors',
               canSend
-                ? 'bg-black text-white hover:bg-gray-800'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? 'bg-primary text-white border-primary hover:bg-blue-600 hover:border-blue-600'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-slate-300 dark:border-slate-600 cursor-not-allowed'
             )}
           >
             {isLoading ? 'שולח...' : 'שלח'}

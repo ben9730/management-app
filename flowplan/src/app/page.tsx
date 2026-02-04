@@ -12,7 +12,9 @@ import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
 import { PhaseForm } from '@/components/forms/PhaseForm'
-import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown } from 'lucide-react'
+import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown, MessageSquare, X } from 'lucide-react'
+import { AIChat } from '@/components/ai'
+import type { RAGResponse, RAGService } from '@/services/rag'
 
 // React Query hooks
 import { useProjects, useCreateProject, useUpdateProject } from '@/hooks/use-projects'
@@ -22,6 +24,26 @@ import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-member
 
 // Default organization ID (will be replaced with auth later)
 const DEFAULT_ORG_ID = 'org-default'
+
+// Mock RAG service for demo purposes
+// In production, this would use real embeddings and Claude API
+const createMockRAGService = (): RAGService => ({
+  async query(query: string, _projectId: string): Promise<RAGResponse> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Return a helpful demo response
+    return {
+      answer: `זוהי תשובה לדוגמה לשאלה שלך: "${query}"\n\nכדי להפעיל את מערכת ה-AI המלאה, יש להגדיר את משתני הסביבה הבאים:\n- ANTHROPIC_API_KEY\n- OPENAI_API_KEY\n\nלאחר ההגדרה, המערכת תוכל לענות על שאלות בהתבסס על מסמכי הפרויקט שהועלו.`,
+      sources: [],
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        contextChunksUsed: 0,
+      },
+    }
+  },
+})
 
 // Helper to format dates for display
 const formatDate = (date: Date | string | null | undefined): string => {
@@ -135,6 +157,10 @@ function DashboardContent() {
   const [editingPhase, setEditingPhase] = useState<ProjectPhase | null>(null)
   const [phaseErrorMessage, setPhaseErrorMessage] = useState<string | null>(null)
   const [taskErrorMessage, setTaskErrorMessage] = useState<string | null>(null)
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false)
+
+  // AI RAG Service (mock for now - would use real service when API keys are configured)
+  const ragService = useMemo(() => createMockRAGService(), [])
 
   // Loading state
   const isLoading = isLoadingProjects || (projectId && (isLoadingTasks || isLoadingPhases || isLoadingTeam))
@@ -497,6 +523,22 @@ function DashboardContent() {
               <span className="material-icons text-lg">settings</span>
               הגדרות פרויקט
             </Button>
+            <Button
+              variant="outline"
+              className={cn(
+                "px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors",
+                isAIChatOpen
+                  ? "bg-primary text-white border-primary hover:bg-blue-600"
+                  : "bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700",
+                !projectId && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => projectId && setIsAIChatOpen(!isAIChatOpen)}
+              disabled={!projectId}
+              title={!projectId ? "יש לבחור פרויקט תחילה" : undefined}
+            >
+              <MessageSquare className="w-5 h-5" />
+              AI עוזר
+            </Button>
           </div>
           <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl">
             <button
@@ -856,6 +898,33 @@ function DashboardContent() {
           isLoading={createPhaseMutation.isPending || updatePhaseMutation.isPending}
         />
       </Modal>
+
+      {/* AI Chat Panel */}
+      {isAIChatOpen && (
+        <div className="fixed bottom-4 left-4 w-[calc(100vw-2rem)] sm:w-[400px] h-[60vh] sm:h-[500px] max-h-[600px] z-50 shadow-2xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 fp-animate-slide-in">
+          <div className="bg-primary text-white px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              <span className="font-bold">AI עוזר פרויקט</span>
+            </div>
+            <button
+              onClick={() => setIsAIChatOpen(false)}
+              className="text-white/80 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded transition-colors"
+              aria-label="סגור צ'אט"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <AIChat
+            projectId={projectId}
+            ragService={ragService}
+            title=""
+            placeholder="שאל שאלה על הפרויקט..."
+            className="h-[calc(100%-48px)] rounded-none border-0"
+            showUsage={false}
+          />
+        </div>
+      )}
     </div>
   )
 }

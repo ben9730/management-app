@@ -1,0 +1,17 @@
+# Playwright MCP temp files
+.playwright-mcp/
+
+# Windows reserved names (accidentally created)
+nul
+
+# Screenshots (development artifacts)
+*.png
+!flowplan/**/*.png
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
