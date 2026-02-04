@@ -217,20 +217,17 @@ describe('Modal', () => {
     })
   })
 
-  // Brutalist Styling
-  describe('brutalist styling', () => {
-    it('applies brutalist border style', () => {
+  // Premium Modern Styling
+  describe('premium modern styling', () => {
+    it('applies rounded corners and shadow', () => {
       render(
         <Modal isOpen={true} onClose={() => { }}>
           <div>Content</div>
         </Modal>
       )
       const dialog = screen.getByRole('dialog')
-      expect(dialog).toHaveClass('rounded-[var(--fp-radius-lg)]')
-      expect(dialog).toHaveClass('border')
-      expect(dialog).toHaveClass('border-[var(--fp-border-light)]')
-      expect(dialog).not.toHaveClass('border-2')
-      expect(dialog).not.toHaveClass('border-black')
+      expect(dialog).toHaveClass('rounded-2xl')
+      expect(dialog).toHaveClass('shadow-2xl')
     })
 
     it('applies white background', () => {

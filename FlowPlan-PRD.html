@@ -378,7 +378,7 @@
             מערכת ניהול ביקורות מבוססת בינה מלאכותית
         </p>
         <div>
-            <span class="cover-badge">PRD v2.1</span>
+            <span class="cover-badge">PRD v2.2</span>
             <span class="cover-badge" style="background: #dc2626;">LEAN MVP</span>
             <span class="cover-badge" style="background: #059669;">RESOURCE-AWARE</span>
         </div>
@@ -413,6 +413,7 @@
             <li>דרישות פונקציונליות</li>
             <li>אסטרטגיית בדיקות</li>
             <li>שלבי פיתוח</li>
+            <li>פערי מימוש (Implementation Gaps)</li>
         </ol>
     </div>
 
@@ -1176,7 +1177,7 @@
         </tr>
         <tr>
             <td>FR-002</td>
-            <td>הגדרת ימים לא-עובדים (חגים, שבתות)</td>
+            <td>הגדרת ימים לא-עובדים (חגים, שבתות) <br><small style="color: #f59e0b;">⚠️ DB קיים, חסר UI</small></td>
             <td><span class="tag core">CORE</span></td>
         </tr>
         <tr>
@@ -1264,12 +1265,12 @@
         </tr>
         <tr>
             <td>FR-045</td>
-            <td>הקצאת שעות ספציפיות למשימה</td>
+            <td>הקצאת שעות ספציפיות למשימה <br><small style="color: #f59e0b;">⚠️ DB קיים (task_assignments), UI מציג assignee יחיד בלבד</small></td>
             <td><span class="tag core">CORE</span></td>
         </tr>
         <tr>
             <td>FR-046</td>
-            <td>חישוב Duration אוטומטי לפי זמינות</td>
+            <td>חישוב Duration אוטומטי לפי זמינות <br><small style="color: #f59e0b;">⚠️ פונקציה קיימת, לא מחוברת לחופשות</small></td>
             <td><span class="tag core">CORE</span></td>
         </tr>
         <tr>
@@ -1347,7 +1348,11 @@
         </tr>
     </table>
 
-    <h2>9.6 AI</h2>
+    <h2>9.6 AI (נדחה לגרסה עתידית)</h2>
+    <div class="box warning">
+        <div class="box-title">⏸️ פיצ'ר AI נדחה</div>
+        <p>פיצ'ר ה-AI הושבת זמנית עקב מגבלות של Gemini Free Tier. יופעל מחדש כשיהיה צורך עסקי או עם ספק AI חלופי (Groq/Claude/Paid Gemini).</p>
+    </div>
     <table>
         <tr>
             <th>מזהה</th>
@@ -1357,17 +1362,17 @@
         <tr>
             <td>FR-030</td>
             <td>העלאת מסמכי פרויקט</td>
-            <td><span class="tag core">CORE</span></td>
+            <td><span class="tag">V2</span></td>
         </tr>
         <tr>
             <td>FR-031</td>
             <td>שאילתות בשפה טבעית</td>
-            <td><span class="tag core">CORE</span></td>
+            <td><span class="tag">V2</span></td>
         </tr>
         <tr>
             <td>FR-032</td>
             <td>Source Attribution בכל תשובה</td>
-            <td><span class="tag critical">CRITICAL</span></td>
+            <td><span class="tag">V2</span></td>
         </tr>
     </table>
 
@@ -1548,7 +1553,7 @@
                 </ul>
             </td>
             <td>AI Enabled</td>
-            <td><span class="tag core">DONE</span></td>
+            <td><span class="tag" style="background: #f59e0b;">DEFERRED</span></td>
         </tr>
         <tr>
             <td><strong>7. Modern SaaS UI</strong></td>
@@ -1621,10 +1626,56 @@
         </tr>
     </table>
 
+    <!-- ==================== SECTION 12: IMPLEMENTATION GAPS ==================== -->
+    <div class="page-break"></div>
+    <h1>12. פערי מימוש (Implementation Gaps)</h1>
+
+    <div class="box warning">
+        <div class="box-title">⚠️ זוהה ב-04/02/2026</div>
+        <p>הפערים הבאים זוהו בין דרישות PRD למימוש בפועל. DB/Services קיימים אבל חסר UI.</p>
+    </div>
+
+    <table>
+        <tr>
+            <th>מזהה</th>
+            <th>פער</th>
+            <th>מצב נוכחי</th>
+            <th>עדיפות</th>
+        </tr>
+        <tr>
+            <td>FR-002</td>
+            <td><strong>UI לניהול חגים</strong><br>הגדרת ימים לא-עובדים</td>
+            <td>טבלת calendar_exceptions קיימת בDB<br>❌ אין ממשק משתמש להוספה/עריכה</td>
+            <td><span class="tag critical">P0</span></td>
+        </tr>
+        <tr>
+            <td>FR-045</td>
+            <td><strong>Multi-Assignee UI</strong><br>הקצאת שעות ספציפיות למשימה</td>
+            <td>טבלת task_assignments קיימת בDB<br>⚠️ UI מציג רק assignee יחיד (dropdown)</td>
+            <td><span class="tag core">P1</span></td>
+        </tr>
+        <tr>
+            <td>FR-046</td>
+            <td><strong>חישוב Duration מלא</strong><br>חישוב אוטומטי לפי זמינות</td>
+            <td>calculateEffectiveDuration() קיים<br>⚠️ לא מתחשב בחופשות אוטומטית</td>
+            <td><span class="tag core">P1</span></td>
+        </tr>
+    </table>
+
+    <h2>המלצות לטיפול</h2>
+    <div class="box info">
+        <ol>
+            <li><strong>FR-002 (P0)</strong>: ליצור דף /settings/calendar או מודאל בפרויקט להוספת חגים</li>
+            <li><strong>FR-045 (P1)</strong>: להרחיב TaskForm לתמיכה במספר assignees עם שעות לכל אחד</li>
+            <li><strong>FR-046 (P1)</strong>: לחבר checkMemberAvailability לחישוב Duration אוטומטי</li>
+        </ol>
+    </div>
+
     <!-- ==================== FOOTER ==================== -->
     <div class="doc-footer">
-        <p><strong>FLOWPLAN PRD v2.1 — LEAN MVP + RESOURCE-AWARE</strong></p>
-        <p>Internal Use Only • January 2026</p>
+        <p><strong>FLOWPLAN PRD v2.2 — LEAN MVP + RESOURCE-AWARE</strong></p>
+        <p>Internal Use Only • February 2026</p>
+        <p><small>עודכן: 04/02/2026 - הוספת סעיף פערי מימוש</small></p>
     </div>
 
 </body>

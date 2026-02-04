@@ -102,7 +102,9 @@ describe('Navbar Component', () => {
             expect(projectLink).toHaveAttribute('href', '/projects');
         });
 
-        it('Findings link (ממצאים) navigates to /findings route', () => {
+        // Note: Findings link is behind feature flag (FINDINGS_PAGE: false)
+        // This test is skipped until the feature is re-enabled
+        it.skip('Findings link (ממצאים) navigates to /findings route - behind feature flag', () => {
             render(<Navbar />);
 
             const findingsLinks = screen.getAllByText('ממצאים');
@@ -141,9 +143,10 @@ describe('Navbar Component', () => {
             const allLinks = document.querySelectorAll('a');
 
             // Filter to navigation links (exclude login/register buttons)
+            // Note: 'ממצאים' is behind feature flag and not rendered
             const navLinks = Array.from(allLinks).filter(link => {
                 const text = link.textContent || '';
-                return ['לוח בקרה', 'אודות', 'ממצאים', 'צוות', 'פרויקטים'].includes(text);
+                return ['לוח בקרה', 'אודות', 'צוות', 'פרויקטים'].includes(text);
             });
 
             // Ensure no nav link has "#" as href

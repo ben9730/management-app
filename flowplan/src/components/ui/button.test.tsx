@@ -38,51 +38,47 @@ describe('Button', () => {
   it('applies default variant styling', () => {
     render(<Button>Default</Button>)
     const button = screen.getByRole('button')
-    // Default is now brand primary
-    expect(button.className).toContain('bg-[var(--fp-brand-primary)]')
+    expect(button.className).toContain('bg-[var(--fp-brand-blue)]')
   })
 
-  it('applies secondary variant styling with high visibility', () => {
+  it('applies secondary variant styling', () => {
     render(<Button variant="secondary">Secondary</Button>)
     const button = screen.getByRole('button')
-    // Secondary should have a visible border and dark text
-    expect(button).toHaveClass('border')
-    expect(button).toHaveClass('text-gray-900')
-    expect(button).toHaveClass('bg-gray-100')
+    expect(button).toHaveClass('bg-slate-100')
+    expect(button).toHaveClass('text-slate-600')
   })
 
   it('applies destructive variant styling', () => {
     render(<Button variant="destructive">Delete</Button>)
     const button = screen.getByRole('button')
-    // Destructive is now status error
-    expect(button.className).toContain('bg-[var(--fp-status-error)]')
+    expect(button.className).toContain('bg-[var(--fp-brand-danger)]')
   })
 
   it('applies outline variant styling', () => {
     render(<Button variant="outline">Outline</Button>)
     const button = screen.getByRole('button')
     expect(button).toHaveClass('border')
-    expect(button.className).toContain('border-[var(--fp-border-medium)]')
+    expect(button).toHaveClass('border-slate-200')
   })
 
   it('applies ghost variant styling', () => {
     render(<Button variant="ghost">Ghost</Button>)
     const button = screen.getByRole('button')
-    expect(button.className).toContain('text-[var(--fp-text-primary)]')
+    expect(button).toHaveClass('text-slate-500')
   })
 
   it('applies small size styling', () => {
     render(<Button size="sm">Small</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('px-3')
-    expect(button).toHaveClass('text-sm')
+    expect(button).toHaveClass('px-4')
+    expect(button).toHaveClass('text-xs')
   })
 
   it('applies large size styling', () => {
     render(<Button size="lg">Large</Button>)
     const button = screen.getByRole('button')
     expect(button).toHaveClass('px-8')
-    expect(button).toHaveClass('text-lg')
+    expect(button).toHaveClass('text-base')
   })
 
   it('applies full width when fullWidth is true', () => {

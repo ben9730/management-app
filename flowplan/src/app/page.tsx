@@ -25,22 +25,71 @@ import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-member
 // Default organization ID (will be replaced with auth later)
 const DEFAULT_ORG_ID = 'org-default'
 
-// Mock RAG service for demo purposes
-// In production, this would use real embeddings and Claude API
-const createMockRAGService = (): RAGService => ({
-  async query(query: string, _projectId: string): Promise<RAGResponse> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+// Feature flags - disable features that are not ready for production
+const FEATURE_FLAGS = {
+  AI_CHAT: false, // Disabled due to Gemini API rate limits on free tier. Re-enable when switching to paid tier or alternative provider.
+}
 
-    // Return a helpful demo response
-    return {
-      answer: `זוהי תשובה לדוגמה לשאלה שלך: "${query}"\n\nכדי להפעיל את מערכת ה-AI המלאה, יש להגדיר את משתני הסביבה הבאים:\n- ANTHROPIC_API_KEY\n- OPENAI_API_KEY\n\nלאחר ההגדרה, המערכת תוכל לענות על שאלות בהתבסס על מסמכי הפרויקט שהועלו.`,
-      sources: [],
-      usage: {
-        inputTokens: 0,
-        outputTokens: 0,
-        contextChunksUsed: 0,
-      },
+// Rate limiting state for client-side throttling
+let lastRequestTime = 0
+const MIN_REQUEST_INTERVAL_MS = 3000 // Minimum 3 seconds between requests
+
+// Gemini AI service that calls the server-side API route
+const createGeminiRAGService = (): RAGService => ({
+  async query(query: string, projectId: string): Promise<RAGResponse> {
+    // Client-side rate limiting
+    const now = Date.now()
+    const timeSinceLastRequest = now - lastRequestTime
+
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS && lastRequestTime > 0) {
+      const waitTime = Math.ceil((MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest) / 1000)
+      return {
+        answer: '',
+        sources: [],
+        error: `אנא המתן ${waitTime} שניות בין הודעות`,
+      }
+    }
+
+    lastRequestTime = now
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, projectId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Handle rate limit with retry info
+        if (response.status === 429 && data.retryAfter) {
+          return {
+            answer: '',
+            sources: [],
+            error: data.error || `חרגת ממגבלת הבקשות. המתן ${data.retryAfter} שניות ונסה שוב.`,
+          }
+        }
+        return {
+          answer: '',
+          sources: [],
+          error: data.error || 'שגיאה בתקשורת עם ה-AI',
+        }
+      }
+
+      return {
+        answer: data.answer,
+        sources: data.sources || [],
+        usage: data.usage,
+      }
+    } catch (error) {
+      return {
+        answer: '',
+        sources: [],
+        error: error instanceof Error ? error.message : 'שגיאת רשת',
+      }
     }
   },
 })
@@ -159,8 +208,8 @@ function DashboardContent() {
   const [taskErrorMessage, setTaskErrorMessage] = useState<string | null>(null)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
 
-  // AI RAG Service (mock for now - would use real service when API keys are configured)
-  const ragService = useMemo(() => createMockRAGService(), [])
+  // AI RAG Service using Gemini via API route
+  const ragService = useMemo(() => createGeminiRAGService(), [])
 
   // Loading state
   const isLoading = isLoadingProjects || (projectId && (isLoadingTasks || isLoadingPhases || isLoadingTeam))
@@ -523,22 +572,24 @@ function DashboardContent() {
               <span className="material-icons text-lg">settings</span>
               הגדרות פרויקט
             </Button>
-            <Button
-              variant="outline"
-              className={cn(
-                "px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors",
-                isAIChatOpen
-                  ? "bg-primary text-white border-primary hover:bg-blue-600"
-                  : "bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700",
-                !projectId && "opacity-50 cursor-not-allowed"
-              )}
-              onClick={() => projectId && setIsAIChatOpen(!isAIChatOpen)}
-              disabled={!projectId}
-              title={!projectId ? "יש לבחור פרויקט תחילה" : undefined}
-            >
-              <MessageSquare className="w-5 h-5" />
-              AI עוזר
-            </Button>
+            {FEATURE_FLAGS.AI_CHAT && (
+              <Button
+                variant="outline"
+                className={cn(
+                  "px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors",
+                  isAIChatOpen
+                    ? "bg-primary text-white border-primary hover:bg-blue-600"
+                    : "bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700",
+                  !projectId && "opacity-50 cursor-not-allowed"
+                )}
+                onClick={() => projectId && setIsAIChatOpen(!isAIChatOpen)}
+                disabled={!projectId}
+                title={!projectId ? "יש לבחור פרויקט תחילה" : undefined}
+              >
+                <MessageSquare className="w-5 h-5" />
+                AI עוזר
+              </Button>
+            )}
           </div>
           <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl">
             <button
@@ -899,8 +950,8 @@ function DashboardContent() {
         />
       </Modal>
 
-      {/* AI Chat Panel */}
-      {isAIChatOpen && (
+      {/* AI Chat Panel - Disabled via FEATURE_FLAGS.AI_CHAT */}
+      {FEATURE_FLAGS.AI_CHAT && isAIChatOpen && (
         <div className="fixed bottom-4 left-4 w-[calc(100vw-2rem)] sm:w-[400px] h-[60vh] sm:h-[500px] max-h-[600px] z-50 shadow-2xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 fp-animate-slide-in">
           <div className="bg-primary text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">

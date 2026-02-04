@@ -14,6 +14,12 @@ vi.mock('@/hooks/use-projects', () => ({
   useProjects: vi.fn(),
   useCreateProject: vi.fn(() => ({
     mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isPending: false,
+  })),
+  useUpdateProject: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
     isPending: false,
   })),
 }))
@@ -22,14 +28,17 @@ vi.mock('@/hooks/use-tasks', () => ({
   useTasks: vi.fn(),
   useCreateTask: vi.fn(() => ({
     mutate: vi.fn(),
+    mutateAsync: vi.fn(),
     isPending: false,
   })),
   useUpdateTask: vi.fn(() => ({
     mutate: vi.fn(),
+    mutateAsync: vi.fn(),
     isPending: false,
   })),
   useDeleteTask: vi.fn(() => ({
     mutate: vi.fn(),
+    mutateAsync: vi.fn(),
     isPending: false,
   })),
 }))
@@ -38,6 +47,12 @@ vi.mock('@/hooks/use-phases', () => ({
   usePhases: vi.fn(),
   useCreatePhase: vi.fn(() => ({
     mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isPending: false,
+  })),
+  useUpdatePhase: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
     isPending: false,
   })),
 }))

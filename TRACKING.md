@@ -11,29 +11,45 @@
 | **Build** | ✅ מצליח |
 | **Tests** | ✅ 1500+ tests עוברים |
 | **Coverage** | ✅ מעל 80% |
-| **סשן אחרון** | #20 - תיקון נראות AI Chat (dark mode) |
-| **משימה הבאה** | Document Upload UI / E2E Tests |
+| **סשן אחרון** | #22 - E2E Tests עם Playwright |
+| **משימה הבאה** | תיקון טסטים כושלים / Offline Sync Validation |
 
 ---
 
 ## 🔍 Gap Analysis - PRD vs Implementation
 
 ### סיכום מצב (Summary)
-- **מומש**: 97% מהפיצ'רים
-- **השלב הבא**: Document Upload UI או E2E Tests
+- **מומש**: 95% מהפיצ'רים (ללא AI)
+- **AI Chat**: 🔒 **מושבת זמנית** - מגבלות Gemini Free Tier
+- **השלב הבא**: E2E Tests / Offline Sync Validation
 - **צריך בדיקות**: Offline sync E2E
 
-### 🎯 השלב הבא: Document Upload UI / E2E Tests
+### 🎯 השלב הבא: E2E Tests
 
-**אופציה 1 - Document Upload UI:**
-1. יצירת קומפוננטת העלאת מסמכים
-2. חיבור ל-`document-upload.ts` service
-3. הוספה לדשבורד או לעמוד נפרד
-
-**אופציה 2 - E2E Tests:**
+**עדיפות גבוהה:**
 1. כתיבת E2E tests עם Playwright
 2. בדיקת זרימות קריטיות (login, create task, etc.)
 3. בדיקת Offline sync
+
+**עתידי (כשיהיה צורך):**
+- AI Chat - להפעלה מחדש עם Groq/Paid Gemini/Claude API
+
+### 🔴 פערים שזוהו (Identified Gaps) - Session #23
+
+**תאריך זיהוי**: 04/02/2026
+
+| פער | PRD Reference | מצב נוכחי | עדיפות |
+|-----|---------------|-----------|--------|
+| **UI לניהול חגים** | FR-002 CORE | טבלת `calendar_exceptions` קיימת, **אין UI** | P0 |
+| **Multi-Assignee UI** | FR-045 CORE | טבלת `task_assignments` קיימת, UI מציג רק assignee יחיד | P1 |
+| **חישוב Duration לפי זמינות** | FR-046 CORE | `calculateEffectiveDuration()` קיים, לא מתחשב בחופשות אוטומטית | P1 |
+
+**הערות**:
+- FR-002: המערכת תומכת ב-calendar_exceptions ברמת הסכמה, אבל אין דרך להוסיף חגים דרך ה-UI
+- FR-045: task_assignments מאפשר הקצאת מספר עובדים למשימה עם שעות ספציפיות, אבל ה-UI מציג רק dropdown של assignee יחיד
+- FR-046: הפונקציה קיימת ב-scheduling.ts אבל לא מחוברת לחישוב אוטומטי שמתחשב בחופשות
+
+---
 
 ### ✅ הושלם (P0 - Done!)
 
@@ -46,13 +62,50 @@
 
 | פיצ'ר | מצב | הערות |
 |-------|-----|-------|
-| **AI Chat Panel in Dashboard** | ✅ הושלם - Session #19 | משולב בדשבורד עם mock service |
-| **Document Upload UI** | ⚠️ Service קיים, אין UI | `document-upload.ts` |
+| **AI Chat Panel** | 🔒 **מושבת** - Session #21 | מוסתר עקב מגבלות Gemini Free Tier |
+| **Document Upload UI** | ⏸️ נדחה | תלוי בהפעלת AI |
 | **Offline Sync** | 80% | Services מלאים, צריך E2E |
-| **RAG/AI** | 90% | UI משולב, צריך API keys להפעלה מלאה |
 
 ### ✅ מושלם (100%)
 - Authentication, Tasks CRUD + CPM, Team Management, Findings Center (hidden), Gantt Charts, Modern UI
+
+---
+
+## 📋 השלבים הבאים לפיתוח (Next Steps)
+
+### עדיפות גבוהה (P0)
+
+| משימה | תיאור | קבצים |
+|-------|-------|-------|
+| **🔴 UI לניהול חגים** | FR-002 CORE - טבלת calendar_exceptions קיימת, חסר UI להוספת/עריכת חגים וימי לא-עבודה | `app/settings/calendar/` או `/project/[id]/calendar` |
+| **E2E Tests** | כתיבת בדיקות E2E עם Playwright | `flowplan/tests/` |
+| **Offline Sync E2E** | אימות Yjs CRDT sync עובד נכון | `services/sync.ts` |
+| **Critical User Flows** | Login → Dashboard → Create Task → Edit → Delete | Playwright |
+
+### עדיפות בינונית (P1)
+
+| משימה | תיאור | הערות |
+|-------|-------|-------|
+| **🟡 Multi-Assignee UI** | FR-045 CORE - טבלת task_assignments קיימת, UI מציג רק assignee יחיד | צריך UI להקצאת מספר עובדים + שעות לכל אחד |
+| **🟡 חישוב Duration מלא** | FR-046 CORE - calculateEffectiveDuration קיים אבל לא מתחשב בחופשות אוטומטית | חיבור checkMemberAvailability לחישוב Duration |
+| **RLS Production Policies** | החלפת "Anyone can..." ל-policies אמיתיים | Supabase migrations |
+| **Performance Optimization** | React Query prefetching, lazy loading | hooks, components |
+| **Error Boundary** | טיפול בשגיאות ברמת האפליקציה | `error.tsx` |
+
+### נדחה לעתיד (V2)
+
+| משימה | תיאור | תנאי להפעלה |
+|-------|-------|-------------|
+| **AI Chat** | שאילתות בשפה טבעית | ספק AI עם מגבלות טובות יותר |
+| **Document Upload** | העלאת מסמכים ל-RAG | תלוי בהפעלת AI |
+| **Multi-language** | תמיכה באנגלית | דרישה עסקית |
+
+### פיצ'רים מוסתרים (ניתן להפעיל)
+
+| פיצ'ר | קובץ | איך להפעיל |
+|-------|------|-------------|
+| **Findings Center** | `Navbar.tsx` | `FEATURE_FLAGS.FINDINGS_PAGE = true` |
+| **AI Chat** | `page.tsx` | `FEATURE_FLAGS.AI_CHAT = true` |
 
 ---
 
@@ -292,6 +345,77 @@
 ---
 
 ## 📝 לוג סשנים (Session Log)
+
+### סשן #22 (04/02/2026) - E2E Tests עם Playwright
+
+**מה נעשה:**
+- ✅ יצירת 3 קבצי E2E tests חדשים:
+  - `auth.spec.ts` - בדיקות אימות (20 טסטים)
+  - `dashboard.spec.ts` - בדיקות דשבורד ומשימות (17 טסטים)
+  - `projects.spec.ts` - בדיקות ניהול פרויקטים (15 טסטים)
+- ✅ הרצת טסטים ראשונית - 14/20 טסטי Auth עוברים
+- ✅ יצירת demo screenshots לפרויקט
+
+**קבצים שנוצרו:**
+- `flowplan/tests/e2e/auth.spec.ts` (~700 שורות)
+- `flowplan/tests/e2e/dashboard.spec.ts` (~700 שורות)
+- `flowplan/tests/e2e/projects.spec.ts` (~500 שורות)
+- `demo-assets/` - 9 screenshots לדמו
+
+**סה"כ E2E Tests:**
+| קובץ | מספר טסטים |
+|------|-----------|
+| auth.spec.ts | 20 |
+| dashboard.spec.ts | 17 |
+| projects.spec.ts | 15 |
+| team-workspace.spec.ts | ~25 (קיים) |
+| findings-center.spec.ts | ~30 (קיים) |
+| **סה"כ** | **~107** |
+
+**טסטים לתיקון:**
+- כמה locators צריכים התאמה (בעיקר לינקים בין דפים)
+- שגיאות EPERM ב-Windows (לא קריטי)
+
+**הפקודה להרצה:**
+```bash
+cd flowplan && npx playwright test --project=chromium
+```
+
+---
+
+### סשן #21 (04/02/2026) - השבתת AI Chat (מגבלות Gemini Free Tier)
+
+**מה נעשה:**
+- ✅ השבתת פיצ'ר AI Chat בדשבורד
+- ✅ הוספת FEATURE_FLAGS לניהול פיצ'רים
+- ✅ עדכון TRACKING.md
+- ✅ עדכון PRD
+
+**סיבת ההשבתה:**
+- Gemini Free Tier מוגבל מאוד (5-15 RPM, ~20-50 בקשות/יום)
+- שגיאות 429 (Too Many Requests) תכופות
+- לא קריטי לפונקציונליות הליבה של המערכת
+
+**איך להפעיל מחדש:**
+```typescript
+// ב-flowplan/src/app/page.tsx
+const FEATURE_FLAGS = {
+  AI_CHAT: true, // שנה מ-false ל-true
+}
+```
+
+**חלופות עתידיות (כשיהיה צורך):**
+- Groq (free tier טוב יותר)
+- Gemini Paid Tier
+- Claude API (Anthropic)
+- Ollama (local)
+
+**קבצים ששונו:**
+- `flowplan/src/app/page.tsx` - הוספת FEATURE_FLAGS, הסתרת כפתור וצ'אט
+- `TRACKING.md` - עדכון סטטוס ולוג
+- `FlowPlan-PRD.html` - עדכון סטטוס AI לנדחה
+
+---
 
 ### סשן #20 (04/02/2026) - תיקון נראות AI Chat (dark mode)
 

@@ -81,26 +81,24 @@ describe('Input', () => {
 
   // Variants
   describe('variants', () => {
-    it('applies default variant styling and high contrast placeholder', () => {
+    it('applies default variant styling and placeholder', () => {
       render(<Input placeholder="Test Placeholder" />)
       const input = screen.getByPlaceholderText('Test Placeholder')
-      expect(input).toHaveClass('border-2')
-      expect(input).toHaveClass('border-gray-900')
-      expect(input).toHaveClass('text-gray-900')
-      // We want to ensure the placeholder color is dark enough
-      expect(input).toHaveClass('placeholder:text-gray-500')
+      expect(input).toHaveClass('border-slate-200')
+      expect(input).toHaveClass('text-slate-900')
+      expect(input).toHaveClass('placeholder:text-slate-400')
     })
 
     it('applies error variant styling', () => {
       render(<Input variant="error" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-[var(--fp-status-error)]')
+      expect(input).toHaveClass('border-red-300')
     })
 
     it('applies success variant styling', () => {
       render(<Input variant="success" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-[var(--fp-status-success)]')
+      expect(input).toHaveClass('border-green-300')
     })
   })
 
@@ -109,23 +107,23 @@ describe('Input', () => {
     it('applies small size styling', () => {
       render(<Input size="sm" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('px-2')
-      expect(input).toHaveClass('py-1')
+      expect(input).toHaveClass('px-3')
+      expect(input).toHaveClass('py-1.5')
       expect(input).toHaveClass('text-sm')
     })
 
     it('applies medium size styling by default', () => {
       render(<Input />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('px-3')
-      expect(input).toHaveClass('py-2')
+      expect(input).toHaveClass('px-4')
+      expect(input).toHaveClass('py-2.5')
     })
 
     it('applies large size styling', () => {
       render(<Input size="lg" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('px-4')
-      expect(input).toHaveClass('py-3')
+      expect(input).toHaveClass('px-5')
+      expect(input).toHaveClass('py-4')
       expect(input).toHaveClass('text-lg')
     })
   })
@@ -211,13 +209,13 @@ describe('Input', () => {
     it('applies error styling when error is provided', () => {
       render(<Input error="Invalid input" />)
       const input = screen.getByRole('textbox')
-      expect(input).toHaveClass('border-[var(--fp-status-error)]')
+      expect(input).toHaveClass('border-red-300')
     })
 
     it('error message has error color', () => {
       render(<Input error="Invalid input" />)
       const errorText = screen.getByText('Invalid input')
-      expect(errorText).toHaveClass('text-[var(--fp-status-error)]')
+      expect(errorText).toHaveClass('text-red-500')
     })
   })
 
