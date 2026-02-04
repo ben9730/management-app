@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase'
-import type { TeamMember } from '@/types/entities'
+import type { TeamMember, EmployeeTimeOff } from '@/types/entities'
 
 const VALID_ROLES = ['admin', 'manager', 'member', 'viewer'] as const
 
@@ -255,4 +255,62 @@ export async function deleteTeamMember(
   }
 
   return { data: null, error: null }
+}
+
+/**
+ * Result type for member availability check
+ */
+export interface MemberAvailabilityResult {
+  available: boolean
+  conflictingTimeOff?: EmployeeTimeOff
+  error?: { message: string; code?: string }
+}
+
+/**
+ * Check if a team member is available during a given date range
+ * Checks the employee_time_off table for any approved time off that overlaps
+ * with the given date range.
+ *
+ * @param memberId - The team member's ID
+ * @param startDate - Start of the date range to check
+ * @param endDate - End of the date range to check
+ * @returns Availability result with conflicting time off if unavailable
+ */
+export async function checkMemberAvailability(
+  memberId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<MemberAvailabilityResult> {
+  // Format dates for Supabase query
+  const startDateStr = startDate.toISOString().split('T')[0]
+  const endDateStr = endDate.toISOString().split('T')[0]
+
+  // Query for approved time off that overlaps with the date range
+  // Overlap condition: time_off.start_date <= endDate AND time_off.end_date >= startDate
+  const { data, error } = await supabase
+    .from('employee_time_off')
+    .select('*')
+    .eq('team_member_id', memberId)
+    .eq('status', 'approved')
+    .lte('start_date', endDateStr)
+    .gte('end_date', startDateStr)
+    .order('start_date', { ascending: true })
+
+  if (error) {
+    // Fail-open: return available on error for better usability
+    return {
+      available: true,
+      error: { message: error.message, code: error.code },
+    }
+  }
+
+  // If any time off records exist, the member is unavailable
+  if (data && data.length > 0) {
+    return {
+      available: false,
+      conflictingTimeOff: data[0] as EmployeeTimeOff,
+    }
+  }
+
+  return { available: true }
 }

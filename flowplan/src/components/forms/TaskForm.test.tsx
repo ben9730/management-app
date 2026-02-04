@@ -10,6 +10,11 @@ import userEvent from '@testing-library/user-event'
 import { TaskForm, TaskFormData } from './TaskForm'
 import { TaskPriority } from '@/types/entities'
 
+// Mock the team-members service to avoid Supabase initialization
+vi.mock('@/services/team-members', () => ({
+  checkMemberAvailability: vi.fn().mockResolvedValue({ available: true }),
+}))
+
 const mockOnSubmit = vi.fn()
 const mockOnCancel = vi.fn()
 
@@ -344,6 +349,247 @@ describe('TaskForm', () => {
       render(<TaskForm {...defaultProps} />)
       const titleInput = screen.getByLabelText(/title/i)
       expect(titleInput).toHaveClass('border-2')
+    })
+  })
+
+  // Vacation Warning Display
+  describe('vacation warning display', () => {
+    const teamMembersWithTimeOff = [
+      {
+        id: 'member-1',
+        display_name: 'John Doe',
+        email: 'john@example.com',
+        role: 'member' as const,
+        hourly_rate: 100,
+        work_hours_per_day: 8,
+        created_at: new Date(),
+        is_active: true,
+      },
+    ]
+
+    const mockVacationConflict = {
+      available: false,
+      conflictingTimeOff: {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: new Date('2026-02-05'),
+        end_date: new Date('2026-02-08'),
+        type: 'vacation' as const,
+        status: 'approved' as const,
+        notes: null,
+        created_at: new Date(),
+      },
+    }
+
+    it('displays vacation warning when assignee has conflicting time off', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={mockVacationConflict}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('vacation-warning')).toBeInTheDocument()
+      })
+    })
+
+    it('shows vacation dates in warning message', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={mockVacationConflict}
+        />
+      )
+
+      await waitFor(() => {
+        const warning = screen.getByTestId('vacation-warning')
+        expect(warning).toHaveTextContent(/05.*02.*2026/)
+        expect(warning).toHaveTextContent(/08.*02.*2026/)
+      })
+    })
+
+    it('does not display warning when no vacation conflict', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={{ available: true }}
+        />
+      )
+
+      expect(screen.queryByTestId('vacation-warning')).not.toBeInTheDocument()
+    })
+
+    it('does not display warning when no assignee selected', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+        />
+      )
+
+      expect(screen.queryByTestId('vacation-warning')).not.toBeInTheDocument()
+    })
+
+    it('does not display warning when no start date', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            duration: 10,
+          }}
+        />
+      )
+
+      expect(screen.queryByTestId('vacation-warning')).not.toBeInTheDocument()
+    })
+
+    it('shows assignee name in vacation warning', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={mockVacationConflict}
+        />
+      )
+
+      await waitFor(() => {
+        const warning = screen.getByTestId('vacation-warning')
+        expect(warning).toHaveTextContent('John Doe')
+      })
+    })
+
+    it('shows different icon/style for sick leave vs vacation', async () => {
+      const sickLeaveConflict = {
+        available: false,
+        conflictingTimeOff: {
+          ...mockVacationConflict.conflictingTimeOff,
+          type: 'sick' as const,
+        },
+      }
+
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={sickLeaveConflict}
+        />
+      )
+
+      await waitFor(() => {
+        const warning = screen.getByTestId('vacation-warning')
+        expect(warning).toHaveTextContent(/sick/i)
+      })
+    })
+
+    it('warning has appropriate ARIA attributes for accessibility', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={mockVacationConflict}
+        />
+      )
+
+      await waitFor(() => {
+        const warning = screen.getByTestId('vacation-warning')
+        expect(warning).toHaveAttribute('role', 'alert')
+      })
+    })
+
+    it('allows form submission even with vacation warning', async () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            title: 'Test Task',
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={mockVacationConflict}
+        />
+      )
+
+      // Use Hebrew text for the button
+      await userEvent.click(screen.getByRole('button', { name: /צור משימה/i }))
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalled()
+      })
+    })
+
+    it('clears vacation warning when assignee is changed to unassigned', async () => {
+      const { rerender } = render(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: 'member-1',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={mockVacationConflict}
+        />
+      )
+
+      expect(screen.getByTestId('vacation-warning')).toBeInTheDocument()
+
+      // Simulate selecting "Unassigned"
+      rerender(
+        <TaskForm
+          {...defaultProps}
+          teamMembers={teamMembersWithTimeOff}
+          initialValues={{
+            assignee_id: '',
+            start_date: '2026-02-01',
+            duration: 10,
+          }}
+          vacationConflict={{ available: true }}
+        />
+      )
+
+      expect(screen.queryByTestId('vacation-warning')).not.toBeInTheDocument()
     })
   })
 })

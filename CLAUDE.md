@@ -169,3 +169,32 @@ TypeScript types in `entities.ts` and service inputs must match the actual datab
 - **Language**: Hebrew (RTL)
 - **Theme**: Dark mode enforced via `className="dark"` on `<html>`
 - **Font**: Assistant (RTL-optimized)
+
+## Session Workflow
+
+### After Testing
+
+Always perform these steps after completing testing:
+1. **Stop the dev server**: Kill any running `npm run dev` processes
+2. **Document in TRACKING.md**: Add a session entry with:
+   - Date and session number
+   - What was implemented/fixed
+   - What was tested
+   - Any remaining issues or next steps
+
+### Documentation Template
+```markdown
+### Session #X - YYYY-MM-DD
+**Focus**: [Brief description]
+
+**Completed**:
+- [ ] Item 1
+- [ ] Item 2
+
+**Tested**:
+- [ ] Manual testing done
+- [ ] Unit tests passing
+
+**Next Steps**:
+- [ ] Remaining work
+```

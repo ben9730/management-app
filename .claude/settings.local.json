@@ -33,7 +33,20 @@
       "mcp__playwright__browser_close",
       "Bash(claude mcp:*)",
       "mcp__supabase__list_projects",
-      "mcp__supabase__list_tables"
+      "mcp__supabase__list_tables",
+      "Bash(npx playwright:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(ping:*)",
+      "Bash(Select-Object -First 10)",
+      "mcp__supabase__execute_sql",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_evaluate",
+      "Bash(taskkill:*)",
+      "Bash(pkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "mcp__playwright__browser_console_messages"
     ]
   }
 }

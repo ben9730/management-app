@@ -6,11 +6,12 @@
  */
 
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cn, formatDateDisplay, calculateEndDate } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Select, SelectOption } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import type { TaskPriority, TeamMember } from '@/types/entities'
+import { checkMemberAvailability } from '@/services/team-members'
+import type { TaskPriority, TeamMember, EmployeeTimeOff } from '@/types/entities'
 
 export interface TaskFormData {
   title: string
@@ -23,6 +24,14 @@ export interface TaskFormData {
   assignee_id?: string
 }
 
+/**
+ * Vacation conflict information
+ */
+export interface VacationConflict {
+  available: boolean
+  conflictingTimeOff?: EmployeeTimeOff
+}
+
 export interface TaskFormProps {
   onSubmit: (data: TaskFormData) => void
   onCancel: () => void
@@ -32,6 +41,8 @@ export interface TaskFormProps {
   className?: string
   /** Team members available for assignment */
   teamMembers?: TeamMember[]
+  /** Vacation conflict information for the selected assignee */
+  vacationConflict?: VacationConflict
 }
 
 interface FormErrors {
@@ -46,6 +57,71 @@ const priorityOptions: SelectOption[] = [
   { value: 'critical', label: 'Critical' },
 ]
 
+/**
+ * Get Hebrew display text for time off type
+ */
+function getTimeOffTypeLabel(type: string): string {
+  switch (type) {
+    case 'vacation':
+      return 'חופשה'
+    case 'sick':
+      return 'מחלה (sick)'
+    case 'personal':
+      return 'אישי'
+    case 'other':
+      return 'אחר'
+    default:
+      return type
+  }
+}
+
+/**
+ * Vacation Warning Component
+ * Displays a warning when the assignee has conflicting time off
+ */
+interface VacationWarningProps {
+  timeOff: EmployeeTimeOff
+  assigneeName: string
+}
+
+const VacationWarning: React.FC<VacationWarningProps> = ({ timeOff, assigneeName }) => {
+  const startDate = formatDateDisplay(timeOff.start_date)
+  const endDate = formatDateDisplay(timeOff.end_date)
+  const typeLabel = getTimeOffTypeLabel(timeOff.type)
+
+  return (
+    <div
+      role="alert"
+      data-testid="vacation-warning"
+      className={cn(
+        'rounded-lg border-2 p-4',
+        timeOff.type === 'sick'
+          ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20'
+          : 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 text-xl">
+          {timeOff.type === 'sick' ? '🤒' : '🏖️'}
+        </div>
+        <div className="flex-1">
+          <h4 className="font-bold text-slate-900 dark:text-white">
+            התראה: חפיפה עם {typeLabel}
+          </h4>
+          <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+            {assigneeName} לא יהיה זמין בתאריכים {startDate} - {endDate} ({typeLabel})
+          </p>
+          {timeOff.notes && (
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              הערה: {timeOff.notes}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const TaskForm: React.FC<TaskFormProps> = ({
   onSubmit,
   onCancel,
@@ -54,6 +130,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   isLoading = false,
   className,
   teamMembers,
+  vacationConflict: externalVacationConflict,
 }) => {
   // Build assignee options from team members
   const assigneeOptions: SelectOption[] = React.useMemo(() => {
@@ -75,6 +152,13 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
     return options
   }, [teamMembers])
+
+  // Internal vacation conflict state (auto-checks when assignee/dates change)
+  const [internalVacationConflict, setInternalVacationConflict] = React.useState<VacationConflict | null>(null)
+
+  // Use external prop if provided, otherwise use internal state
+  const vacationConflict = externalVacationConflict ?? internalVacationConflict
+
   const [formData, setFormData] = React.useState<TaskFormData>({
     title: initialValues?.title || '',
     description: initialValues?.description || '',
@@ -87,6 +171,63 @@ const TaskForm: React.FC<TaskFormProps> = ({
   })
 
   const [errors, setErrors] = React.useState<FormErrors>({})
+
+  // Calculate duration from estimated_hours when assignee changes
+  const calculateDurationFromHours = React.useCallback((estimatedHours: number | undefined, assigneeId: string | undefined) => {
+    if (!estimatedHours || estimatedHours <= 0) return null
+
+    // Get assignee's work hours per day (default 8)
+    const assignee = teamMembers?.find(m => m.id === assigneeId)
+    const workHoursPerDay = assignee?.work_hours_per_day || 8
+
+    // Calculate and round up to nearest day
+    return Math.ceil(estimatedHours / workHoursPerDay)
+  }, [teamMembers])
+
+  // Auto-calculate duration when estimated_hours or assignee changes
+  React.useEffect(() => {
+    const calculatedDuration = calculateDurationFromHours(formData.estimated_hours, formData.assignee_id)
+    if (calculatedDuration !== null && calculatedDuration !== formData.duration) {
+      setFormData(prev => ({ ...prev, duration: calculatedDuration }))
+    }
+  }, [formData.estimated_hours, formData.assignee_id, calculateDurationFromHours, formData.duration])
+
+  // Check vacation availability when assignee, start_date, or duration changes
+  React.useEffect(() => {
+    // Skip if external conflict is provided (controlled mode)
+    if (externalVacationConflict !== undefined) return
+
+    // Skip if no assignee or no start date
+    if (!formData.assignee_id || !formData.start_date) {
+      setInternalVacationConflict(null)
+      return
+    }
+
+    // Calculate task date range
+    const startDate = new Date(formData.start_date)
+    const endDate = calculateEndDate(formData.start_date, formData.duration)
+
+    if (!endDate) {
+      setInternalVacationConflict(null)
+      return
+    }
+
+    // Check availability
+    const checkAvailability = async () => {
+      try {
+        const result = await checkMemberAvailability(formData.assignee_id!, startDate, endDate)
+        setInternalVacationConflict({
+          available: result.available,
+          conflictingTimeOff: result.conflictingTimeOff,
+        })
+      } catch {
+        // Silently fail - don't block form submission
+        setInternalVacationConflict(null)
+      }
+    }
+
+    checkAvailability()
+  }, [formData.assignee_id, formData.start_date, formData.duration, externalVacationConflict])
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
@@ -211,19 +352,28 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
       {/* Duration & Estimated Hours - Side by Side */}
       <div className="grid grid-cols-2 gap-4">
-        <Input
-          label="משך זמן (ימים)"
-          id="duration"
-          name="duration"
-          type="number"
-          min={1}
-          value={formData.duration}
-          onChange={handleChange}
-          disabled={isLoading}
-          error={errors.duration}
-          fullWidth
-          data-testid="task-duration-input"
-        />
+        <div>
+          <Input
+            label="משך זמן (ימים)"
+            id="duration"
+            name="duration"
+            type="number"
+            min={1}
+            value={formData.duration}
+            onChange={handleChange}
+            disabled={isLoading}
+            error={errors.duration}
+            fullWidth
+            data-testid="task-duration-input"
+          />
+          {formData.estimated_hours && formData.estimated_hours > 0 && (
+            <p className="text-xs text-slate-500 mt-1" data-testid="duration-calculation-hint">
+              מחושב: {formData.estimated_hours} שעות ÷ {
+                teamMembers?.find(m => m.id === formData.assignee_id)?.work_hours_per_day || 8
+              } שעות/יום
+            </p>
+          )}
+        </div>
 
         <Input
           label="שעות מוערכות"
@@ -251,6 +401,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
           disabled={isLoading}
           fullWidth
           data-testid="task-assignee-select"
+        />
+      )}
+
+      {/* Vacation Warning */}
+      {vacationConflict && !vacationConflict.available && vacationConflict.conflictingTimeOff && (
+        <VacationWarning
+          timeOff={vacationConflict.conflictingTimeOff}
+          assigneeName={teamMembers?.find(m => m.id === formData.assignee_id)?.display_name || ''}
         />
       )}
 

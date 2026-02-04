@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
-import { cn } from '@/lib/utils'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { cn, calculateEndDate } from '@/lib/utils'
 import type { Project, ProjectPhase, Task, TeamMember } from '@/types/entities'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -84,6 +84,17 @@ export default function DashboardPage() {
   // Loading state
   const isLoading = isLoadingProjects || (projectId && (isLoadingTasks || isLoadingPhases || isLoadingTeam))
 
+  // Sync selectedTask with updated tasks from React Query
+  // This ensures the sidebar shows fresh data when tasks are updated
+  useEffect(() => {
+    if (selectedTask) {
+      const updatedTask = tasks.find(t => t.id === selectedTask.id)
+      if (updatedTask && JSON.stringify(updatedTask) !== JSON.stringify(selectedTask)) {
+        setSelectedTask(updatedTask)
+      }
+    }
+  }, [tasks, selectedTask])
+
   // Calculate stats
   const totalTasks = tasks.length
   const completedTasks = tasks.filter(t => t.status === 'done').length
@@ -101,6 +112,26 @@ export default function DashboardPage() {
   const getTasksForPhase = useCallback((phaseId: string) => {
     return tasks.filter(t => t.phase_id === phaseId)
   }, [tasks])
+
+  // Calculate phase status based on tasks
+  const calculatePhaseStatus = useCallback((phaseTasks: Task[]): 'pending' | 'active' | 'completed' => {
+    if (phaseTasks.length === 0) return 'pending'
+
+    const allDone = phaseTasks.every(t => t.status === 'done')
+    if (allDone) return 'completed'
+
+    const hasActiveOrDone = phaseTasks.some(t => t.status === 'in_progress' || t.status === 'done')
+    if (hasActiveOrDone) return 'active'
+
+    return 'pending'
+  }, [])
+
+  // Get phase with calculated status
+  const getPhaseWithCalculatedStatus = useCallback((phase: ProjectPhase): ProjectPhase => {
+    const phaseTasks = getTasksForPhase(phase.id)
+    const calculatedStatus = calculatePhaseStatus(phaseTasks)
+    return { ...phase, status: calculatedStatus }
+  }, [getTasksForPhase, calculatePhaseStatus])
 
   // Get team member name - supports both display_name and first_name/last_name
   const getTeamMemberName = useCallback((memberId: string | null) => {
@@ -462,11 +493,14 @@ export default function DashboardPage() {
               </div>
             ) : viewMode === 'phases' ? (
               <div className="space-y-4 fp-stagger">
-                {phases.map(phase => (
-                  <PhaseSection key={phase.id} phase={phase} tasks={getTasksForPhase(phase.id)}
-                    taskAssignees={taskAssignees} onTaskClick={setSelectedTask}
-                    onTaskStatusChange={handleTaskStatusChange} onAddTask={() => handleAddTask(phase.id)} />
-                ))}
+                {phases.map(phase => {
+                  const phaseWithStatus = getPhaseWithCalculatedStatus(phase)
+                  return (
+                    <PhaseSection key={phase.id} phase={phaseWithStatus} tasks={getTasksForPhase(phase.id)}
+                      taskAssignees={taskAssignees} onTaskClick={setSelectedTask}
+                      onTaskStatusChange={handleTaskStatusChange} onAddTask={() => handleAddTask(phase.id)} />
+                  )
+                })}
               </div>
             ) : (
               <div className="fp-card p-4">
@@ -512,7 +546,15 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">לוח זמנים</div>
-                        <div className="text-sm font-bold">{formatDate(selectedTask.start_date)} - {formatDate(selectedTask.end_date)}</div>
+                        <div className="text-sm font-bold">
+                          {formatDate(selectedTask.start_date)} - {
+                            selectedTask.end_date
+                              ? formatDate(selectedTask.end_date)
+                              : selectedTask.start_date && selectedTask.duration > 0
+                                ? formatDate(calculateEndDate(selectedTask.start_date, selectedTask.duration))
+                                : '—'
+                          }
+                        </div>
                       </div>
                     </div>
                     {selectedTask.assignee_id && (
