@@ -7,13 +7,14 @@
  * Hebrew RTL support.
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { TeamMemberList } from '@/components/team/TeamMemberList'
 import { TimeOffCalendar } from '@/components/team/TimeOffCalendar'
 import { TeamMemberForm, TeamMemberFormData } from '@/components/forms/TeamMemberForm'
 import { TimeOffForm, TimeOffFormData } from '@/components/forms/TimeOffForm'
 import type { TeamMember, UserRole } from '@/types/entities'
+import { useRegisteredUsers } from '@/hooks/use-users'
 
 // Hooks
 import {
@@ -39,6 +40,9 @@ const getTimeOffDateRange = () => {
 }
 
 export default function TeamPage() {
+  // Fetch registered users for email lookup
+  const { data: registeredUsers = [] } = useRegisteredUsers()
+
   // Fetch team members
   const {
     data: teamMembers = [],
@@ -71,11 +75,26 @@ export default function TeamPage() {
     ? (deleteMemberMutation.variables as string)
     : null
 
+  // Get list of user IDs that are already team members (to exclude from selection)
+  const existingMemberUserIds = useMemo(() => {
+    return teamMembers
+      .map((m) => m.user_id)
+      .filter((id): id is string => id !== null && id !== undefined)
+  }, [teamMembers])
+
+  // Helper to get user email by ID
+  const getUserEmail = useCallback(
+    (userId: string) => {
+      const user = registeredUsers.find((u) => u.id === userId)
+      return user?.email || ''
+    },
+    [registeredUsers]
+  )
+
   // Map TeamMember to form data
-  // Note: Form only supports 'admin' | 'member' roles, so we map other roles to 'member'
   const memberToFormData = (member: TeamMember): Partial<TeamMemberFormData> => ({
-    name: `${member.first_name} ${member.last_name}`,
-    email: member.email,
+    user_id: member.user_id || '',
+    display_name: member.display_name || '',
     role: (member.role === 'admin' ? 'admin' : 'member') as UserRole,
     employment_type: member.employment_type,
     work_hours_per_day: member.work_hours_per_day,
@@ -113,14 +132,19 @@ export default function TeamPage() {
   // Handle form submit
   const handleFormSubmit = useCallback(
     (data: TeamMemberFormData) => {
+      // Get user email for the selected user
+      const userEmail = getUserEmail(data.user_id)
+
+      // Use custom display_name if provided, otherwise use email
+      const displayName = data.display_name?.trim() || userEmail
+
       if (editingMember) {
-        // Update existing member
+        // Update existing member (user_id cannot be changed)
         updateMemberMutation.mutate(
           {
             id: editingMember.id,
             updates: {
-              display_name: data.name,
-              email: data.email,
+              display_name: displayName,
               role: data.role,
               employment_type: data.employment_type,
               work_hours_per_day: data.work_hours_per_day,
@@ -140,12 +164,13 @@ export default function TeamPage() {
           }
         )
       } else {
-        // Create new member
+        // Create new member with user_id
         createMemberMutation.mutate(
           {
             organization_id: DEFAULT_ORG_ID,
-            display_name: data.name,
-            email: data.email,
+            user_id: data.user_id,
+            display_name: displayName,
+            email: userEmail,
             role: data.role,
             employment_type: data.employment_type,
             work_hours_per_day: data.work_hours_per_day,
@@ -164,7 +189,7 @@ export default function TeamPage() {
         )
       }
     },
-    [editingMember, createMemberMutation, updateMemberMutation]
+    [editingMember, createMemberMutation, updateMemberMutation, getUserEmail]
   )
 
   // Handle form cancel
@@ -242,9 +267,9 @@ export default function TeamPage() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Team Workspace</h1>
+          <h1 className="text-3xl font-bold text-foreground">צוות העבודה</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">
-            Manage your team members and track time off
+            ניהול חברי צוות ומעקב אחר חופשות
           </p>
         </div>
 
@@ -281,7 +306,7 @@ export default function TeamPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={handleFormCancel}
-        title={editingMember ? 'Edit Team Member' : 'Add Team Member'}
+        title={editingMember ? 'עריכת חבר צוות' : 'הוספת חבר צוות'}
         size="md"
       >
         <TeamMemberForm
@@ -290,6 +315,7 @@ export default function TeamPage() {
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
           isLoading={createMemberMutation.isPending || updateMemberMutation.isPending}
+          excludeUserIds={editingMember ? [] : existingMemberUserIds}
         />
       </Modal>
 
@@ -297,7 +323,7 @@ export default function TeamPage() {
       <Modal
         isOpen={isTimeOffModalOpen}
         onClose={handleTimeOffCancel}
-        title="Add Time Off"
+        title="הוספת חופשה"
         size="md"
       >
         <TimeOffForm

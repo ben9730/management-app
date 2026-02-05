@@ -9,6 +9,7 @@
 
 import { supabase } from '@/lib/supabase'
 import type { Task } from '@/types/entities'
+import { ensureProjectMember } from './team-members'
 
 export interface CreateTaskInput {
   project_id: string
@@ -106,7 +107,14 @@ export async function createTask(
     return { data: null, error: { message: error.message, code: error.code } }
   }
 
-  return { data: data as Task, error: null }
+  const task = data as Task
+
+  // If assignee is set, ensure they are a project member (for RLS visibility)
+  if (task.assignee_id) {
+    await ensureProjectMember(task.project_id, task.assignee_id)
+  }
+
+  return { data: task, error: null }
 }
 
 /**
@@ -179,7 +187,14 @@ export async function updateTask(
     return { data: null, error: { message: error.message, code: error.code } }
   }
 
-  return { data: data as Task, error: null }
+  const task = data as Task
+
+  // If assignee is set/changed, ensure they are a project member (for RLS visibility)
+  if (updates.assignee_id && task.project_id) {
+    await ensureProjectMember(task.project_id, updates.assignee_id)
+  }
+
+  return { data: task, error: null }
 }
 
 /**

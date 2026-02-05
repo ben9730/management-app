@@ -5,6 +5,7 @@ import './globals.css'
 import { Navbar } from '@/components/Navbar'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -37,7 +38,9 @@ export default function RootLayout({
               <Navbar />
 
               <main className="flex-1">
-                {children}
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
               </main>
 
             </div>

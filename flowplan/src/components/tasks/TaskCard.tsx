@@ -83,7 +83,7 @@ function memberToAvatar(member: TeamMember): AvatarData {
   }
 }
 
-const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
+const TaskCardComponent = React.forwardRef<HTMLDivElement, TaskCardProps>(
   (
     {
       task,
@@ -210,6 +210,9 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
   }
 )
 
-TaskCard.displayName = 'TaskCard'
+TaskCardComponent.displayName = 'TaskCard'
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+const TaskCard = React.memo(TaskCardComponent)
 
 export { TaskCard }

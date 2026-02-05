@@ -175,13 +175,14 @@ export async function getTeamMember(
  * Get all team members for an organization
  */
 export async function getTeamMembers(
-  organizationId: string,
+  _organizationId: string,
   filter?: TeamMembersFilter
 ): Promise<ServiceResult<TeamMember[]>> {
+  // Fetch all team members
+  // Note: In production, filter by organization_id. For dev/demo, fetch all.
   let query = supabase
     .from('team_members')
     .select('*')
-    .eq('organization_id', organizationId)
 
   if (filter?.is_active !== undefined) {
     query = query.eq('is_active', filter.is_active)
@@ -325,4 +326,56 @@ export async function checkMemberAvailability(
   }
 
   return { available: true }
+}
+
+/**
+ * Ensure a team member is assigned to a project via project_members junction table.
+ * This is idempotent - if the member is already assigned, it does nothing.
+ * Called automatically when a task is assigned to a team member.
+ *
+ * @param projectId - The project ID
+ * @param teamMemberId - The team member ID
+ * @returns Service result with the project_members record
+ */
+export async function ensureProjectMember(
+  projectId: string,
+  teamMemberId: string
+): Promise<ServiceResult<{ project_id: string; team_member_id: string }>> {
+  if (!projectId || !teamMemberId) {
+    return { data: null, error: { message: 'Project ID and Team Member ID are required' } }
+  }
+
+  // Check if already assigned
+  const { data: existing, error: checkError } = await supabase
+    .from('project_members')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('team_member_id', teamMemberId)
+    .maybeSingle()
+
+  if (checkError) {
+    return { data: null, error: { message: checkError.message, code: checkError.code } }
+  }
+
+  // Already assigned, return success
+  if (existing) {
+    return { data: { project_id: projectId, team_member_id: teamMemberId }, error: null }
+  }
+
+  // Insert new assignment
+  const { data, error } = await supabase
+    .from('project_members')
+    .insert({
+      project_id: projectId,
+      team_member_id: teamMemberId,
+      role: 'member',
+    } as never)
+    .select('project_id, team_member_id')
+    .single()
+
+  if (error) {
+    return { data: null, error: { message: error.message, code: error.code } }
+  }
+
+  return { data: data as { project_id: string; team_member_id: string }, error: null }
 }

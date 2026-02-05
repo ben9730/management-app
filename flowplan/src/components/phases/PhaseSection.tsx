@@ -39,7 +39,7 @@ const statusColorMap: Record<ProjectPhase['status'], string> = {
   completed: 'border-emerald-500',
 }
 
-const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
+const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
   (
     {
       phase,
@@ -189,6 +189,9 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
   }
 )
 
-PhaseSection.displayName = 'PhaseSection'
+PhaseSectionComponent.displayName = 'PhaseSection'
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+const PhaseSection = React.memo(PhaseSectionComponent)
 
 export { PhaseSection }

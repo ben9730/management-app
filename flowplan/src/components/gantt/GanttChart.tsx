@@ -128,7 +128,7 @@ function getMonthLabels(start: Date, end: Date): { month: string; width: number;
   return months
 }
 
-const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
+const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
   (
     {
       tasks,
@@ -149,31 +149,48 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
     const [hoveredTaskId, setHoveredTaskId] = React.useState<string | null>(null)
     const timelineRef = React.useRef<HTMLDivElement>(null)
 
-    const { start: dateRangeStart, end: dateRangeEnd } = getDateRange(tasks)
-    const dateHeaders = generateDateHeaders(dateRangeStart, dateRangeEnd)
-    const monthLabels = getMonthLabels(dateRangeStart, dateRangeEnd)
+    // Memoize date range calculation
+    const { start: dateRangeStart, end: dateRangeEnd } = React.useMemo(
+      () => getDateRange(tasks),
+      [tasks]
+    )
+
+    // Memoize date headers (expensive for long timelines)
+    const dateHeaders = React.useMemo(
+      () => generateDateHeaders(dateRangeStart, dateRangeEnd),
+      [dateRangeStart, dateRangeEnd]
+    )
+
+    // Memoize month labels
+    const monthLabels = React.useMemo(
+      () => getMonthLabels(dateRangeStart, dateRangeEnd),
+      [dateRangeStart, dateRangeEnd]
+    )
+
     const totalDays = dateHeaders.length
     const timelineWidth = totalDays * dayWidth
 
-    // Calculate task positions
-    const taskPositions: TaskPosition[] = tasks.map((task, index) => {
-      const taskStart = parseDate(task.start_date)
-      const taskEnd = parseDate(task.end_date)
+    // Memoize task positions calculation
+    const taskPositions: TaskPosition[] = React.useMemo(() => {
+      return tasks.map((task, index) => {
+        const taskStart = parseDate(task.start_date)
+        const taskEnd = parseDate(task.end_date)
 
-      if (!taskStart || !taskEnd) {
-        return { task, left: 0, width: dayWidth, top: index * ROW_HEIGHT }
-      }
+        if (!taskStart || !taskEnd) {
+          return { task, left: 0, width: dayWidth, top: index * ROW_HEIGHT }
+        }
 
-      const startOffset = getDaysBetween(dateRangeStart, taskStart)
-      const duration = getDaysBetween(taskStart, taskEnd) + 1
+        const startOffset = getDaysBetween(dateRangeStart, taskStart)
+        const duration = getDaysBetween(taskStart, taskEnd) + 1
 
-      return {
-        task,
-        left: startOffset * dayWidth,
-        width: duration * dayWidth,
-        top: index * ROW_HEIGHT,
-      }
-    })
+        return {
+          task,
+          left: startOffset * dayWidth,
+          width: duration * dayWidth,
+          top: index * ROW_HEIGHT,
+        }
+      })
+    }, [tasks, dayWidth, dateRangeStart])
 
     // Calculate today's position
     const today = new Date()
@@ -587,6 +604,9 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
   }
 )
 
-GanttChart.displayName = 'GanttChart'
+GanttChartComponent.displayName = 'GanttChart'
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+const GanttChart = React.memo(GanttChartComponent)
 
 export { GanttChart }

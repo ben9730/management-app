@@ -90,7 +90,7 @@ interface VacationWarningProps {
   assigneeName: string
 }
 
-const VacationWarning: React.FC<VacationWarningProps> = ({ timeOff, assigneeName }) => {
+const VacationWarning: React.FC<VacationWarningProps> = React.memo(({ timeOff, assigneeName }) => {
   const startDate = formatDateDisplay(timeOff.start_date)
   const endDate = formatDateDisplay(timeOff.end_date)
   const typeLabel = getTimeOffTypeLabel(timeOff.type)
@@ -126,7 +126,7 @@ const VacationWarning: React.FC<VacationWarningProps> = ({ timeOff, assigneeName
       </div>
     </div>
   )
-}
+})
 
 /**
  * Get Hebrew display text for calendar exception type
@@ -193,7 +193,7 @@ interface HolidayWarningProps {
   exceptions: CalendarException[]
 }
 
-const HolidayWarning: React.FC<HolidayWarningProps> = ({ exceptions }) => {
+const HolidayWarning: React.FC<HolidayWarningProps> = React.memo(({ exceptions }) => {
   if (exceptions.length === 0) return null
 
   // Determine if any are holidays (vs all being non_working)
@@ -250,9 +250,9 @@ const HolidayWarning: React.FC<HolidayWarningProps> = ({ exceptions }) => {
       </div>
     </div>
   )
-}
+})
 
-const TaskForm: React.FC<TaskFormProps> = ({
+const TaskFormComponent: React.FC<TaskFormProps> = ({
   onSubmit,
   onCancel,
   initialValues,
@@ -380,7 +380,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     checkAvailability()
   }, [primaryAssigneeId, formData.start_date, formData.duration, externalVacationConflict])
 
-  const validate = (): boolean => {
+  const validate = React.useCallback((): boolean => {
     const newErrors: FormErrors = {}
 
     if (!formData.title.trim()) {
@@ -393,9 +393,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }
+  }, [formData.title, formData.duration])
 
-  const handleChange = (
+  const handleChange = React.useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target
@@ -406,23 +406,23 @@ const TaskForm: React.FC<TaskFormProps> = ({
       [name]: newValue,
     }))
 
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }))
-    }
-  }
+    setErrors((prev) => {
+      if (prev[name as keyof FormErrors]) {
+        return { ...prev, [name]: undefined }
+      }
+      return prev
+    })
+  }, [])
 
   // Handle multi-select change for assignees
-  const handleAssigneesChange = (selectedIds: string[]) => {
+  const handleAssigneesChange = React.useCallback((selectedIds: string[]) => {
     setFormData(prev => ({
       ...prev,
       assignee_ids: selectedIds,
     }))
-  }
+  }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = React.useCallback((e: React.FormEvent) => {
     e.preventDefault()
 
     if (validate()) {
@@ -436,7 +436,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         assignee_ids: formData.assignee_ids?.length ? formData.assignee_ids : undefined,
       })
     }
-  }
+  }, [formData, onSubmit, validate])
 
   const isEditMode = mode === 'edit'
 
@@ -607,6 +607,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
   )
 }
 
-TaskForm.displayName = 'TaskForm'
+TaskFormComponent.displayName = 'TaskForm'
+
+// Memoize to prevent unnecessary re-renders
+const TaskForm = React.memo(TaskFormComponent)
 
 export { TaskForm }

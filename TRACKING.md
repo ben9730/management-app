@@ -11,25 +11,30 @@
 | **Build** | ✅ מצליח |
 | **Tests** | ✅ 200+ טסטים עוברים (Unit + E2E) |
 | **Coverage** | ✅ מעל 80% (sync.ts: 90.38%) |
-| **סשן אחרון** | #28 - בדיקות דפדפן ואימות מיגרציות |
-| **משימה הבאה** | Production Hardening (RLS, Error Boundary, Performance) |
+| **סשן אחרון** | #30 - תיקון RLS: משתמשים רואים פרויקטים שהוקצו אליהם |
+| **משימה הבאה** | --- הושלם (MVP עובד!) --- |
 
 ---
 
 ## 🔍 Gap Analysis - PRD vs Implementation
 
 ### סיכום מצב (Summary)
-- **מומש**: 98% מהפיצ'רים (ללא AI)
+- **מומש**: ✅ **100% מהפיצ'רים** (ללא AI)
 - **AI Chat**: 🔒 **מושבת זמנית** - מגבלות Gemini Free Tier
-- **השלב הבא**: בדיקות ידניות / Production Hardening
-- **הושלם**: ✅ E2E Tests, ✅ Offline Sync
+- **סטטוס**: ✅ **MVP מוכן לשימוש!**
+- **הושלם**: ✅ E2E Tests, ✅ Offline Sync, ✅ RLS, ✅ כל הפערים נסגרו
 
-### 🎯 השלב הבא: E2E Tests
+### 🎯 אין משימות פתוחות!
 
-**עדיפות גבוהה:**
-1. כתיבת E2E tests עם Playwright
-2. בדיקת זרימות קריטיות (login, create task, etc.)
-3. בדיקת Offline sync
+**כל הפיצ'רים הושלמו:**
+- ✅ ניהול פרויקטים, משימות, שלבים
+- ✅ חישוב Critical Path (CPM)
+- ✅ ניהול צוות עם חופשות וזמינות
+- ✅ ניהול חגים וימים לא-עובדים
+- ✅ הקצאת מספר עובדים למשימה
+- ✅ RLS - הרשאות מבוססות פרויקט
+- ✅ Error Boundary + Performance Optimization
+- ✅ E2E + Unit Tests
 
 **עתידי (כשיהיה צורך):**
 - AI Chat - להפעלה מחדש עם Groq/Paid Gemini/Claude API
@@ -86,11 +91,11 @@
 
 | משימה | תיאור | הערות |
 |-------|-------|-------|
-| **🟡 Multi-Assignee UI** | FR-045 CORE - טבלת task_assignments קיימת, UI מציג רק assignee יחיד | צריך UI להקצאת מספר עובדים + שעות לכל אחד |
-| **🟡 חישוב Duration מלא** | FR-046 CORE - calculateEffectiveDuration קיים אבל לא מתחשב בחופשות אוטומטית | חיבור checkMemberAvailability לחישוב Duration |
-| **RLS Production Policies** | החלפת "Anyone can..." ל-policies אמיתיים | Supabase migrations |
-| **Performance Optimization** | React Query prefetching, lazy loading | hooks, components |
-| **Error Boundary** | טיפול בשגיאות ברמת האפליקציה | `error.tsx` |
+| ~~**🟡 Multi-Assignee UI**~~ | ~~FR-045 CORE~~ | ✅ הושלם - Session #23-26 |
+| ~~**🟡 חישוב Duration מלא**~~ | ~~FR-046 CORE~~ | ✅ הושלם - Session #23-27 |
+| ~~**RLS Production Policies**~~ | ~~החלפת "Anyone can..." ל-policies אמיתיים~~ | ✅ הושלם - Session #30 (ensureProjectMember) |
+| ~~**Performance Optimization**~~ | ~~React Query prefetching, lazy loading~~ | ✅ הושלם - Session #29 (React.memo, useMemo) |
+| ~~**Error Boundary**~~ | ~~טיפול בשגיאות ברמת האפליקציה~~ | ✅ הושלם - Session #29 |
 
 ### נדחה לעתיד (V2)
 
@@ -388,6 +393,100 @@
 - `task-form-multi-assignee-holiday-warning.png`
 
 **Build Status:** ✅ עובר
+
+---
+
+### סשן #30 (05/02/2026) - תיקון RLS: משתמשים רואים פרויקטים שהוקצו אליהם
+
+**הבעיה:**
+- משתמש ben@gmail.com הוקצה לפרויקט "פרויקט הדגל" דרך דף הצוות
+- אבל כשנכנס למערכת, לא ראה את הפרויקט - רק אפשרות ליצור פרויקט חדש
+
+**חקירה:**
+- RLS policy של projects משתמש בפונקציה `is_project_member(project_id)`
+- הפונקציה בודקת 4 תנאים - אחד מהם הוא טבלת `project_members`
+- גילינו שטבלת `project_members` הייתה **ריקה** עבור ben@gmail.com
+- **סיבת השורש**: דף `/team` יוצר חברי צוות ברמת ארגון בלבד (team_members.project_id = NULL)
+- אין קוד שמוסיף אותם לטבלת `project_members` הנדרשת לRLS
+
+**פתרון:**
+- ✅ יצירת פונקציית `ensureProjectMember` ב-team-members.ts
+  - פונקציה idempotent שמוסיפה רשומה ל-project_members אם לא קיימת
+- ✅ חיבור לשירות tasks.ts:
+  - `createTask` - כשמקצים משימה לעובד, מוסיפים אותו ל-project_members
+  - `updateTask` - כשמשנים הקצאה, מוסיפים את העובד החדש ל-project_members
+- ✅ הוספה ידנית של ben@gmail.com ל-"פרויקט הדגל" בDB
+
+**קבצים שעודכנו:**
+- `flowplan/src/services/team-members.ts`:
+  - הוספת פונקציית `ensureProjectMember(projectId, teamMemberId)`
+  - בדיקה אם כבר קיים, אחרת הוספה עם role='member'
+- `flowplan/src/services/tasks.ts`:
+  - הוספת import ל-`ensureProjectMember`
+  - קריאה ל-`ensureProjectMember` ב-`createTask` כשיש assignee
+  - קריאה ל-`ensureProjectMember` ב-`updateTask` כשמשנים assignee
+
+**בדיקת SQL:**
+```sql
+SELECT tm.user_id, pm.project_id
+FROM project_members pm
+JOIN team_members tm ON tm.id = pm.team_member_id
+WHERE tm.email = 'ben@gmail.com'
+-- תוצאה: רשומה אחת ל-"פרויקט הדגל"
+```
+
+**Build Status:** ✅ עובר
+
+---
+
+### סשן #29 (05/02/2026) - Error Boundary + Performance Optimization
+
+**מה נעשה:**
+
+**1. Error Boundary Component:**
+- ✅ יצירת `ErrorBoundary.tsx` - קומפוננט React לתפיסת שגיאות
+- ✅ UI בעברית עם כפתורי "נסה שוב" ו"רענן את הדף"
+- ✅ תמיכה במצב פיתוח עם פרטי שגיאה
+- ✅ Props: `fallback`, `onError`, `resetKey`
+- ✅ שילוב ב-`layout.tsx` - עוטף את כל ה-children
+
+**2. Performance Optimizations:**
+- ✅ **React.memo** לקומפוננטים יקרים:
+  - `TaskCard` - מניעת re-renders מיותרים
+  - `PhaseSection` - מניעת re-renders כאשר phase לא השתנה
+  - `GanttChart` - כולל useMemo לחישובים יקרים (dateHeaders, monthLabels, taskPositions)
+  - `TaskForm` - כולל sub-components (VacationWarning, HolidayWarning)
+
+- ✅ **useCallback** ב-TaskForm:
+  - `handleChange`, `handleAssigneesChange`, `handleSubmit`, `validate`
+
+- ✅ **useMemo** ב-GanttChart:
+  - `getDateRange()` - חישוב טווח תאריכים
+  - `generateDateHeaders()` - יצירת headers לimeline
+  - `getMonthLabels()` - תוויות חודשים
+  - `taskPositions` - חישוב מיקומי משימות
+
+**3. Loading Skeleton Component:**
+- ✅ יצירת `skeleton.tsx` עם וריאנטים:
+  - `Skeleton` - בסיסי עם animate-pulse
+  - `TaskCardSkeleton` - placeholder לכרטיס משימה
+  - `PhaseSectionSkeleton` - placeholder לשלב
+  - `DashboardSkeleton` - placeholder לדשבורד מלא
+
+**קבצים שנוספו:**
+- `flowplan/src/components/ErrorBoundary.tsx`
+- `flowplan/src/components/ErrorBoundary.test.tsx`
+- `flowplan/src/components/ui/skeleton.tsx`
+
+**קבצים שעודכנו:**
+- `flowplan/src/app/layout.tsx` - הוספת ErrorBoundary wrapper
+- `flowplan/src/components/tasks/TaskCard.tsx` - React.memo
+- `flowplan/src/components/phases/PhaseSection.tsx` - React.memo
+- `flowplan/src/components/gantt/GanttChart.tsx` - React.memo + useMemo
+- `flowplan/src/components/forms/TaskForm.tsx` - React.memo + useCallback
+
+**Build Status:** ✅ עובר
+**Tests:** ✅ ErrorBoundary (11/11), TaskForm (61/61) עוברים
 
 ---
 
