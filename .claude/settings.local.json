@@ -56,7 +56,8 @@
       "Bash(Get-ChildItem -Path \"d:\\\\claude code\\\\memgment proj\\\\flowplan\\\\src\" -Recurse -Filter \"*.test.*\")",
       "Bash(Select-Object -ExpandProperty FullName)",
       "mcp__supabase__get_project_url",
-      "mcp__supabase__get_logs"
+      "mcp__supabase__get_logs",
+      "Bash(powershell:*)"
     ]
   }
 }
