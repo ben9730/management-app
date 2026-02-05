@@ -11,8 +11,8 @@
 | **Build** | ✅ מצליח |
 | **Tests** | ✅ 200+ טסטים עוברים (Unit + E2E) |
 | **Coverage** | ✅ מעל 80% (sync.ts: 90.38%) |
-| **סשן אחרון** | #27 - Holiday Warning Indicator ב-TaskForm |
-| **משימה הבאה** | בדיקות ידניות + Production Hardening |
+| **סשן אחרון** | #28 - בדיקות דפדפן ואימות מיגרציות |
+| **משימה הבאה** | Production Hardening (RLS, Error Boundary, Performance) |
 
 ---
 
@@ -345,6 +345,51 @@
 ---
 
 ## 📝 לוג סשנים (Session Log)
+
+### סשן #28 (05/02/2026) - בדיקות דפדפן ואימות מיגרציות
+
+**מה נעשה:**
+- ✅ **אימות מיגרציות** - וידאתי שכל המיגרציות הנדרשות כבר הורצו ב-Supabase:
+  - `add_calendar_exception_end_date` ✅
+  - `fix_task_assignments_rls_policies` ✅
+  - `fix_task_assignments_user_id_fkey` ✅
+
+- ✅ **בדיקות דפדפן מקיפות** - אימות כל הפיצ'רים החדשים:
+
+**1. Calendar Exceptions (FR-002):**
+- מודל "ניהול חגים וימים לא עובדים" נפתח ועובד
+- טופס עם תמיכה בטווח תאריכים (מתאריך / עד תאריך)
+- רשימת חגים קיימים מוצגת עם תאריכים מלאים
+- כפתורי עריכה ומחיקה עובדים
+- צילום מסך: `calendar-exceptions-modal.png`
+
+**2. Multi-Assignee (FR-045):**
+- Avatar Stacks מוצגים בכרטיסי משימות (עד 3 אחראים)
+- פאנל פרטי משימה מציג "אחראים: אור פרץ, Israel Cohen"
+- בעריכת משימה - MultiSelect עם תגים וכפתורי X לכל אחראי
+- צילום מסך: `task-form-multi-assignee-holiday-warning.png`
+
+**3. Holiday Warning (FR-046):**
+- התראה 🎉 מופיעה בטופס עריכת משימה
+- "התראה: חפיפה עם חג" עם שם החג ותאריכים
+- הודעה "משך המשימה האפקטיבי עשוי להיות ארוך יותר"
+
+**סיכום בדיקות:**
+| פיצ'ר | סטטוס |
+|-------|-------|
+| Calendar Exceptions Modal | ✅ עובד |
+| Multi-Assignee in TaskCard | ✅ עובד |
+| Multi-Assignee in TaskForm | ✅ עובד |
+| Holiday Warning | ✅ עובד |
+| Date Range Display | ✅ עובד |
+
+**צילומי מסך נשמרו:**
+- `calendar-exceptions-modal.png`
+- `task-form-multi-assignee-holiday-warning.png`
+
+**Build Status:** ✅ עובר
+
+---
 
 ### סשן #27 (05/02/2026) - התראה על חפיפה עם חגים/ימי לא-עבודה בטופס משימה
 
