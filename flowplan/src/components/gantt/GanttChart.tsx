@@ -34,7 +34,9 @@ interface TaskPosition {
 const ZOOM_STEP = 10
 const MIN_DAY_WIDTH = 20
 const MAX_DAY_WIDTH = 100
-const ROW_HEIGHT = 40
+const ROW_HEIGHT = 44 // Increased for better readability
+const MIN_BAR_WIDTH = 60 // Minimum bar width for visibility
+const TEXT_THRESHOLD_WIDTH = 80 // Hide text in bars narrower than this
 
 function getDateRange(tasks: Task[]): { start: Date; end: Date } {
   if (tasks.length === 0) {
@@ -47,7 +49,7 @@ function getDateRange(tasks: Task[]): { start: Date; end: Date } {
 
   for (const task of tasks) {
     const start = parseDate(task.start_date)
-    const end = parseDate(task.due_date)
+    const end = parseDate(task.end_date)
 
     if (start && (!minDate || start < minDate)) {
       minDate = start
@@ -126,7 +128,7 @@ function getMonthLabels(start: Date, end: Date): { month: string; width: number;
   return months
 }
 
-const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
+const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
   (
     {
       tasks,
@@ -147,31 +149,48 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
     const [hoveredTaskId, setHoveredTaskId] = React.useState<string | null>(null)
     const timelineRef = React.useRef<HTMLDivElement>(null)
 
-    const { start: dateRangeStart, end: dateRangeEnd } = getDateRange(tasks)
-    const dateHeaders = generateDateHeaders(dateRangeStart, dateRangeEnd)
-    const monthLabels = getMonthLabels(dateRangeStart, dateRangeEnd)
+    // Memoize date range calculation
+    const { start: dateRangeStart, end: dateRangeEnd } = React.useMemo(
+      () => getDateRange(tasks),
+      [tasks]
+    )
+
+    // Memoize date headers (expensive for long timelines)
+    const dateHeaders = React.useMemo(
+      () => generateDateHeaders(dateRangeStart, dateRangeEnd),
+      [dateRangeStart, dateRangeEnd]
+    )
+
+    // Memoize month labels
+    const monthLabels = React.useMemo(
+      () => getMonthLabels(dateRangeStart, dateRangeEnd),
+      [dateRangeStart, dateRangeEnd]
+    )
+
     const totalDays = dateHeaders.length
     const timelineWidth = totalDays * dayWidth
 
-    // Calculate task positions
-    const taskPositions: TaskPosition[] = tasks.map((task, index) => {
-      const taskStart = parseDate(task.start_date)
-      const taskEnd = parseDate(task.due_date)
+    // Memoize task positions calculation
+    const taskPositions: TaskPosition[] = React.useMemo(() => {
+      return tasks.map((task, index) => {
+        const taskStart = parseDate(task.start_date)
+        const taskEnd = parseDate(task.end_date)
 
-      if (!taskStart || !taskEnd) {
-        return { task, left: 0, width: dayWidth, top: index * ROW_HEIGHT }
-      }
+        if (!taskStart || !taskEnd) {
+          return { task, left: 0, width: dayWidth, top: index * ROW_HEIGHT }
+        }
 
-      const startOffset = getDaysBetween(dateRangeStart, taskStart)
-      const duration = getDaysBetween(taskStart, taskEnd) + 1
+        const startOffset = getDaysBetween(dateRangeStart, taskStart)
+        const duration = getDaysBetween(taskStart, taskEnd) + 1
 
-      return {
-        task,
-        left: startOffset * dayWidth,
-        width: duration * dayWidth,
-        top: index * ROW_HEIGHT,
-      }
-    })
+        return {
+          task,
+          left: startOffset * dayWidth,
+          width: duration * dayWidth,
+          top: index * ROW_HEIGHT,
+        }
+      })
+    }, [tasks, dayWidth, dateRangeStart])
 
     // Calculate today's position
     const today = new Date()
@@ -226,7 +245,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
           role="figure"
           aria-label="Gantt chart - No tasks"
           className={cn(
-            'border border-[var(--fp-border-light)] bg-white p-12 text-center rounded-lg shadow-sm',
+            'border border-[var(--fp-border-light)] bg-[var(--fp-bg-secondary)] p-12 text-center rounded-lg shadow-sm',
             className
           )}
         >
@@ -246,13 +265,13 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
         role="figure"
         aria-label="Gantt chart showing project timeline"
         className={cn(
-          'border border-[var(--fp-border-light)] bg-white overflow-hidden rounded-lg shadow-sm',
+          'border border-[var(--fp-border-light)] bg-[var(--fp-bg-secondary)] overflow-hidden rounded-lg shadow-sm',
           className
         )}
       >
         {/* Controls */}
         <div className="flex items-center justify-between p-3 border-b border-[var(--fp-border-light)] bg-[var(--fp-bg-tertiary)]/50">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             {showTodayMarker && (
               <button
                 data-testid="scroll-to-today"
@@ -262,6 +281,25 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                 Today
               </button>
             )}
+            {/* Status Legend */}
+            <div className="flex items-center gap-3 text-xs" data-testid="status-legend">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[var(--fp-status-pending)]"></span>
+                <span className="text-[var(--fp-text-secondary)]">ממתין</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[var(--fp-status-warning)]"></span>
+                <span className="text-[var(--fp-text-secondary)]">בביצוע</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[var(--fp-status-success)]"></span>
+                <span className="text-[var(--fp-text-secondary)]">הושלם</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[var(--fp-critical)] ring-2 ring-[var(--fp-critical)]/30"></span>
+                <span className="text-[var(--fp-text-secondary)]">קריטי</span>
+              </div>
+            </div>
           </div>
           {showZoomControls && (
             <div className="flex items-center gap-1">
@@ -287,35 +325,49 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
 
         <div className="flex">
           {/* Task List Panel */}
-          <div className="w-64 flex-shrink-0 border-r border-[var(--fp-border-light)]">
+          <div className="w-72 flex-shrink-0 border-r border-[var(--fp-border-light)]">
             {/* Header */}
             <div className="h-12 border-b border-[var(--fp-border-light)] bg-[var(--fp-bg-tertiary)]/30 flex items-center px-4">
-              <span className="font-bold text-xs uppercase text-[var(--fp-text-secondary)] tracking-wider">Tasks</span>
+              <span className="font-bold text-sm text-[var(--fp-text-primary)]">משימות</span>
             </div>
             {/* Task Rows */}
-            <div className="bg-white">
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  data-testid={`task-row-${task.id}`}
-                  tabIndex={0}
-                  role="button"
-                  onClick={() => handleTaskRowClick(task)}
-                  onKeyDown={(e) => handleTaskRowKeyDown(e, task)}
-                  className={cn(
-                    'flex items-center px-4 border-b border-[var(--fp-border-light)]/50 cursor-pointer hover:bg-[var(--fp-bg-tertiary)] transition-colors',
-                    'focus:outline-none focus:bg-[var(--fp-bg-tertiary)]'
-                  )}
-                  style={{ height: ROW_HEIGHT }}
-                >
-                  {task.wbs_number && (
-                    <span className="text-xs font-mono text-[var(--fp-text-tertiary)] mr-2 w-8">
-                      {task.wbs_number}
+            <div className="bg-[var(--fp-bg-secondary)]">
+              {tasks.map((task) => {
+                const isCritical = criticalPathTaskIds.includes(task.id) || task.is_critical
+                return (
+                  <div
+                    key={task.id}
+                    data-testid={`task-row-${task.id}`}
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => handleTaskRowClick(task)}
+                    onKeyDown={(e) => handleTaskRowKeyDown(e, task)}
+                    className={cn(
+                      'flex items-center gap-2 px-4 border-b border-[var(--fp-border-light)]/50 cursor-pointer hover:bg-[var(--fp-bg-tertiary)] transition-colors',
+                      'focus:outline-none focus:bg-[var(--fp-bg-tertiary)]',
+                      isCritical && 'bg-[var(--fp-status-error-bg)]'
+                    )}
+                    style={{ height: ROW_HEIGHT }}
+                  >
+                    {/* Status indicator dot */}
+                    <span className={cn(
+                      'w-2 h-2 rounded-full flex-shrink-0',
+                      task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
+                        task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
+                          'bg-[var(--fp-status-pending)]'
+                    )} />
+                    <span className={cn(
+                      'text-sm truncate flex-1 text-[var(--fp-text-primary)]',
+                      task.status === 'done' && 'line-through opacity-70'
+                    )} dir="auto">
+                      {task.title}
                     </span>
-                  )}
-                  <span className="text-sm truncate flex-1 text-[var(--fp-text-primary)]">{task.title}</span>
-                </div>
-              ))}
+                    {isCritical && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-[var(--fp-critical)] text-white rounded font-bold flex-shrink-0">!</span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -332,11 +384,11 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
               style={{ width: timelineWidth }}
             >
               {/* Month Labels */}
-              <div className="h-6 flex border-b border-[var(--fp-border-light)]/50">
+              <div className="h-6 flex border-b border-[var(--fp-border-light)]">
                 {monthLabels.map((month, idx) => (
                   <div
                     key={`${month.month}-${idx}`}
-                    className="text-[10px] font-bold uppercase flex items-center justify-center border-r border-[var(--fp-border-light)]/50 text-[var(--fp-text-secondary)]"
+                    className="text-xs font-bold uppercase flex items-center justify-center border-r border-[var(--fp-border-light)] text-[var(--fp-text-primary)]"
                     style={{ width: month.width * dayWidth }}
                   >
                     {month.month}
@@ -349,8 +401,8 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                   <div
                     key={idx}
                     className={cn(
-                      'text-[10px] flex items-center justify-center border-r border-[var(--fp-border-light)]/30 text-[var(--fp-text-tertiary)]',
-                      header.isWeekend && 'bg-[var(--fp-bg-tertiary)]/50'
+                      'text-xs flex items-center justify-center border-r border-[var(--fp-border-light)]/50 text-[var(--fp-text-secondary)]',
+                      header.isWeekend && 'bg-[var(--fp-bg-tertiary)]/70'
                     )}
                     style={{ width: dayWidth }}
                   >
@@ -362,7 +414,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
 
             {/* Timeline Body */}
             <div
-              className="relative bg-white"
+              className="relative bg-[var(--fp-bg-secondary)]"
               style={{ width: timelineWidth, height: tasks.length * ROW_HEIGHT }}
             >
               {/* Grid Lines */}
@@ -371,8 +423,8 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                   <div
                     key={idx}
                     className={cn(
-                      'absolute top-0 bottom-0 border-r border-[var(--fp-border-light)]/30',
-                      header.isWeekend && 'bg-[var(--fp-bg-tertiary)]/30'
+                      'absolute top-0 bottom-0 border-r border-[var(--fp-border-light)]/50',
+                      header.isWeekend && 'bg-[var(--fp-bg-tertiary)]/50'
                     )}
                     style={{ left: idx * dayWidth, width: dayWidth }}
                   />
@@ -383,7 +435,7 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
               {tasks.map((_, idx) => (
                 <div
                   key={idx}
-                  className="absolute left-0 right-0 border-b border-[var(--fp-border-light)]/30 pointer-events-none"
+                  className="absolute left-0 right-0 border-b border-[var(--fp-border-light)]/50 pointer-events-none"
                   style={{ top: (idx + 1) * ROW_HEIGHT - 1 }}
                 />
               ))}
@@ -392,15 +444,17 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
               {showTodayMarker && todayOffset >= 0 && todayOffset < totalDays && (
                 <div
                   data-testid="today-marker"
-                  className="absolute top-0 bottom-0 w-[2px] bg-[var(--fp-brand-secondary)] z-10 opacity-70"
+                  className="absolute top-0 bottom-0 w-[3px] bg-[var(--fp-critical)] z-10 shadow-md"
                   style={{ left: todayPosition }}
                 />
               )}
 
               {/* Task Bars */}
               {taskPositions.map(({ task, left, width, top }) => {
-                const isCritical = criticalPathTaskIds.includes(task.id)
-                const isMilestone = task.task_type === 'milestone'
+                const isCritical = criticalPathTaskIds.includes(task.id) || task.is_critical
+                const barHeight = ROW_HEIGHT - 12
+                const actualBarWidth = Math.max(width, MIN_BAR_WIDTH)
+                const showText = actualBarWidth >= TEXT_THRESHOLD_WIDTH
 
                 return (
                   <div
@@ -410,51 +464,52 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     className={cn(
                       'absolute cursor-pointer transition-all group',
                       isCritical && 'critical-path',
-                      isMilestone && 'milestone',
                       `status-${task.status}`
                     )}
                     style={{
                       left,
-                      width: isMilestone ? ROW_HEIGHT - 12 : width,
+                      width: actualBarWidth,
                       top: top + 6,
-                      height: ROW_HEIGHT - 12,
+                      height: barHeight,
                     }}
                     onClick={(e) => handleTaskBarClick(e, task)}
                     onMouseEnter={() => setHoveredTaskId(task.id)}
                     onMouseLeave={() => setHoveredTaskId(null)}
                   >
-                    {isMilestone ? (
-                      <div
-                        className={cn(
-                          'w-full h-full rotate-45 transform origin-center shadow-sm hover:shadow-md transition-shadow',
-                          isCritical ? 'bg-[var(--fp-critical)]' : 'bg-[var(--fp-text-primary)]'
-                        )}
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          'w-full h-full rounded-md relative overflow-hidden shadow-sm hover:shadow-md transition-shadow',
-                          task.status === 'done' ? 'bg-[var(--fp-status-success)]' :
-                            task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)]' :
-                              task.status === 'pending' ? 'bg-[var(--fp-status-pending)]' :
-                                'bg-[var(--fp-brand-primary)]',
-                          isCritical && 'ring-2 ring-[var(--fp-critical)] ring-offset-1'
-                        )}
-                      >
-
-                        {/* Progress Fill (Darker shade overlay) */}
-                        <div
-                          data-testid={`task-progress-${task.id}`}
-                          className="absolute inset-y-0 left-0 bg-black/10"
-                          style={{ width: `${task.progress_percent}%` }}
-                        />
-
-                        {/* Task Title */}
-                        <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium truncate z-10 text-white drop-shadow-sm">
+                    <div
+                      className={cn(
+                        'w-full h-full rounded-lg relative overflow-hidden shadow-lg hover:shadow-xl transition-all border',
+                        task.status === 'done' ? 'bg-[var(--fp-status-success)] border-[var(--fp-status-success)]' :
+                          task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)] border-[var(--fp-status-warning)]' :
+                            task.status === 'pending' ? 'bg-[var(--fp-status-pending)] border-[var(--fp-status-pending)]' :
+                              'bg-[var(--fp-brand-primary)] border-[var(--fp-brand-primary)]',
+                        isCritical && 'ring-2 ring-[var(--fp-critical)] ring-offset-2 ring-offset-[var(--fp-bg-secondary)]',
+                        'hover:scale-[1.02] hover:z-20'
+                      )}
+                    >
+                      {/* Progress stripe pattern for in_progress */}
+                      {task.status === 'in_progress' && (
+                        <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse" />
+                      )}
+                      {/* Checkmark icon for done tasks */}
+                      {task.status === 'done' && (
+                        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-white/90 text-sm">✓</span>
+                      )}
+                      {/* Task Title - only show if bar is wide enough */}
+                      {showText ? (
+                        <span className={cn(
+                          'absolute inset-0 flex items-center text-sm font-bold truncate z-10 text-white',
+                          task.status === 'done' ? 'px-6' : 'px-2.5'
+                        )} dir="auto" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
                           {task.title}
                         </span>
-                      </div>
-                    )}
+                      ) : (
+                        // For narrow bars, show abbreviated text or just a dot
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white/80" title={task.title}>
+                          {task.status === 'done' ? '' : '•••'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )
               })}
@@ -512,17 +567,35 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
         {hoveredTask && (
           <div
             data-testid="task-tooltip"
-            className="fixed z-50 bg-white/95 backdrop-blur-sm text-[var(--fp-text-primary)] px-3 py-2 text-xs border border-[var(--fp-border-light)] rounded-lg shadow-lg pointer-events-none"
+            className="fixed z-50 bg-[var(--fp-bg-secondary)] text-[var(--fp-text-primary)] px-4 py-3 text-sm border border-[var(--fp-border-light)] rounded-xl shadow-2xl pointer-events-none min-w-[200px]"
+            dir="rtl"
           >
-            <div className="font-bold mb-1">{hoveredTask.title}</div>
-            <div className="flex items-center gap-2 text-[var(--fp-text-secondary)]">
-              <span>{formatDateDisplay(hoveredTask.start_date)} - {formatDateDisplay(hoveredTask.due_date)}</span>
-            </div>
-            <div className="mt-1 flex items-center gap-2">
-              <div className="w-16 h-1.5 bg-[var(--fp-bg-tertiary)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--fp-status-success)]" style={{ width: `${hoveredTask.progress_percent}%` }}></div>
+            <div className="font-bold mb-2 text-base">{hoveredTask.title}</div>
+            <div className="space-y-1.5 text-[var(--fp-text-secondary)]">
+              <div className="flex items-center gap-2">
+                <span className="text-xs opacity-70">📅</span>
+                <span>{formatDateDisplay(hoveredTask.start_date)} - {formatDateDisplay(hoveredTask.end_date)}</span>
               </div>
-              <span>{hoveredTask.progress_percent}%</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs opacity-70">⏱️</span>
+                <span>משך: {hoveredTask.duration} ימים</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  'px-2 py-0.5 text-xs font-bold rounded-full',
+                  hoveredTask.status === 'done' ? 'bg-[var(--fp-status-success-bg)] text-[var(--fp-status-success)]' :
+                    hoveredTask.status === 'in_progress' ? 'bg-[var(--fp-status-warning-bg)] text-[var(--fp-status-warning)]' :
+                      'bg-[var(--fp-bg-tertiary)] text-[var(--fp-text-tertiary)]'
+                )}>
+                  {hoveredTask.status === 'done' ? 'הושלם' :
+                    hoveredTask.status === 'in_progress' ? 'בביצוע' : 'ממתין'}
+                </span>
+                {(criticalPathTaskIds.includes(hoveredTask.id) || hoveredTask.is_critical) && (
+                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[var(--fp-status-error-bg)] text-[var(--fp-critical)]">
+                    קריטי
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -531,6 +604,9 @@ const GanttChart = React.forwardRef<HTMLDivElement, GanttChartProps>(
   }
 )
 
-GanttChart.displayName = 'GanttChart'
+GanttChartComponent.displayName = 'GanttChart'
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+const GanttChart = React.memo(GanttChartComponent)
 
 export { GanttChart }

@@ -7,6 +7,7 @@
 
 import { supabase } from '@/lib/supabase'
 import type { Project } from '@/types/entities'
+import { createPhase } from './phases'
 
 export interface CreateProjectInput {
   name: string
@@ -77,7 +78,23 @@ export async function createProject(
     return { data: null, error: { message: error.message, code: error.code } }
   }
 
-  return { data: data as Project, error: null }
+  const project = data as Project
+
+  // Create default phase "כללי" (General) for the new project
+  // This is non-blocking - if it fails, we still return the project
+  try {
+    await createPhase({
+      project_id: project.id,
+      name: 'כללי',
+      description: 'שלב ברירת מחדל',
+      phase_order: 1,
+    })
+  } catch (phaseError) {
+    // Log the error but don't fail the project creation
+    console.warn('Failed to create default phase for project:', phaseError)
+  }
+
+  return { data: project, error: null }
 }
 
 /**

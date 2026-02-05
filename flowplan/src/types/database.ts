@@ -225,7 +225,8 @@ export interface Database {
         Row: {
           id: string
           project_id: string
-          date: string
+          date: string // start_date for date ranges
+          end_date: string | null // end_date for multi-day exceptions
           type: 'holiday' | 'non_working'
           name: string | null
           created_at: string
@@ -234,6 +235,7 @@ export interface Database {
           id?: string
           project_id: string
           date: string
+          end_date?: string | null
           type: 'holiday' | 'non_working'
           name?: string | null
           created_at?: string
@@ -242,6 +244,7 @@ export interface Database {
           id?: string
           project_id?: string
           date?: string
+          end_date?: string | null
           type?: 'holiday' | 'non_working'
           name?: string | null
           created_at?: string

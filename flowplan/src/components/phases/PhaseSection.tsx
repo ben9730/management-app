@@ -6,7 +6,7 @@
  */
 
 import * as React from 'react'
-import { Plus, ChevronDown, Calendar, CheckCircle2, Layout } from 'lucide-react'
+import { Plus, ChevronDown, Calendar, CheckCircle2, Layout, Edit2 } from 'lucide-react'
 import { cn, formatDateDisplay, calculatePercentage } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { TaskCard } from '@/components/tasks/TaskCard'
@@ -15,13 +15,15 @@ import type { ProjectPhase, Task, TeamMember } from '@/types/entities'
 export interface PhaseSectionProps {
   phase: ProjectPhase
   tasks: Task[]
-  taskAssignees?: Record<string, TeamMember>
+  /** Map of task_id -> array of team members (multi-assignee support) */
+  taskAssignees?: Record<string, TeamMember[]>
   taskSlackValues?: Record<string, number>
   criticalPathTaskIds?: string[]
   defaultCollapsed?: boolean
   className?: string
   onTaskClick?: (task: Task) => void
   onAddTask?: (phaseId: string) => void
+  onEditPhase?: (phase: ProjectPhase) => void
   onTaskStatusChange?: (taskId: string, newStatus: Task['status']) => void
 }
 
@@ -37,7 +39,7 @@ const statusColorMap: Record<ProjectPhase['status'], string> = {
   completed: 'border-emerald-500',
 }
 
-const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
+const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
   (
     {
       phase,
@@ -49,6 +51,7 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
       className,
       onTaskClick,
       onAddTask,
+      onEditPhase,
       onTaskStatusChange,
     },
     ref
@@ -56,10 +59,10 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
     const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
     const contentId = `phase-content-${phase.id}`
 
-    const progressPercent = calculatePercentage(
-      phase.completed_task_count,
-      phase.task_count
-    )
+    // Use database column names (total_tasks, completed_tasks) with fallback to alternatives
+    const totalTasks = phase.total_tasks ?? phase.task_count ?? 0
+    const completedTasks = phase.completed_tasks ?? phase.completed_task_count ?? 0
+    const progressPercent = calculatePercentage(completedTasks, totalTasks)
 
     const handleToggle = () => {
       setIsCollapsed(!isCollapsed)
@@ -69,6 +72,13 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
       e.stopPropagation()
       if (onAddTask) {
         onAddTask(phase.id)
+      }
+    }
+
+    const handleEditPhase = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (onEditPhase) {
+        onEditPhase(phase)
       }
     }
 
@@ -137,6 +147,13 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
             </div>
 
             <button
+              onClick={handleEditPhase}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-lg transition-colors"
+              title="ערוך שלב"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
               onClick={handleAddTask}
               className="text-primary hover:bg-primary/10 p-2 rounded-lg transition-colors"
             >
@@ -153,7 +170,7 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
                 <TaskCard
                   key={task.id}
                   task={task}
-                  assignee={taskAssignees[task.id]}
+                  assignees={taskAssignees[task.id]}
                   slack={taskSlackValues[task.id]}
                   isCriticalPath={criticalPathTaskIds.includes(task.id)}
                   onClick={onTaskClick}
@@ -172,6 +189,9 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
   }
 )
 
-PhaseSection.displayName = 'PhaseSection'
+PhaseSectionComponent.displayName = 'PhaseSection'
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+const PhaseSection = React.memo(PhaseSectionComponent)
 
 export { PhaseSection }

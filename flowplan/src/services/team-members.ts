@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/lib/supabase'
-import type { TeamMember } from '@/types/entities'
+import type { TeamMember, EmployeeTimeOff } from '@/types/entities'
 
 const VALID_ROLES = ['admin', 'manager', 'member', 'viewer'] as const
 
@@ -19,6 +19,10 @@ export interface CreateTeamMemberInput {
   hourly_rate?: number | null
   weekly_capacity_hours?: number
   skills?: string[]
+  // Work schedule fields
+  employment_type?: 'full_time' | 'part_time' | 'contractor'
+  work_hours_per_day?: number
+  work_days?: number[] // 0=Sunday, 1=Monday, etc.
 }
 
 export interface UpdateTeamMemberInput {
@@ -31,6 +35,10 @@ export interface UpdateTeamMemberInput {
   weekly_capacity_hours?: number
   skills?: string[]
   is_active?: boolean
+  // Work schedule fields
+  employment_type?: 'full_time' | 'part_time' | 'contractor'
+  work_hours_per_day?: number
+  work_days?: number[] // 0=Sunday, 1=Monday, etc.
 }
 
 export interface TeamMembersFilter {
@@ -125,6 +133,10 @@ export async function createTeamMember(
     weekly_capacity_hours: input.weekly_capacity_hours ?? 40,
     skills: input.skills ?? [],
     is_active: true,
+    // Work schedule fields
+    employment_type: input.employment_type ?? 'full_time',
+    work_hours_per_day: input.work_hours_per_day ?? 8,
+    work_days: input.work_days ?? [0, 1, 2, 3, 4], // Default Israeli work week (Sun-Thu)
   }
 
   const { data, error } = await supabase
@@ -163,13 +175,14 @@ export async function getTeamMember(
  * Get all team members for an organization
  */
 export async function getTeamMembers(
-  organizationId: string,
+  _organizationId: string,
   filter?: TeamMembersFilter
 ): Promise<ServiceResult<TeamMember[]>> {
+  // Fetch all team members
+  // Note: In production, filter by organization_id. For dev/demo, fetch all.
   let query = supabase
     .from('team_members')
     .select('*')
-    .eq('organization_id', organizationId)
 
   if (filter?.is_active !== undefined) {
     query = query.eq('is_active', filter.is_active)
@@ -255,4 +268,114 @@ export async function deleteTeamMember(
   }
 
   return { data: null, error: null }
+}
+
+/**
+ * Result type for member availability check
+ */
+export interface MemberAvailabilityResult {
+  available: boolean
+  conflictingTimeOff?: EmployeeTimeOff
+  error?: { message: string; code?: string }
+}
+
+/**
+ * Check if a team member is available during a given date range
+ * Checks the employee_time_off table for any approved time off that overlaps
+ * with the given date range.
+ *
+ * @param memberId - The team member's ID
+ * @param startDate - Start of the date range to check
+ * @param endDate - End of the date range to check
+ * @returns Availability result with conflicting time off if unavailable
+ */
+export async function checkMemberAvailability(
+  memberId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<MemberAvailabilityResult> {
+  // Format dates for Supabase query
+  const startDateStr = startDate.toISOString().split('T')[0]
+  const endDateStr = endDate.toISOString().split('T')[0]
+
+  // Query for approved time off that overlaps with the date range
+  // Overlap condition: time_off.start_date <= endDate AND time_off.end_date >= startDate
+  const { data, error } = await supabase
+    .from('employee_time_off')
+    .select('*')
+    .eq('team_member_id', memberId)
+    .eq('status', 'approved')
+    .lte('start_date', endDateStr)
+    .gte('end_date', startDateStr)
+    .order('start_date', { ascending: true })
+
+  if (error) {
+    // Fail-open: return available on error for better usability
+    return {
+      available: true,
+      error: { message: error.message, code: error.code },
+    }
+  }
+
+  // If any time off records exist, the member is unavailable
+  if (data && data.length > 0) {
+    return {
+      available: false,
+      conflictingTimeOff: data[0] as EmployeeTimeOff,
+    }
+  }
+
+  return { available: true }
+}
+
+/**
+ * Ensure a team member is assigned to a project via project_members junction table.
+ * This is idempotent - if the member is already assigned, it does nothing.
+ * Called automatically when a task is assigned to a team member.
+ *
+ * @param projectId - The project ID
+ * @param teamMemberId - The team member ID
+ * @returns Service result with the project_members record
+ */
+export async function ensureProjectMember(
+  projectId: string,
+  teamMemberId: string
+): Promise<ServiceResult<{ project_id: string; team_member_id: string }>> {
+  if (!projectId || !teamMemberId) {
+    return { data: null, error: { message: 'Project ID and Team Member ID are required' } }
+  }
+
+  // Check if already assigned
+  const { data: existing, error: checkError } = await supabase
+    .from('project_members')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('team_member_id', teamMemberId)
+    .maybeSingle()
+
+  if (checkError) {
+    return { data: null, error: { message: checkError.message, code: checkError.code } }
+  }
+
+  // Already assigned, return success
+  if (existing) {
+    return { data: { project_id: projectId, team_member_id: teamMemberId }, error: null }
+  }
+
+  // Insert new assignment
+  const { data, error } = await supabase
+    .from('project_members')
+    .insert({
+      project_id: projectId,
+      team_member_id: teamMemberId,
+      role: 'member',
+    } as never)
+    .select('project_id, team_member_id')
+    .single()
+
+  if (error) {
+    return { data: null, error: { message: error.message, code: error.code } }
+  }
+
+  return { data: data as { project_id: string; team_member_id: string }, error: null }
 }

@@ -11,7 +11,7 @@ const VALID_TYPES: TimeOffType[] = ['vacation', 'sick', 'personal', 'other']
 const VALID_STATUSES: TimeOffStatus[] = ['pending', 'approved', 'rejected']
 
 export interface CreateTimeOffInput {
-  user_id: string
+  team_member_id: string
   start_date: string
   end_date: string
   type: TimeOffType
@@ -45,8 +45,8 @@ interface ServiceResult<T> {
 
 // Validation helpers
 function validateCreateInput(input: CreateTimeOffInput): string | null {
-  if (!input.user_id) {
-    return 'User ID is required (user_id)'
+  if (!input.team_member_id) {
+    return 'User ID is required (team_member_id)'
   }
 
   if (!input.start_date) {
@@ -104,7 +104,7 @@ export async function createTimeOff(
 
   // Set defaults
   const timeOffData = {
-    user_id: input.user_id,
+    team_member_id: input.team_member_id,
     start_date: input.start_date,
     end_date: input.end_date,
     type: input.type,
@@ -179,7 +179,7 @@ export async function getTimeOffsByUser(
   let query = supabase
     .from('employee_time_off')
     .select('*')
-    .eq('user_id', userId)
+    .eq('team_member_id', userId)
 
   if (filter?.startDate) {
     query = query.gte('end_date', filter.startDate)

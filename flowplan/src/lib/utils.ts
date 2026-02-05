@@ -198,3 +198,22 @@ export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength - 3) + '...'
 }
+
+/**
+ * Calculate end date by adding duration days to start date
+ * @param startDate - The start date (Date object or ISO string)
+ * @param durationDays - Number of days to add
+ * @returns End date or null if startDate is null/undefined
+ */
+export function calculateEndDate(
+  startDate: Date | string | null,
+  durationDays: number
+): Date | null {
+  if (!startDate) return null
+
+  const start = typeof startDate === 'string' ? new Date(startDate) : startDate
+  const endDate = new Date(start)
+  endDate.setDate(endDate.getDate() + durationDays)
+
+  return endDate
+}

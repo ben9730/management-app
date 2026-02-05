@@ -136,7 +136,7 @@ const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'relative w-full bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-hidden fp-animate-slide-up',
+          'relative w-full bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-visible fp-animate-slide-up',
           sizes[size],
           className
         )}

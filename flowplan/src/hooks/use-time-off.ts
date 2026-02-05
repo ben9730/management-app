@@ -99,7 +99,7 @@ export function useCreateTimeOff() {
       queryClient.invalidateQueries({ queryKey: timeOffKeys.lists() })
       // Invalidate user-specific queries
       queryClient.invalidateQueries({
-        queryKey: [...timeOffKeys.all, 'user', data.user_id],
+        queryKey: [...timeOffKeys.all, 'user', data.team_member_id],
       })
       // Add the new time off to the cache
       queryClient.setQueryData(timeOffKeys.detail(data.id), data)
@@ -134,7 +134,7 @@ export function useUpdateTimeOff() {
       queryClient.invalidateQueries({ queryKey: timeOffKeys.lists() })
       // Invalidate user-specific queries
       queryClient.invalidateQueries({
-        queryKey: [...timeOffKeys.all, 'user', data.user_id],
+        queryKey: [...timeOffKeys.all, 'user', data.team_member_id],
       })
     },
   })

@@ -54,14 +54,11 @@ export interface CreateProjectInput {
 // 2. Task
 // ============================================
 
-export type TaskType = 'task' | 'milestone'
-
 export interface Task extends BaseEntity {
   project_id: string
   phase_id: string | null
   title: string
   description: string | null
-  task_type: TaskType
   status: TaskStatus
   priority: TaskPriority
   assignee_id: string | null
@@ -69,23 +66,16 @@ export interface Task extends BaseEntity {
   // Scheduling fields (CPM)
   duration: number // Duration in working days
   estimated_hours: number | null // Total hours needed
-  actual_hours: number // Hours actually spent
   start_date: Date | string | null
   end_date: Date | string | null
-  due_date: Date | string | null
-  es: Date | null // Early Start
-  ef: Date | null // Early Finish
-  ls: Date | null // Late Start
-  lf: Date | null // Late Finish
+  es: Date | string | null // Early Start
+  ef: Date | string | null // Early Finish
+  ls: Date | string | null // Late Start
+  lf: Date | string | null // Late Finish
   slack: number // Slack = LS - ES (in working days)
   is_critical: boolean // On Critical Path?
 
-  // Display fields
-  progress_percent: number
-  wbs_number: string | null
-  order_index: number
-
-  updated_at: Date
+  updated_at: Date | string
 }
 
 export interface CreateTaskInput {
@@ -147,43 +137,62 @@ export interface CreateAuditFindingInput {
 
 export interface CalendarException extends BaseEntity {
   project_id: string
-  date: Date
+  date: Date // Start date (or single date for one-day exceptions)
+  end_date?: Date | null // End date for multi-day exceptions (e.g., Passover week)
   type: CalendarExceptionType
   name: string | null
 }
 
 export interface CreateCalendarExceptionInput {
   project_id: string
-  date: Date
+  date: Date // Start date
+  end_date?: Date | null // End date (optional, for multi-day exceptions)
   type: CalendarExceptionType
   name?: string | null
 }
 
 // ============================================
-// 6. Team Member
+// 6. Team Member (Organization-level)
 // ============================================
 
+// Organization-level team member (new schema)
+export type TeamMemberRole = 'admin' | 'manager' | 'member' | 'viewer'
+
 export interface TeamMember extends BaseEntity {
-  user_id: string
-  project_id: string
-  first_name: string
-  last_name: string
+  organization_id?: string | null
+  user_id: string | null
+  project_id?: string | null // Optional for org-level members
+  display_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
   email: string
-  employment_type: EmploymentType
-  work_hours_per_day: number // e.g., 8.0, 4.0
-  work_days: number[] // Days of week (1=Sunday, 7=Saturday)
-  role: UserRole
+  avatar_url?: string | null
+  employment_type?: EmploymentType
+  work_hours_per_day?: number // e.g., 8.0, 4.0
+  work_days?: number[] // Days of week (0=Sunday, 6=Saturday)
+  role: UserRole | TeamMemberRole
   hourly_rate: number | null
+  weekly_capacity_hours?: number
+  skills?: string[]
+  is_active?: boolean
+  updated_at?: Date | string
 }
 
+// Legacy project-level team member input
 export interface CreateTeamMemberInput {
-  user_id: string
-  project_id: string
+  user_id?: string | null
+  project_id?: string | null
+  organization_id?: string
+  display_name?: string
+  email?: string
+  avatar_url?: string | null
   employment_type?: EmploymentType
   work_hours_per_day?: number
   work_days?: number[]
-  role?: UserRole
+  role?: UserRole | TeamMemberRole
   hourly_rate?: number | null
+  weekly_capacity_hours?: number
+  skills?: string[]
 }
 
 // ============================================
@@ -191,7 +200,7 @@ export interface CreateTeamMemberInput {
 // ============================================
 
 export interface EmployeeTimeOff extends BaseEntity {
-  user_id: string
+  team_member_id: string
   start_date: Date
   end_date: Date
   type: TimeOffType
@@ -200,7 +209,7 @@ export interface EmployeeTimeOff extends BaseEntity {
 }
 
 export interface CreateEmployeeTimeOffInput {
-  user_id: string
+  team_member_id: string
   start_date: Date
   end_date: Date
   type: TimeOffType

@@ -25,6 +25,8 @@ const mockSupabase = vi.hoisted(() => ({
   update: vi.fn(),
   delete: vi.fn(),
   eq: vi.fn(),
+  lte: vi.fn(),
+  gte: vi.fn(),
   order: vi.fn(),
   single: vi.fn(),
   maybeSingle: vi.fn(),
@@ -37,6 +39,8 @@ mockSupabase.insert.mockReturnValue(mockSupabase)
 mockSupabase.update.mockReturnValue(mockSupabase)
 mockSupabase.delete.mockReturnValue(mockSupabase)
 mockSupabase.eq.mockReturnValue(mockSupabase)
+mockSupabase.lte.mockReturnValue(mockSupabase)
+mockSupabase.gte.mockReturnValue(mockSupabase)
 mockSupabase.order.mockReturnValue(mockSupabase)
 
 vi.mock('@/lib/supabase', () => ({
@@ -69,6 +73,8 @@ describe('Team Members Service', () => {
     mockSupabase.update.mockReturnValue(mockSupabase)
     mockSupabase.delete.mockReturnValue(mockSupabase)
     mockSupabase.eq.mockReturnValue(mockSupabase)
+    mockSupabase.lte.mockReturnValue(mockSupabase)
+    mockSupabase.gte.mockReturnValue(mockSupabase)
     mockSupabase.order.mockReturnValue(mockSupabase)
   })
 
@@ -462,6 +468,311 @@ describe('Team Members Service', () => {
       const result = await deleteTeamMember('member-1')
 
       expect(result.error).toBeDefined()
+    })
+  })
+
+  describe('checkMemberAvailability', () => {
+    // Import the function dynamically to avoid issues with hoisted mocks
+    const getCheckMemberAvailability = async () => {
+      const module = await import('./team-members')
+      return module.checkMemberAvailability
+    }
+
+    it('returns available true when no time off exists in date range', async () => {
+      // Mock the employee_time_off query to return empty array
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(true)
+      expect(result.conflictingTimeOff).toBeUndefined()
+    })
+
+    it('returns available false when approved vacation overlaps date range', async () => {
+      const mockTimeOff = {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: '2026-02-05',
+        end_date: '2026-02-08',
+        type: 'vacation',
+        status: 'approved',
+        notes: null,
+        created_at: '2026-01-15T10:00:00Z',
+      }
+
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [mockTimeOff],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(false)
+      expect(result.conflictingTimeOff).toBeDefined()
+      expect(result.conflictingTimeOff?.id).toBe('timeoff-1')
+    })
+
+    it('returns available true when time off is pending (not approved)', async () => {
+      const mockTimeOff = {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: '2026-02-05',
+        end_date: '2026-02-08',
+        type: 'vacation',
+        status: 'pending',
+        notes: null,
+        created_at: '2026-01-15T10:00:00Z',
+      }
+
+      // The query should filter by status='approved', so return empty
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(true)
+    })
+
+    it('returns available true when time off is outside date range (before)', async () => {
+      // Mock returns empty because dates don't overlap
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-15'),
+        new Date('2026-02-20')
+      )
+
+      expect(result.available).toBe(true)
+    })
+
+    it('returns available true when time off is outside date range (after)', async () => {
+      // Mock returns empty because dates don't overlap
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-01-01'),
+        new Date('2026-01-10')
+      )
+
+      expect(result.available).toBe(true)
+    })
+
+    it('handles time off that starts during task range', async () => {
+      const mockTimeOff = {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: '2026-02-08',
+        end_date: '2026-02-15',
+        type: 'vacation',
+        status: 'approved',
+        notes: null,
+        created_at: '2026-01-15T10:00:00Z',
+      }
+
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [mockTimeOff],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(false)
+      expect(result.conflictingTimeOff?.start_date).toBe('2026-02-08')
+    })
+
+    it('handles time off that ends during task range', async () => {
+      const mockTimeOff = {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: '2026-01-25',
+        end_date: '2026-02-03',
+        type: 'vacation',
+        status: 'approved',
+        notes: null,
+        created_at: '2026-01-15T10:00:00Z',
+      }
+
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [mockTimeOff],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(false)
+    })
+
+    it('handles time off that fully contains task range', async () => {
+      const mockTimeOff = {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: '2026-01-15',
+        end_date: '2026-02-28',
+        type: 'vacation',
+        status: 'approved',
+        notes: null,
+        created_at: '2026-01-15T10:00:00Z',
+      }
+
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [mockTimeOff],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(false)
+    })
+
+    it('returns first conflicting time off when multiple exist', async () => {
+      const mockTimeOffs = [
+        {
+          id: 'timeoff-1',
+          team_member_id: 'member-1',
+          start_date: '2026-02-03',
+          end_date: '2026-02-05',
+          type: 'vacation',
+          status: 'approved',
+          notes: null,
+          created_at: '2026-01-15T10:00:00Z',
+        },
+        {
+          id: 'timeoff-2',
+          team_member_id: 'member-1',
+          start_date: '2026-02-08',
+          end_date: '2026-02-09',
+          type: 'sick',
+          status: 'approved',
+          notes: null,
+          created_at: '2026-01-16T10:00:00Z',
+        },
+      ]
+
+      mockSupabase.order.mockResolvedValueOnce({
+        data: mockTimeOffs,
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(false)
+      // Should return the first conflicting time off
+      expect(result.conflictingTimeOff?.id).toBe('timeoff-1')
+    })
+
+    it('queries employee_time_off table with correct parameters', async () => {
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('employee_time_off')
+      expect(mockSupabase.eq).toHaveBeenCalledWith('team_member_id', 'member-1')
+      expect(mockSupabase.eq).toHaveBeenCalledWith('status', 'approved')
+    })
+
+    it('handles database error gracefully', async () => {
+      mockSupabase.order.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Database error', code: '500' },
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      // On error, treat as available (fail-open for usability)
+      expect(result.available).toBe(true)
+      expect(result.error).toBeDefined()
+      expect(result.error?.message).toBe('Database error')
+    })
+
+    it('handles different time off types (sick, personal, other)', async () => {
+      const mockTimeOff = {
+        id: 'timeoff-1',
+        team_member_id: 'member-1',
+        start_date: '2026-02-05',
+        end_date: '2026-02-08',
+        type: 'sick',
+        status: 'approved',
+        notes: null,
+        created_at: '2026-01-15T10:00:00Z',
+      }
+
+      mockSupabase.order.mockResolvedValueOnce({
+        data: [mockTimeOff],
+        error: null,
+      })
+
+      const checkMemberAvailability = await getCheckMemberAvailability()
+      const result = await checkMemberAvailability(
+        'member-1',
+        new Date('2026-02-01'),
+        new Date('2026-02-10')
+      )
+
+      expect(result.available).toBe(false)
+      expect(result.conflictingTimeOff?.type).toBe('sick')
     })
   })
 })

@@ -16,6 +16,7 @@ import {
   type TasksFilter,
 } from '@/services/tasks'
 import type { Task } from '@/types/entities'
+import { phaseKeys } from '@/hooks/use-phases'
 
 // Query keys for cache management
 export const taskKeys = {
@@ -77,6 +78,8 @@ export function useCreateTask() {
     onSuccess: (data) => {
       // Invalidate tasks list to refetch
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // Invalidate phases to update progress counts (DB triggers update phase counts)
+      queryClient.invalidateQueries({ queryKey: phaseKeys.lists() })
       // Also add the new task to the cache
       queryClient.setQueryData(taskKeys.detail(data.id), data)
     },
@@ -108,6 +111,8 @@ export function useUpdateTask() {
       queryClient.setQueryData(taskKeys.detail(data.id), data)
       // Invalidate lists to refresh
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // Invalidate phases to update progress counts (DB triggers update phase counts)
+      queryClient.invalidateQueries({ queryKey: phaseKeys.lists() })
     },
   })
 }
@@ -131,6 +136,8 @@ export function useDeleteTask() {
       queryClient.removeQueries({ queryKey: taskKeys.detail(id) })
       // Invalidate lists
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // Invalidate phases to update progress counts (DB triggers update phase counts)
+      queryClient.invalidateQueries({ queryKey: phaseKeys.lists() })
     },
   })
 }

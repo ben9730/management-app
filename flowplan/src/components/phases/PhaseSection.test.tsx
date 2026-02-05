@@ -86,22 +86,22 @@ const mockTasks: Task[] = [
   } as unknown as Task,
 ]
 
-const mockAssignees: Record<string, TeamMember> = {
-  'task-1': {
+const mockAssignees: Record<string, TeamMember[]> = {
+  'task-1': [{
     id: 'member-1',
     organization_id: 'org-1',
     user_id: 'user-1',
     email: 'john@example.com',
     first_name: 'John',
     last_name: 'Doe',
-    role: 'member', // Changed from 'auditor'
+    role: 'member',
     employment_type: 'full_time',
     weekly_capacity_hours: 40,
     work_days: [0, 1, 2, 3, 4],
     hourly_rate: 100,
     is_active: true,
     created_at: '2026-01-01T00:00:00Z',
-  } as unknown as TeamMember,
+  } as unknown as TeamMember],
 }
 
 describe('PhaseSection', () => {

@@ -120,18 +120,21 @@ export class SchedulingService {
    * Count working days between two dates
    */
   workingDaysBetween(
-    start: Date,
-    end: Date,
+    start: Date | string,
+    end: Date | string,
     workDays: number[],
     holidays: Date[]
   ): number {
-    if (this.toDateString(start) === this.toDateString(end)) {
+    const startDate = start instanceof Date ? start : new Date(start)
+    const endDate = end instanceof Date ? end : new Date(end)
+
+    if (this.toDateString(startDate) === this.toDateString(endDate)) {
       return 0
     }
 
     let count = 0
-    let currentDate = new Date(start)
-    const endStr = this.toDateString(end)
+    let currentDate = new Date(startDate)
+    const endStr = this.toDateString(endDate)
 
     while (this.toDateString(currentDate) !== endStr) {
       currentDate = this.addDays(currentDate, 1)
@@ -363,8 +366,91 @@ export class SchedulingService {
    * Calculate effective duration based on work hours per day
    */
   calculateEffectiveDuration(estimatedHours: number, member: TeamMember): number {
-    const daysNeeded = estimatedHours / member.work_hours_per_day
+    const workHoursPerDay = member.work_hours_per_day || 8 // Default to 8 hours/day
+    const daysNeeded = estimatedHours / workHoursPerDay
     return Math.ceil(daysNeeded)
+  }
+
+  /**
+   * Calculate effective duration considering time-off in the task period.
+   * Returns the extended duration and information about conflicting time-off.
+   *
+   * @param estimatedHours - The estimated hours for the task
+   * @param startDate - The task start date
+   * @param member - The team member assigned
+   * @param timeOff - Array of approved time-off periods for the member
+   * @param workDays - Working days of the week (0=Sunday, etc.)
+   * @param holidays - Project-level holidays
+   * @returns Object with effectiveDuration and any overlapping time-off days
+   */
+  calculateDurationWithTimeOff(
+    estimatedHours: number,
+    startDate: Date,
+    member: TeamMember,
+    timeOff: EmployeeTimeOff[],
+    workDays: number[] = [0, 1, 2, 3, 4], // Default: Sunday-Thursday
+    holidays: Date[] = []
+  ): {
+    baseDuration: number
+    effectiveDuration: number
+    timeOffDays: number
+    affectedTimeOff: EmployeeTimeOff[]
+  } {
+    // Calculate base duration from hours
+    const baseDuration = this.calculateEffectiveDuration(estimatedHours, member)
+
+    // Get member's work days
+    const memberWorkDays = member.work_days || workDays
+
+    // Filter to approved time-off only
+    const approvedTimeOff = timeOff.filter(to => to.status === 'approved')
+
+    if (approvedTimeOff.length === 0) {
+      return {
+        baseDuration,
+        effectiveDuration: baseDuration,
+        timeOffDays: 0,
+        affectedTimeOff: [],
+      }
+    }
+
+    // Calculate the initial end date without time-off
+    const initialEndDate = this.addWorkingDays(startDate, baseDuration, memberWorkDays, holidays)
+
+    // Find time-off that overlaps with the task period
+    const affectedTimeOff: EmployeeTimeOff[] = []
+    let timeOffDays = 0
+
+    for (const to of approvedTimeOff) {
+      const toStart = new Date(to.start_date)
+      const toEnd = new Date(to.end_date)
+
+      // Check if time-off overlaps with task period
+      if (toEnd >= startDate && toStart <= initialEndDate) {
+        affectedTimeOff.push(to)
+
+        // Count the time-off days that fall on working days within the task period
+        let current = new Date(Math.max(toStart.getTime(), startDate.getTime()))
+        const periodEnd = new Date(Math.min(toEnd.getTime(), initialEndDate.getTime()))
+
+        while (current <= periodEnd) {
+          if (this.isWorkingDay(current, memberWorkDays, holidays)) {
+            timeOffDays++
+          }
+          current = this.addDays(current, 1)
+        }
+      }
+    }
+
+    // Effective duration = base duration + time-off days that fall on working days
+    const effectiveDuration = baseDuration + timeOffDays
+
+    return {
+      baseDuration,
+      effectiveDuration,
+      timeOffDays,
+      affectedTimeOff,
+    }
   }
 
   /**
@@ -391,8 +477,9 @@ export class SchedulingService {
     // Find project end date (max EF)
     let projectEnd: Date | null = null
     for (const task of processedTasks) {
-      if (task.ef && (!projectEnd || task.ef > projectEnd)) {
-        projectEnd = task.ef
+      const taskEf = this.toDate(task.ef)
+      if (taskEf && (!projectEnd || taskEf > projectEnd)) {
+        projectEnd = taskEf
       }
     }
 
@@ -449,14 +536,16 @@ export class SchedulingService {
         current = this.addDays(current, 1)
       }
 
-      const existing = userTimeOff.get(to.user_id) || []
-      userTimeOff.set(to.user_id, [...existing, ...dates])
+      const existing = userTimeOff.get(to.team_member_id) || []
+      userTimeOff.set(to.team_member_id, [...existing, ...dates])
     }
 
     // Create user work days map
     const userWorkDays = new Map<string, number[]>()
     for (const member of teamMembers) {
-      userWorkDays.set(member.user_id, member.work_days)
+      if (member.user_id) {
+        userWorkDays.set(member.user_id, member.work_days || [0, 1, 2, 3, 4])
+      }
     }
 
     // Process tasks with resource constraints
@@ -519,8 +608,9 @@ export class SchedulingService {
     // Find project end date
     let projectEnd: Date | null = null
     for (const task of resultTasks) {
-      if (task.ef && (!projectEnd || task.ef > projectEnd)) {
-        projectEnd = task.ef
+      const taskEf = this.toDate(task.ef)
+      if (taskEf && (!projectEnd || taskEf > projectEnd)) {
+        projectEnd = taskEf
       }
     }
 
@@ -553,8 +643,15 @@ export class SchedulingService {
   // Helper Methods
   // ==========================================
 
-  private addDays(date: Date, days: number): Date {
-    const result = new Date(date)
+  private toDate(value: Date | string | null): Date | null {
+    if (!value) return null
+    if (value instanceof Date) return value
+    return new Date(value)
+  }
+
+  private addDays(date: Date | string, days: number): Date {
+    const d = date instanceof Date ? date : new Date(date)
+    const result = new Date(d)
     result.setDate(result.getDate() + days)
     return result
   }

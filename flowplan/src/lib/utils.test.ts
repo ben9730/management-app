@@ -18,6 +18,7 @@ import {
   debounce,
   generateId,
   safeJsonParse,
+  calculateEndDate,
 } from './utils'
 
 describe('cn (classnames)', () => {
@@ -270,5 +271,72 @@ describe('safeJsonParse', () => {
     const fallback = []
     const result = safeJsonParse('', fallback)
     expect(result).toEqual(fallback)
+  })
+})
+
+describe('calculateEndDate', () => {
+  it('returns null when startDate is null', () => {
+    expect(calculateEndDate(null, 5)).toBeNull()
+  })
+
+  it('calculates end date from Date object', () => {
+    const startDate = new Date('2026-02-01')
+    const result = calculateEndDate(startDate, 5)
+
+    expect(result).toBeInstanceOf(Date)
+    expect(result?.toISOString().split('T')[0]).toBe('2026-02-06')
+  })
+
+  it('calculates end date from date string', () => {
+    const result = calculateEndDate('2026-02-01', 5)
+
+    expect(result).toBeInstanceOf(Date)
+    expect(result?.toISOString().split('T')[0]).toBe('2026-02-06')
+  })
+
+  it('handles zero duration (same day)', () => {
+    const startDate = new Date('2026-02-01')
+    const result = calculateEndDate(startDate, 0)
+
+    expect(result?.toISOString().split('T')[0]).toBe('2026-02-01')
+  })
+
+  it('handles single day duration', () => {
+    const startDate = new Date('2026-02-01')
+    const result = calculateEndDate(startDate, 1)
+
+    expect(result?.toISOString().split('T')[0]).toBe('2026-02-02')
+  })
+
+  it('handles large duration values', () => {
+    const startDate = new Date('2026-01-01')
+    const result = calculateEndDate(startDate, 365)
+
+    expect(result?.toISOString().split('T')[0]).toBe('2027-01-01')
+  })
+
+  it('handles month boundary crossing', () => {
+    const startDate = new Date('2026-01-30')
+    const result = calculateEndDate(startDate, 5)
+
+    expect(result?.toISOString().split('T')[0]).toBe('2026-02-04')
+  })
+
+  it('handles year boundary crossing', () => {
+    const startDate = new Date('2026-12-30')
+    const result = calculateEndDate(startDate, 5)
+
+    expect(result?.toISOString().split('T')[0]).toBe('2027-01-04')
+  })
+
+  it('handles ISO date string format', () => {
+    const result = calculateEndDate('2026-02-01T00:00:00.000Z', 5)
+
+    expect(result).toBeInstanceOf(Date)
+    expect(result?.toISOString().split('T')[0]).toBe('2026-02-06')
+  })
+
+  it('handles undefined input by returning null', () => {
+    expect(calculateEndDate(undefined as unknown as null, 5)).toBeNull()
   })
 })

@@ -1,6 +1,36 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
+// Mock Supabase environment variables for tests
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+
+// Mock next/navigation for App Router components
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+  }),
+  useSearchParams: () => ({
+    get: vi.fn().mockReturnValue(null),
+    getAll: vi.fn().mockReturnValue([]),
+    has: vi.fn().mockReturnValue(false),
+    keys: vi.fn().mockReturnValue([]),
+    values: vi.fn().mockReturnValue([]),
+    entries: vi.fn().mockReturnValue([]),
+    forEach: vi.fn(),
+    toString: vi.fn().mockReturnValue(''),
+  }),
+  usePathname: () => '/',
+  useParams: () => ({}),
+  notFound: vi.fn(),
+  redirect: vi.fn(),
+}))
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

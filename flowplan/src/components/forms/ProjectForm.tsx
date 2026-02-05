@@ -58,6 +58,18 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
 
   const [errors, setErrors] = React.useState<FormErrors>({})
 
+  // Reset form when initialValues or mode changes (fixes edit not updating bug)
+  React.useEffect(() => {
+    setFormData({
+      name: initialValues?.name || '',
+      description: initialValues?.description || '',
+      status: initialValues?.status || 'active',
+      start_date: initialValues?.start_date || '',
+      end_date: initialValues?.end_date || '',
+    })
+    setErrors({})
+  }, [initialValues, mode])
+
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
 

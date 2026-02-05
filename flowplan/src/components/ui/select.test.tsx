@@ -97,21 +97,20 @@ describe('Select', () => {
     it('applies default variant styling', () => {
       render(<Select options={[{ value: '1', label: 'Option 1' }]} />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-2')
-      expect(select).toHaveClass('border-gray-900')
-      expect(select).toHaveClass('rounded-[var(--fp-radius-md)]')
+      expect(select).toHaveClass('border-slate-200')
+      expect(select).toHaveClass('rounded-xl')
     })
 
     it('applies error variant styling', () => {
       render(<Select options={mockOptions} variant="error" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-[var(--fp-status-error)]')
+      expect(select).toHaveClass('border-red-300')
     })
 
     it('applies success variant styling', () => {
       render(<Select options={mockOptions} variant="success" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-[var(--fp-status-success)]')
+      expect(select).toHaveClass('border-green-300')
     })
   })
 
@@ -120,23 +119,23 @@ describe('Select', () => {
     it('applies small size styling', () => {
       render(<Select options={mockOptions} size="sm" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('px-2')
-      expect(select).toHaveClass('py-1')
+      expect(select).toHaveClass('px-3')
+      expect(select).toHaveClass('py-1.5')
       expect(select).toHaveClass('text-sm')
     })
 
     it('applies medium size styling by default', () => {
       render(<Select options={mockOptions} />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('px-3')
-      expect(select).toHaveClass('py-2')
+      expect(select).toHaveClass('px-4')
+      expect(select).toHaveClass('py-2.5')
     })
 
     it('applies large size styling', () => {
       render(<Select options={mockOptions} size="lg" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('px-4')
-      expect(select).toHaveClass('py-3')
+      expect(select).toHaveClass('px-5')
+      expect(select).toHaveClass('py-3.5')
       expect(select).toHaveClass('text-lg')
     })
   })
@@ -217,13 +216,13 @@ describe('Select', () => {
     it('applies error styling when error is provided', () => {
       render(<Select options={mockOptions} error="Invalid selection" />)
       const select = screen.getByRole('combobox')
-      expect(select).toHaveClass('border-[var(--fp-status-error)]')
+      expect(select).toHaveClass('border-red-300')
     })
 
     it('error message has error color', () => {
       render(<Select options={mockOptions} error="Invalid selection" />)
       const errorText = screen.getByText('Invalid selection')
-      expect(errorText).toHaveClass('text-[var(--fp-status-error)]')
+      expect(errorText).toHaveClass('text-red-500')
     })
   })
 

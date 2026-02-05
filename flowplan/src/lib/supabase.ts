@@ -1,13 +1,15 @@
 /**
  * Supabase Client Configuration
  *
- * This file provides the Supabase client for both browser and server contexts.
+ * This file provides the Supabase client for browser context.
+ * For server-side operations, use lib/supabase-server.ts
+ *
  * Environment variables required:
  * - NEXT_PUBLIC_SUPABASE_URL
  * - NEXT_PUBLIC_SUPABASE_ANON_KEY
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
 
 // Validate environment variables
@@ -24,26 +26,12 @@ if (!supabaseAnonKey) {
 
 /**
  * Supabase client for browser context
- * Uses anon key for public operations
+ * Uses cookie-based session management for SSR compatibility
  */
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-})
-
-/**
- * Create a Supabase client for server-side operations
- * Useful for API routes and Server Components
- */
-export function createServerSupabaseClient() {
-  return createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
-    auth: {
-      persistSession: false,
-    },
-  })
-}
+export const supabase = createBrowserClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey
+)
 
 /**
  * Helper to get current user from Supabase auth

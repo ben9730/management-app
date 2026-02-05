@@ -545,4 +545,252 @@ describe('SyncService', () => {
       expect(mockDestroy).toHaveBeenCalled()
     })
   })
+
+  describe('callback unsubscription', () => {
+    beforeEach(() => {
+      syncService = createSyncService(defaultConfig)
+    })
+
+    it('should allow unsubscribing from change callbacks', () => {
+      const changeCallback = vi.fn()
+
+      const unsubscribe = syncService.onChange(changeCallback)
+
+      // Make a change - callback should be called
+      syncService.setTask('task-1', { id: 'task-1', title: 'Test' })
+      expect(changeCallback).toHaveBeenCalledTimes(1)
+
+      // Unsubscribe
+      unsubscribe()
+
+      // Make another change - callback should NOT be called again
+      syncService.setTask('task-2', { id: 'task-2', title: 'Test 2' })
+      expect(changeCallback).toHaveBeenCalledTimes(1)
+    })
+
+    it('should allow unsubscribing from awareness callbacks', () => {
+      const awarenessCallback = vi.fn()
+
+      const unsubscribe = syncService.onAwarenessChange(awarenessCallback)
+
+      // Set awareness - callback should be called
+      syncService.setAwarenessState({ name: 'User 1' })
+      expect(awarenessCallback).toHaveBeenCalledTimes(1)
+
+      // Unsubscribe
+      unsubscribe()
+
+      // Set awareness again - callback should NOT be called again
+      syncService.setAwarenessState({ name: 'User 2' })
+      expect(awarenessCallback).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle multiple callbacks independently', () => {
+      const callback1 = vi.fn()
+      const callback2 = vi.fn()
+
+      const unsubscribe1 = syncService.onChange(callback1)
+      syncService.onChange(callback2)
+
+      // Make a change - both should be called
+      syncService.setTask('task-1', { id: 'task-1', title: 'Test' })
+      expect(callback1).toHaveBeenCalledTimes(1)
+      expect(callback2).toHaveBeenCalledTimes(1)
+
+      // Unsubscribe first callback
+      unsubscribe1()
+
+      // Make another change - only callback2 should be called
+      syncService.setTask('task-2', { id: 'task-2', title: 'Test 2' })
+      expect(callback1).toHaveBeenCalledTimes(1)
+      expect(callback2).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('change origin handling', () => {
+    beforeEach(() => {
+      syncService = createSyncService(defaultConfig)
+    })
+
+    it('should mark changes with non-string origin as remote', () => {
+      const changeCallback = vi.fn()
+      syncService.onChange(changeCallback)
+
+      // Directly apply update to document (simulating remote update)
+      const doc = syncService.getDocument()
+      doc.transact(() => {
+        const tasks = doc.getMap('tasks')
+        tasks.set('remote-task', { id: 'remote-task', title: 'Remote' })
+      }, null) // null origin should be treated as 'unknown'
+
+      expect(changeCallback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          origin: 'unknown',
+          type: 'remote',
+        })
+      )
+    })
+
+    it('should mark changes with numeric origin as remote', () => {
+      const changeCallback = vi.fn()
+      syncService.onChange(changeCallback)
+
+      const doc = syncService.getDocument()
+      doc.transact(() => {
+        const tasks = doc.getMap('tasks')
+        tasks.set('numeric-task', { id: 'numeric-task', title: 'Numeric Origin' })
+      }, 123) // numeric origin should be treated as 'unknown'
+
+      expect(changeCallback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          origin: 'unknown',
+          type: 'remote',
+        })
+      )
+    })
+  })
+
+  describe('awareness state when connected', () => {
+    const persistenceConfig: SyncConfig = {
+      ...defaultConfig,
+      persistence: {
+        enabled: true,
+        name: 'awareness-test',
+      },
+    }
+
+    it('should return null for local awareness state initially', () => {
+      syncService = createSyncService(defaultConfig)
+
+      const localState = syncService.getLocalAwarenessState()
+
+      expect(localState).toBeNull()
+    })
+
+    it('should return empty map for all awareness states initially', () => {
+      syncService = createSyncService(defaultConfig)
+
+      const allStates = syncService.getAllAwarenessStates()
+
+      expect(allStates).toBeInstanceOf(Map)
+      expect(allStates.size).toBe(0)
+    })
+  })
+
+  describe('edge cases', () => {
+    beforeEach(() => {
+      syncService = createSyncService(defaultConfig)
+    })
+
+    it('should handle deleting non-existent task gracefully', () => {
+      expect(() => {
+        syncService.deleteTask('non-existent-task')
+      }).not.toThrow()
+
+      const tasks = syncService.getTasks()
+      expect(tasks.get('non-existent-task')).toBeUndefined()
+    })
+
+    it('should handle undo when nothing to undo', () => {
+      expect(syncService.canUndo()).toBe(false)
+
+      // Should not throw
+      expect(() => {
+        syncService.undo()
+      }).not.toThrow()
+    })
+
+    it('should handle redo when nothing to redo', () => {
+      expect(syncService.canRedo()).toBe(false)
+
+      // Should not throw
+      expect(() => {
+        syncService.redo()
+      }).not.toThrow()
+    })
+
+    it('should handle setting task with same data multiple times', () => {
+      const task = { id: 'task-1', title: 'Same Task' }
+
+      syncService.setTask('task-1', task)
+      syncService.setTask('task-1', task)
+      syncService.setTask('task-1', task)
+
+      const tasks = syncService.getTasks()
+      expect(tasks.get('task-1')).toEqual(task)
+    })
+
+    it('should handle empty transaction', () => {
+      const doc = syncService.getDocument()
+      const updateSpy = vi.fn()
+      doc.on('update', updateSpy)
+
+      syncService.transaction(() => {
+        // Empty transaction
+      })
+
+      // Empty transaction should not trigger update
+      expect(updateSpy).not.toHaveBeenCalled()
+    })
+
+    it('should create independent snapshots', () => {
+      syncService.setTask('task-1', { id: 'task-1', title: 'Snapshot 1' })
+      const snapshot1 = syncService.createSnapshot()
+
+      syncService.setTask('task-2', { id: 'task-2', title: 'Snapshot 2' })
+      const snapshot2 = syncService.createSnapshot()
+
+      // Snapshots should be different
+      expect(snapshot1.length).not.toBe(snapshot2.length)
+
+      // Restore snapshot1 to new service - should only have task-1
+      const newService = createSyncService({ ...defaultConfig, documentId: 'snapshot-test' })
+      newService.restoreFromSnapshot(snapshot1)
+
+      const tasks = newService.getTasks()
+      expect(tasks.get('task-1')).toEqual({ id: 'task-1', title: 'Snapshot 1' })
+      expect(tasks.get('task-2')).toBeUndefined()
+
+      newService.disconnect()
+    })
+
+    it('should handle multiple rapid status changes', async () => {
+      const statusChanges: boolean[] = []
+      syncService.onStatusChange((status) => {
+        statusChanges.push(status.connected)
+      })
+
+      // Rapid connect/disconnect cycles
+      await syncService.connect()
+      await new Promise(resolve => setTimeout(resolve, 5))
+      syncService.disconnect()
+      await syncService.connect()
+      await new Promise(resolve => setTimeout(resolve, 5))
+      syncService.disconnect()
+
+      // Should have recorded multiple status changes
+      expect(statusChanges.length).toBeGreaterThan(0)
+      // Last status should be disconnected
+      expect(statusChanges[statusChanges.length - 1]).toBe(false)
+    })
+  })
+
+  describe('status object immutability', () => {
+    beforeEach(() => {
+      syncService = createSyncService(defaultConfig)
+    })
+
+    it('should return a copy of status, not the original', () => {
+      const status1 = syncService.getStatus()
+      const status2 = syncService.getStatus()
+
+      // Should be equal but not the same object
+      expect(status1).toEqual(status2)
+      expect(status1).not.toBe(status2)
+
+      // Modifying one should not affect the other
+      status1.connected = true
+      expect(status2.connected).toBe(false)
+    })
+  })
 })

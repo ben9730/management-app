@@ -8,12 +8,16 @@
 import * as React from 'react'
 import { cn, formatDateDisplay, parseDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { AvatarStack, AvatarData } from '@/components/ui/avatar-stack'
 import { Check, Calendar, User, Zap, Circle, Target } from 'lucide-react'
 import type { Task, TeamMember } from '@/types/entities'
 
 export interface TaskCardProps {
   task: Task
+  /** @deprecated Use assignees for multi-assignee support */
   assignee?: TeamMember | null
+  /** Array of team members assigned to this task */
+  assignees?: TeamMember[]
   slack?: number
   isCriticalPath?: boolean
   showProgress?: boolean
@@ -45,15 +49,46 @@ function isOverdue(dueDate: Date | string | null): boolean {
   return due < today
 }
 
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+function getInitials(member?: TeamMember | null): string {
+  if (!member) return '?'
+  // Try display_name first
+  if (member.display_name) {
+    const parts = member.display_name.trim().split(' ')
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase()
+    }
+    return member.display_name.charAt(0).toUpperCase()
+  }
+  // Fall back to first_name/last_name
+  const first = member.first_name?.charAt(0) || ''
+  const last = member.last_name?.charAt(0) || ''
+  if (first || last) return `${first}${last}`.toUpperCase()
+  // Last resort: email
+  return member.email?.charAt(0).toUpperCase() || '?'
 }
 
-const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
+/**
+ * Convert TeamMember to AvatarData for AvatarStack
+ */
+function memberToAvatar(member: TeamMember): AvatarData {
+  const displayName = member.display_name ||
+    `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+    member.email || 'Unknown'
+
+  return {
+    id: member.id,
+    name: displayName,
+    email: member.email,
+    avatarUrl: member.avatar_url,
+  }
+}
+
+const TaskCardComponent = React.forwardRef<HTMLDivElement, TaskCardProps>(
   (
     {
       task,
       assignee,
+      assignees,
       slack,
       isCriticalPath = false,
       showProgress = false,
@@ -64,6 +99,17 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
     },
     ref
   ) => {
+    // Build avatar list from assignees or legacy assignee
+    const avatarList = React.useMemo((): AvatarData[] => {
+      if (assignees && assignees.length > 0) {
+        return assignees.map(memberToAvatar)
+      }
+      if (assignee) {
+        return [memberToAvatar(assignee)]
+      }
+      return []
+    }, [assignees, assignee])
+
     const handleCardClick = () => {
       if (onClick) {
         onClick(task)
@@ -89,17 +135,22 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         )}
         onClick={handleCardClick}
       >
-        {/* Assignee Avatar (Right side) */}
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0">
-          {assignee ? getInitials(assignee.first_name, assignee.last_name) : '?'}
-        </div>
+        {/* Assignee Avatars (Right side) - use AvatarStack for multi-assignee */}
+        {avatarList.length > 0 ? (
+          <AvatarStack
+            avatars={avatarList}
+            max={3}
+            size="sm"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold flex-shrink-0">
+            ?
+          </div>
+        )}
 
         {/* Title & Info (Middle) */}
         <div className="flex-grow min-w-0">
           <div className="flex items-center gap-2">
-            {task.wbs_number && (
-              <span className="text-slate-400 text-xs font-medium">{task.wbs_number}</span>
-            )}
             <h4 className={cn(
               "font-semibold text-foreground truncate",
               task.status === 'done' && "text-slate-400 line-through"
@@ -115,7 +166,7 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         {/* Meta Info (Left side) */}
         <div className="flex items-center gap-6">
           <div className="hidden md:block text-slate-500 dark:text-slate-400 text-sm">
-            {formatDateDisplay(task.due_date || task.end_date)}
+            {formatDateDisplay(task.end_date)}
           </div>
 
           {/* Status Badge */}
@@ -159,6 +210,9 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
   }
 )
 
-TaskCard.displayName = 'TaskCard'
+TaskCardComponent.displayName = 'TaskCard'
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+const TaskCard = React.memo(TaskCardComponent)
 
 export { TaskCard }
