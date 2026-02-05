@@ -19,6 +19,10 @@ export interface CreateTeamMemberInput {
   hourly_rate?: number | null
   weekly_capacity_hours?: number
   skills?: string[]
+  // Work schedule fields
+  employment_type?: 'full_time' | 'part_time' | 'contractor'
+  work_hours_per_day?: number
+  work_days?: number[] // 0=Sunday, 1=Monday, etc.
 }
 
 export interface UpdateTeamMemberInput {
@@ -31,6 +35,10 @@ export interface UpdateTeamMemberInput {
   weekly_capacity_hours?: number
   skills?: string[]
   is_active?: boolean
+  // Work schedule fields
+  employment_type?: 'full_time' | 'part_time' | 'contractor'
+  work_hours_per_day?: number
+  work_days?: number[] // 0=Sunday, 1=Monday, etc.
 }
 
 export interface TeamMembersFilter {
@@ -125,6 +133,10 @@ export async function createTeamMember(
     weekly_capacity_hours: input.weekly_capacity_hours ?? 40,
     skills: input.skills ?? [],
     is_active: true,
+    // Work schedule fields
+    employment_type: input.employment_type ?? 'full_time',
+    work_hours_per_day: input.work_hours_per_day ?? 8,
+    work_days: input.work_days ?? [0, 1, 2, 3, 4], // Default Israeli work week (Sun-Thu)
   }
 
   const { data, error } = await supabase

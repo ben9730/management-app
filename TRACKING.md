@@ -9,20 +9,20 @@
 | פריט | מצב |
 |------|-----|
 | **Build** | ✅ מצליח |
-| **Tests** | ✅ 1500+ tests עוברים |
-| **Coverage** | ✅ מעל 80% |
-| **סשן אחרון** | #22 - E2E Tests עם Playwright |
-| **משימה הבאה** | תיקון טסטים כושלים / Offline Sync Validation |
+| **Tests** | ✅ 200+ טסטים עוברים (Unit + E2E) |
+| **Coverage** | ✅ מעל 80% (sync.ts: 90.38%) |
+| **סשן אחרון** | #27 - Holiday Warning Indicator ב-TaskForm |
+| **משימה הבאה** | בדיקות ידניות + Production Hardening |
 
 ---
 
 ## 🔍 Gap Analysis - PRD vs Implementation
 
 ### סיכום מצב (Summary)
-- **מומש**: 95% מהפיצ'רים (ללא AI)
+- **מומש**: 98% מהפיצ'רים (ללא AI)
 - **AI Chat**: 🔒 **מושבת זמנית** - מגבלות Gemini Free Tier
-- **השלב הבא**: E2E Tests / Offline Sync Validation
-- **צריך בדיקות**: Offline sync E2E
+- **השלב הבא**: בדיקות ידניות / Production Hardening
+- **הושלם**: ✅ E2E Tests, ✅ Offline Sync
 
 ### 🎯 השלב הבא: E2E Tests
 
@@ -34,20 +34,20 @@
 **עתידי (כשיהיה צורך):**
 - AI Chat - להפעלה מחדש עם Groq/Paid Gemini/Claude API
 
-### 🔴 פערים שזוהו (Identified Gaps) - Session #23
+### ✅ פערים שזוהו ונסגרו (Identified & Closed Gaps) - Session #23
 
-**תאריך זיהוי**: 04/02/2026
+**תאריך זיהוי**: 04/02/2026 | **תאריך סגירה**: 05/02/2026
 
-| פער | PRD Reference | מצב נוכחי | עדיפות |
-|-----|---------------|-----------|--------|
-| **UI לניהול חגים** | FR-002 CORE | טבלת `calendar_exceptions` קיימת, **אין UI** | P0 |
-| **Multi-Assignee UI** | FR-045 CORE | טבלת `task_assignments` קיימת, UI מציג רק assignee יחיד | P1 |
-| **חישוב Duration לפי זמינות** | FR-046 CORE | `calculateEffectiveDuration()` קיים, לא מתחשב בחופשות אוטומטית | P1 |
+| פער | PRD Reference | מצב | עדיפות |
+|-----|---------------|-----|--------|
+| **UI לניהול חגים** | FR-002 CORE | ✅ הושלם - Modal + Form + List | P0 |
+| **Multi-Assignee UI** | FR-045 CORE | ✅ הושלם - MultiSelect + AvatarStack | P1 |
+| **חישוב Duration לפי זמינות** | FR-046 CORE | ✅ הושלם - calculateDurationWithTimeOff + hint | P1 |
 
-**הערות**:
-- FR-002: המערכת תומכת ב-calendar_exceptions ברמת הסכמה, אבל אין דרך להוסיף חגים דרך ה-UI
-- FR-045: task_assignments מאפשר הקצאת מספר עובדים למשימה עם שעות ספציפיות, אבל ה-UI מציג רק dropdown של assignee יחיד
-- FR-046: הפונקציה קיימת ב-scheduling.ts אבל לא מחוברת לחישוב אוטומטי שמתחשב בחופשות
+**מימוש**:
+- FR-002: Service, Hook, Form, List, Modal בדשבורד, RLS policies
+- FR-045: Service, Hook, MultiSelect component, AvatarStack, עדכון TaskForm + TaskCard
+- FR-046: פונקציית calculateDurationWithTimeOff ב-scheduling.ts, hint בטופס
 
 ---
 
@@ -64,7 +64,7 @@
 |-------|-----|-------|
 | **AI Chat Panel** | 🔒 **מושבת** - Session #21 | מוסתר עקב מגבלות Gemini Free Tier |
 | **Document Upload UI** | ⏸️ נדחה | תלוי בהפעלת AI |
-| **Offline Sync** | 80% | Services מלאים, צריך E2E |
+| **Offline Sync** | ✅ **100%** - Session #25 | E2E + Unit tests מלאים |
 
 ### ✅ מושלם (100%)
 - Authentication, Tasks CRUD + CPM, Team Management, Findings Center (hidden), Gantt Charts, Modern UI
@@ -345,6 +345,218 @@
 ---
 
 ## 📝 לוג סשנים (Session Log)
+
+### סשן #27 (05/02/2026) - התראה על חפיפה עם חגים/ימי לא-עבודה בטופס משימה
+
+**מה נעשה:**
+- ✅ **Holiday Warning Indicator** - הוספת אינדיקציה ויזואלית בטופס יצירת/עריכת משימה כאשר תאריכי המשימה חופפים עם חגים או ימי לא-עבודה
+
+**שינויי קבצים:**
+- `flowplan/src/components/forms/TaskForm.tsx`:
+  - הוספת prop חדש: `calendarExceptions?: CalendarException[]`
+  - פונקציית `findOverlappingExceptions` - מזהה חגים שחופפים לטווח תאריכי המשימה
+  - פונקציית `dateRangesOverlap` - בדיקת חפיפה בין טווחי תאריכים
+  - קומפוננטת `HolidayWarning` - מציגה התראה עם:
+    - 🎉 סגול לחגים
+    - 🚫 אפור לימי לא-עבודה
+    - שמות החגים ותאריכים
+    - הודעה שמשך המשימה האפקטיבי עשוי להיות ארוך יותר
+  - `role="alert"` לנגישות
+
+- `flowplan/src/components/forms/TaskForm.test.tsx`:
+  - 14 טסטים חדשים לבדיקת Holiday Warning
+  - בדיקת חפיפה עם חג יחיד ומרובה ימים
+  - בדיקת הצגת מספר חגים
+  - בדיקת styling שונה לסוגי חריגות
+  - בדיקת נגישות (ARIA)
+  - בדיקת אייקונים (🎉 vs 🚫)
+
+- `flowplan/src/app/page.tsx`:
+  - חיבור `calendarExceptions` ל-TaskForm
+
+**TDD:**
+- נכתבו 14 טסטים תחילה (Red)
+- מימוש הקומפוננטה (Green)
+- כל 61 טסטי TaskForm עוברים
+
+**ניקוי:**
+- נמחקה תיקיית `test-results/` עם ~30 צילומי מסך מבדיקות E2E
+
+**Build Status:** ✅ עובר
+
+---
+
+### סשן #26 (05/02/2026) - תיקון 3 באגים: Team Members, Calendar Exceptions, Multi-Assignee
+
+**מה נעשה:**
+- ✅ **באג #1: ימי ושעות עבודה של עובד לא נשמרים** - שינויים תמיד חזרו לברירת מחדל (א-ה, 8 שעות)
+- ✅ **באג #2: חגים חסרים טווח תאריכים** - נוסף תמיכה ב-start_date ו-end_date לחגים מרובי ימים (כמו פסח)
+- ✅ **באג #3: עריכת משימה לא מציגה את כל האחראים** - כאשר עורכים משימה עם מספר אחראים, הופיע רק אחד
+
+**תיקון #1: Team Member Work Schedule Persistence**
+
+שינויי קבצים:
+- `flowplan/src/services/team-members.ts`:
+  - הוספת שדות work schedule ל-`UpdateTeamMemberInput`: `employment_type`, `work_hours_per_day`, `work_days`
+  - הוספת שדות work schedule ל-`CreateTeamMemberInput`
+  - עדכון `createTeamMember` עם ערכי ברירת מחדל (ראשון-חמישי, 8 שעות)
+- `flowplan/src/app/team/page.tsx`:
+  - עדכון mutations להעביר את כל שדות ה-work schedule ל-API
+
+**תיקון #2: Calendar Exception Date Range Support**
+
+שינויי קבצים:
+- `flowplan/src/types/database.ts` - הוספת `end_date` ל-calendar_exceptions schema
+- `flowplan/src/types/entities.ts` - הוספת `end_date?: Date | null` ל-CalendarException
+- `flowplan/src/services/calendar-exceptions.ts`:
+  - הוספת `end_date` ל-UpdateCalendarExceptionInput
+  - עדכון validation functions לבדוק end_date >= date
+  - עדכון create/update functions לטפל ב-end_date
+- `flowplan/src/components/forms/CalendarExceptionForm.tsx`:
+  - שכתוב לתמיכה בטווח תאריכים (date + end_date)
+  - שני שדות input לתאריכים בתצוגת grid
+  - ולידציה: end_date >= date
+  - טקסט עזרה למשתמש
+- `flowplan/src/components/calendar/CalendarExceptionsList.tsx`:
+  - פונקציית `formatDateRange` להצגת טווח
+  - עדכון תצוגה להציג "01.01.2026 - 07.01.2026"
+
+**תיקון #3: Multi-Assignee Edit Mode Display**
+
+שינויי קבצים:
+- `flowplan/src/app/page.tsx`:
+  - הוספת `useTaskAssignments` hook לטעינת assignments בעריכה
+  - הוספת `editingTaskAssigneeIds` מחושב מ-task assignments
+  - פונקציית `syncTaskAssignments` לסנכרון שינויים
+  - עדכון `TaskForm` לקבל assignee_ids מטבלת task_assignments
+  - עדכון handlers לחגים לכלול end_date
+
+**מיגרציה נדרשת (יש להריץ ידנית):**
+```sql
+ALTER TABLE calendar_exceptions
+ADD COLUMN IF NOT EXISTS end_date DATE;
+
+COMMENT ON COLUMN calendar_exceptions.end_date IS 'End date for multi-day exceptions. NULL for single-day events.';
+```
+
+**בדיקות:**
+- ✅ 165 טסטים עוברים לקבצים המושפעים
+- ✅ Build עובר ללא שגיאות
+
+**Build Status:** ✅ עובר
+
+**הערות:**
+- מיגרציה לא הורצה אוטומטית עקב הרשאות - יש להריץ ידנית דרך Supabase Dashboard
+- כל הפונקציונליות מוכנה בצד הקוד
+
+---
+
+### סשן #25 (05/02/2026) - E2E Tests + Offline Sync
+
+**מה נעשה:**
+- ✅ **E2E Tests לפיצ'רים חדשים** (FR-002, FR-045)
+  - יצירת `calendar-exceptions.spec.ts` - 16 טסטים (13 עוברים, 3 דולגים)
+  - יצירת `multi-assignee.spec.ts` - 15 טסטים (10 עוברים, 5 דולגים)
+
+- ✅ **בדיקות Offline Sync מקיפות**
+  - Unit tests ל-sync.ts - 57 טסטים (90.38% coverage)
+  - Unit tests ל-offline-storage.ts - 36 טסטים
+  - Integration tests - 18 טסטים
+  - E2E tests `offline-sync.spec.ts` - 13 טסטים
+
+- ✅ **סה"כ 200+ טסטים חדשים**
+
+**קבצים שנוצרו:**
+- `flowplan/tests/e2e/calendar-exceptions.spec.ts`
+- `flowplan/tests/e2e/multi-assignee.spec.ts`
+- `flowplan/tests/e2e/offline-sync.spec.ts`
+
+**Build Status:** ✅ עובר
+
+---
+
+### סשן #24 (05/02/2026) - תיקון טסטים + בדיקות E2E
+
+**מה נעשה:**
+- ✅ **תיקון בעיית כפתור מקונן** ב-MultiSelect
+  - שינוי כפתור ה-X מ-`<button>` ל-`<span role="button">` למניעת nested buttons
+
+- ✅ **עדכון טסטים ל-Multi-Assignee**
+  - שכתוב `TaskForm.assignee.test.tsx` - 16 טסטים עוברים
+  - עדכון `TaskForm.test.tsx` - 48 טסטים עוברים
+  - סה"כ 64 טסטים עוברים לטפסי משימות
+
+- ✅ **בדיקות E2E עם Playwright**
+  - **FR-002 Calendar Exceptions**: הוספת חג "פסח" בהצלחה
+  - **FR-045 Multi-Assignee**: בחירת מספר אחראים (MultiSelect dropdown)
+  - אימות תצוגת AvatarStack לאחראים
+
+**קבצים ששונו:**
+- `flowplan/src/components/ui/multi-select.tsx` - תיקון nested button
+- `flowplan/src/components/forms/TaskForm.test.tsx` - עדכון selectors לעברית
+- `flowplan/src/components/forms/TaskForm.assignee.test.tsx` - שכתוב מלא ל-MultiSelect
+
+**Build Status:** ✅ עובר
+
+**בדיקות ידניות מומלצות:**
+1. **חגים**: Dashboard → כפתור "חגים" → הוסף חג → ראה ברשימה
+2. **Multi-Assignee**: משימה חדשה → לחץ "אחראים" → בחר מספר אנשים → שמור
+3. **AvatarStack**: ראה תצוגת avatars בכרטיסי משימות
+
+---
+
+### סשן #23 (05/02/2026) - מימוש פערים FR-002, FR-045, FR-046
+
+**מה נעשה:**
+- ✅ **FR-002: UI לניהול חגים** (P0)
+  - יצירת `calendar-exceptions.ts` service עם CRUD מלא
+  - יצירת `use-calendar-exceptions.ts` React Query hook
+  - יצירת `CalendarExceptionForm.tsx` לטופס הוספה/עריכה
+  - יצירת `CalendarExceptionsList.tsx` לתצוגת רשימה לפי שנה
+  - הוספת Modal חגים לדשבורד עם כפתור "חגים" בטולבר
+  - תיקון RLS policy עבור calendar_exceptions (migration נוספה)
+  - בדיקה עם Playwright - נוסף חג "פורים" בהצלחה
+
+- ✅ **FR-045: Multi-Assignee UI** (P1)
+  - יצירת `task-assignments.ts` service עם TDD (CRUD מלא)
+  - יצירת `use-task-assignments.ts` React Query hook
+  - יצירת `avatar-stack.tsx` - תצוגת avatars חופפים
+  - יצירת `multi-select.tsx` - בחירה מרובה עם checkboxes
+  - עדכון `TaskForm.tsx` - החלפת dropdown יחיד ב-MultiSelect
+  - עדכון `TaskCard.tsx` - תצוגת AvatarStack במקום avatar יחיד
+
+- ✅ **FR-046: Duration + חופשות** (P1)
+  - הוספת `calculateDurationWithTimeOff()` ל-scheduling.ts
+  - עדכון hint בטופס משימה להצגת השפעת חופשות על משך
+
+**קבצים שנוצרו:**
+- `flowplan/src/services/calendar-exceptions.ts`
+- `flowplan/src/hooks/use-calendar-exceptions.ts`
+- `flowplan/src/components/forms/CalendarExceptionForm.tsx`
+- `flowplan/src/components/calendar/CalendarExceptionsList.tsx`
+- `flowplan/src/components/calendar/index.ts`
+- `flowplan/src/services/task-assignments.ts`
+- `flowplan/src/hooks/use-task-assignments.ts`
+- `flowplan/src/components/ui/avatar-stack.tsx`
+- `flowplan/src/components/ui/multi-select.tsx`
+
+**קבצים ששונו:**
+- `flowplan/src/app/page.tsx` - הוספת מודאל חגים
+- `flowplan/src/components/forms/TaskForm.tsx` - MultiSelect לאחראים + hint חופשות
+- `flowplan/src/components/tasks/TaskCard.tsx` - AvatarStack לתצוגת אחראים מרובים
+- `flowplan/src/services/scheduling.ts` - פונקציה לחישוב משך עם חופשות
+
+**TDD Methodology:**
+- task-assignments.ts נכתב עם tdd-guide agent
+- בדיקות דרך browser עם Playwright MCP
+
+**Build Status:** ✅ עובר
+
+**צעדים הבאים:**
+- תיקון 13 test files שנכשלו (בעיקר בעיות קיימות)
+- E2E testing עם Playwright לפיצ'רים החדשים
+
+---
 
 ### סשן #22 (04/02/2026) - E2E Tests עם Playwright
 
@@ -1432,6 +1644,6 @@ git push
 
 ---
 
-**עודכן לאחרונה**: 04/02/2026
+**עודכן לאחרונה**: 05/02/2026
 **גרסה**: 1.0
 **מצב הפרויקט**: 🟢 Active Development

@@ -1,12 +1,12 @@
 /**
  * TaskForm Assignee Selection Tests
  *
- * TDD: Tests for assignee selection functionality in TaskForm.
- * These tests verify the team member assignment feature.
+ * TDD: Tests for multi-assignee selection functionality in TaskForm.
+ * These tests verify the team member assignment feature using MultiSelect.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TaskForm, type TaskFormProps } from './TaskForm'
 import type { TeamMember } from '@/types/entities'
@@ -45,7 +45,7 @@ const mockTeamMembers: TeamMember[] = [
   },
 ]
 
-describe('TaskForm - Assignee Selection', () => {
+describe('TaskForm - Multi-Assignee Selection', () => {
   const defaultProps: TaskFormProps = {
     onSubmit: vi.fn(),
     onCancel: vi.fn(),
@@ -57,41 +57,48 @@ describe('TaskForm - Assignee Selection', () => {
   })
 
   describe('Rendering', () => {
-    it('renders assignee dropdown when teamMembers prop is provided', () => {
+    it('renders assignee multi-select when teamMembers prop is provided', () => {
       render(<TaskForm {...defaultProps} />)
 
-      expect(screen.getByTestId('task-assignee-select')).toBeInTheDocument()
+      expect(screen.getByTestId('multi-select-trigger')).toBeInTheDocument()
     })
 
-    it('does not render assignee dropdown when teamMembers prop is empty', () => {
+    it('does not render assignee select when teamMembers prop is empty', () => {
       render(<TaskForm {...defaultProps} teamMembers={[]} />)
 
-      expect(screen.queryByTestId('task-assignee-select')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('multi-select-trigger')).not.toBeInTheDocument()
     })
 
-    it('does not render assignee dropdown when teamMembers prop is undefined', () => {
+    it('does not render assignee select when teamMembers prop is undefined', () => {
       const { teamMembers, ...propsWithoutMembers } = defaultProps
       render(<TaskForm {...propsWithoutMembers} />)
 
-      expect(screen.queryByTestId('task-assignee-select')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('multi-select-trigger')).not.toBeInTheDocument()
     })
 
-    it('displays team members in the dropdown', () => {
+    it('displays team members in the dropdown when clicked', async () => {
+      const user = userEvent.setup()
       render(<TaskForm {...defaultProps} />)
 
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      expect(assigneeSelect).toBeInTheDocument()
+      // Open the dropdown
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
+
+      // Check that dropdown is open
+      const dropdown = screen.getByTestId('multi-select-dropdown')
+      expect(dropdown).toBeInTheDocument()
 
       // Check that member names appear as options
-      expect(screen.getByRole('option', { name: /David Cohen/i })).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: /Sarah Levy/i })).toBeInTheDocument()
-      expect(screen.getByRole('option', { name: /Michael Ben-David/i })).toBeInTheDocument()
+      expect(screen.getByTestId('option-member-1')).toBeInTheDocument()
+      expect(screen.getByTestId('option-member-2')).toBeInTheDocument()
+      expect(screen.getByTestId('option-member-3')).toBeInTheDocument()
     })
 
-    it('includes an "unassigned" option', () => {
+    it('shows placeholder when no assignees selected', () => {
       render(<TaskForm {...defaultProps} />)
 
-      expect(screen.getByRole('option', { name: /unassigned|none|select/i })).toBeInTheDocument()
+      const trigger = screen.getByTestId('multi-select-trigger')
+      expect(trigger).toHaveTextContent('בחר אחראים...')
     })
   })
 
@@ -100,13 +107,35 @@ describe('TaskForm - Assignee Selection', () => {
       const user = userEvent.setup()
       render(<TaskForm {...defaultProps} />)
 
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      await user.selectOptions(assigneeSelect, 'member-1')
+      // Open dropdown
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
 
-      expect(assigneeSelect).toHaveValue('member-1')
+      // Select a member
+      await user.click(screen.getByTestId('option-member-1'))
+
+      // The selected member's name should appear in the trigger
+      expect(trigger).toHaveTextContent('David Cohen')
     })
 
-    it('includes assignee_id in submitted data when selected', async () => {
+    it('allows selecting multiple team members', async () => {
+      const user = userEvent.setup()
+      render(<TaskForm {...defaultProps} />)
+
+      // Open dropdown
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
+
+      // Select multiple members
+      await user.click(screen.getByTestId('option-member-1'))
+      await user.click(screen.getByTestId('option-member-2'))
+
+      // Both names should appear
+      expect(trigger).toHaveTextContent('David Cohen')
+      expect(trigger).toHaveTextContent('Sarah Levy')
+    })
+
+    it('includes assignee_ids in submitted data when selected', async () => {
       const user = userEvent.setup()
       const onSubmit = vi.fn()
       render(<TaskForm {...defaultProps} onSubmit={onSubmit} />)
@@ -114,40 +143,36 @@ describe('TaskForm - Assignee Selection', () => {
       // Fill required fields
       await user.type(screen.getByTestId('task-title-input'), 'Test Task')
 
-      // Select assignee
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      await user.selectOptions(assigneeSelect, 'member-2')
+      // Open dropdown and select assignees
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
+      await user.click(screen.getByTestId('option-member-2'))
 
-      // Submit (button text is in Hebrew)
-      const submitButtons = screen.getAllByRole('button')
-      const submitButton = submitButtons.find(btn => btn.getAttribute('type') === 'submit')!
+      // Submit
+      const submitButton = screen.getByRole('button', { name: /צור משימה/i })
       await user.click(submitButton)
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
             title: 'Test Task',
-            assignee_id: 'member-2',
+            assignee_id: 'member-2', // For backward compatibility
+            assignee_ids: ['member-2'],
           })
         )
       })
     })
 
-    it('submits with undefined assignee_id when "unassigned" is selected', async () => {
+    it('submits with undefined assignee_id when no assignees selected', async () => {
       const user = userEvent.setup()
       const onSubmit = vi.fn()
       render(<TaskForm {...defaultProps} onSubmit={onSubmit} />)
 
-      // Fill required fields
+      // Fill required fields only
       await user.type(screen.getByTestId('task-title-input'), 'Unassigned Task')
 
-      // Ensure unassigned is selected (default)
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      expect(assigneeSelect).toHaveValue('')
-
-      // Submit (button text is in Hebrew)
-      const submitButtons = screen.getAllByRole('button')
-      const submitButton = submitButtons.find(btn => btn.getAttribute('type') === 'submit')!
+      // Submit without selecting assignees
+      const submitButton = screen.getByRole('button', { name: /צור משימה/i })
       await user.click(submitButton)
 
       await waitFor(() => {
@@ -155,14 +180,53 @@ describe('TaskForm - Assignee Selection', () => {
           expect.objectContaining({
             title: 'Unassigned Task',
             assignee_id: undefined,
+            assignee_ids: undefined,
           })
         )
       })
     })
+
+    it('allows deselecting a team member', async () => {
+      const user = userEvent.setup()
+      render(<TaskForm {...defaultProps} />)
+
+      // Open dropdown and select
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
+      await user.click(screen.getByTestId('option-member-1'))
+
+      expect(trigger).toHaveTextContent('David Cohen')
+
+      // Click again to deselect
+      await user.click(screen.getByTestId('option-member-1'))
+
+      // Should show placeholder again
+      expect(trigger).toHaveTextContent('בחר אחראים...')
+    })
+
+    it('can remove assignee by clicking X button', async () => {
+      const user = userEvent.setup()
+      render(<TaskForm {...defaultProps} />)
+
+      // Open dropdown and select
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
+      await user.click(screen.getByTestId('option-member-1'))
+
+      // Close dropdown by clicking outside
+      await user.click(document.body)
+
+      // Find and click remove button
+      const removeButton = screen.getByTestId('remove-member-1')
+      await user.click(removeButton)
+
+      // Should show placeholder again
+      expect(trigger).toHaveTextContent('בחר אחראים...')
+    })
   })
 
   describe('Edit Mode', () => {
-    it('pre-selects the assignee when editing a task', () => {
+    it('pre-selects the assignee when editing a task with legacy assignee_id', () => {
       render(
         <TaskForm
           {...defaultProps}
@@ -176,11 +240,30 @@ describe('TaskForm - Assignee Selection', () => {
         />
       )
 
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      expect(assigneeSelect).toHaveValue('member-3')
+      const trigger = screen.getByTestId('multi-select-trigger')
+      expect(trigger).toHaveTextContent('Michael Ben-David')
     })
 
-    it('allows changing the assignee in edit mode', async () => {
+    it('pre-selects multiple assignees when editing with assignee_ids', () => {
+      render(
+        <TaskForm
+          {...defaultProps}
+          mode="edit"
+          initialValues={{
+            title: 'Team Task',
+            priority: 'high',
+            duration: 3,
+            assignee_ids: ['member-1', 'member-2'],
+          }}
+        />
+      )
+
+      const trigger = screen.getByTestId('multi-select-trigger')
+      expect(trigger).toHaveTextContent('David Cohen')
+      expect(trigger).toHaveTextContent('Sarah Levy')
+    })
+
+    it('allows adding assignees in edit mode', async () => {
       const user = userEvent.setup()
       const onSubmit = vi.fn()
       render(
@@ -192,32 +275,31 @@ describe('TaskForm - Assignee Selection', () => {
             title: 'Existing Task',
             priority: 'medium',
             duration: 2,
-            assignee_id: 'member-1',
+            assignee_ids: ['member-1'],
           }}
         />
       )
 
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      expect(assigneeSelect).toHaveValue('member-1')
+      // Open dropdown and add another member
+      const trigger = screen.getByTestId('multi-select-trigger')
+      await user.click(trigger)
+      await user.click(screen.getByTestId('option-member-2'))
 
-      // Change to different member
-      await user.selectOptions(assigneeSelect, 'member-2')
-
-      // Submit (button text is in Hebrew)
-      const submitButtons = screen.getAllByRole('button')
-      const submitButton = submitButtons.find(btn => btn.getAttribute('type') === 'submit')!
+      // Submit
+      const submitButton = screen.getByRole('button', { name: /עדכן משימה/i })
       await user.click(submitButton)
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
-            assignee_id: 'member-2',
+            assignee_id: 'member-1', // First in array for backward compatibility
+            assignee_ids: ['member-1', 'member-2'],
           })
         )
       })
     })
 
-    it('allows removing assignee in edit mode', async () => {
+    it('allows removing all assignees in edit mode', async () => {
       const user = userEvent.setup()
       const onSubmit = vi.fn()
       render(
@@ -229,25 +311,24 @@ describe('TaskForm - Assignee Selection', () => {
             title: 'Assigned Task',
             priority: 'low',
             duration: 1,
-            assignee_id: 'member-2',
+            assignee_ids: ['member-2'],
           }}
         />
       )
 
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
+      // Remove the assignee using X button
+      const removeButton = screen.getByTestId('remove-member-2')
+      await user.click(removeButton)
 
-      // Select unassigned
-      await user.selectOptions(assigneeSelect, '')
-
-      // Submit (button text is in Hebrew)
-      const submitButtons = screen.getAllByRole('button')
-      const submitButton = submitButtons.find(btn => btn.getAttribute('type') === 'submit')!
+      // Submit
+      const submitButton = screen.getByRole('button', { name: /עדכן משימה/i })
       await user.click(submitButton)
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
             assignee_id: undefined,
+            assignee_ids: undefined,
           })
         )
       })
@@ -255,11 +336,11 @@ describe('TaskForm - Assignee Selection', () => {
   })
 
   describe('Loading State', () => {
-    it('disables assignee dropdown when loading', () => {
+    it('disables assignee select when loading', () => {
       render(<TaskForm {...defaultProps} isLoading />)
 
-      const assigneeSelect = screen.getByTestId('task-assignee-select')
-      expect(assigneeSelect).toBeDisabled()
+      const trigger = screen.getByTestId('multi-select-trigger')
+      expect(trigger).toBeDisabled()
     })
   })
 })

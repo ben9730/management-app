@@ -50,7 +50,11 @@
       "Bash(powershell -Command \"Get-ChildItem ''d:\\\\claude code\\\\memgment proj\\\\flowplan\\\\src\\\\app'' -Directory | Select-Object Name\")",
       "Bash(npm run start:*)",
       "WebFetch(domain:status.anthropic.com)",
-      "WebFetch(domain:status.claude.com)"
+      "WebFetch(domain:status.claude.com)",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__list_organizations",
+      "Bash(Get-ChildItem -Path \"d:\\\\claude code\\\\memgment proj\\\\flowplan\\\\src\" -Recurse -Filter \"*.test.*\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

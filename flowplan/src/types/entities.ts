@@ -137,14 +137,16 @@ export interface CreateAuditFindingInput {
 
 export interface CalendarException extends BaseEntity {
   project_id: string
-  date: Date
+  date: Date // Start date (or single date for one-day exceptions)
+  end_date?: Date | null // End date for multi-day exceptions (e.g., Passover week)
   type: CalendarExceptionType
   name: string | null
 }
 
 export interface CreateCalendarExceptionInput {
   project_id: string
-  date: Date
+  date: Date // Start date
+  end_date?: Date | null // End date (optional, for multi-day exceptions)
   type: CalendarExceptionType
   name?: string | null
 }

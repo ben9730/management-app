@@ -15,7 +15,8 @@ import type { ProjectPhase, Task, TeamMember } from '@/types/entities'
 export interface PhaseSectionProps {
   phase: ProjectPhase
   tasks: Task[]
-  taskAssignees?: Record<string, TeamMember>
+  /** Map of task_id -> array of team members (multi-assignee support) */
+  taskAssignees?: Record<string, TeamMember[]>
   taskSlackValues?: Record<string, number>
   criticalPathTaskIds?: string[]
   defaultCollapsed?: boolean
@@ -169,7 +170,7 @@ const PhaseSection = React.forwardRef<HTMLDivElement, PhaseSectionProps>(
                 <TaskCard
                   key={task.id}
                   task={task}
-                  assignee={taskAssignees[task.id]}
+                  assignees={taskAssignees[task.id]}
                   slack={taskSlackValues[task.id]}
                   isCriticalPath={criticalPathTaskIds.includes(task.id)}
                   onClick={onTaskClick}

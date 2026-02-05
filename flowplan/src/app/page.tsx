@@ -12,7 +12,7 @@ import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
 import { PhaseForm } from '@/components/forms/PhaseForm'
-import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown, MessageSquare, X } from 'lucide-react'
+import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown, MessageSquare, X, CalendarDays } from 'lucide-react'
 import { AIChat } from '@/components/ai'
 import type { RAGResponse, RAGService } from '@/services/rag'
 
@@ -21,6 +21,11 @@ import { useProjects, useCreateProject, useUpdateProject } from '@/hooks/use-pro
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from '@/hooks/use-tasks'
 import { usePhases, useCreatePhase, useUpdatePhase } from '@/hooks/use-phases'
 import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-members'
+import { useCalendarExceptions, useCreateCalendarException, useUpdateCalendarException, useDeleteCalendarException } from '@/hooks/use-calendar-exceptions'
+import { useTaskAssignments, useTaskAssignmentsByProject, useCreateTaskAssignment, useDeleteTaskAssignment } from '@/hooks/use-task-assignments'
+import { CalendarExceptionsList } from '@/components/calendar'
+import { CalendarExceptionForm, type CalendarExceptionFormData } from '@/components/forms/CalendarExceptionForm'
+import type { CalendarException } from '@/types/entities'
 
 // Default organization ID (will be replaced with auth later)
 const DEFAULT_ORG_ID = 'org-default'
@@ -207,6 +212,33 @@ function DashboardContent() {
   const [phaseErrorMessage, setPhaseErrorMessage] = useState<string | null>(null)
   const [taskErrorMessage, setTaskErrorMessage] = useState<string | null>(null)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [editingCalendarException, setEditingCalendarException] = useState<CalendarException | null>(null)
+  const [calendarErrorMessage, setCalendarErrorMessage] = useState<string | null>(null)
+
+  // Calendar Exceptions hooks
+  const { data: calendarExceptions = [], isLoading: isLoadingCalendar } = useCalendarExceptions(projectId)
+  const createCalendarExceptionMutation = useCreateCalendarException()
+  const updateCalendarExceptionMutation = useUpdateCalendarException()
+  const deleteCalendarExceptionMutation = useDeleteCalendarException()
+
+  // Task Assignments hooks - load assignments for the task being edited AND all project tasks
+  const { data: editingTaskAssignments = [] } = useTaskAssignments(editingTask?.id ?? '')
+  const { data: projectTaskAssignments = [] } = useTaskAssignmentsByProject(projectId)
+  const createTaskAssignmentMutation = useCreateTaskAssignment()
+  const deleteTaskAssignmentMutation = useDeleteTaskAssignment()
+
+  // Extract assignee IDs from task assignments for edit mode
+  const editingTaskAssigneeIds = useMemo(() => {
+    if (editingTaskAssignments.length > 0) {
+      return editingTaskAssignments.map(a => a.user_id)
+    }
+    // Fallback to legacy assignee_id if no task_assignments exist
+    if (editingTask?.assignee_id) {
+      return [editingTask.assignee_id]
+    }
+    return []
+  }, [editingTaskAssignments, editingTask])
 
   // AI RAG Service using Gemini via API route
   const ragService = useMemo(() => createGeminiRAGService(), [])
@@ -277,16 +309,37 @@ function DashboardContent() {
     return member.email // Last resort: show email
   }, [teamMembers])
 
-  // Build taskAssignees map for PhaseSection
+  // Build taskAssignees map for PhaseSection (multi-assignee support)
+  // Uses task_assignments table, falls back to legacy assignee_id
   const taskAssignees = useMemo(() => {
-    return tasks.reduce((acc, task) => {
-      if (task.assignee_id) {
-        const member = teamMembers.find(m => m.id === task.assignee_id)
-        if (member) acc[task.id] = member
+    const result: Record<string, TeamMember[]> = {}
+
+    // First, build from task_assignments (new multi-assignee system)
+    projectTaskAssignments.forEach((assignment) => {
+      const member = teamMembers.find(m => m.id === assignment.user_id)
+      if (member) {
+        if (!result[assignment.task_id]) {
+          result[assignment.task_id] = []
+        }
+        // Avoid duplicates
+        if (!result[assignment.task_id].some(m => m.id === member.id)) {
+          result[assignment.task_id].push(member)
+        }
       }
-      return acc
-    }, {} as Record<string, TeamMember>)
-  }, [tasks, teamMembers])
+    })
+
+    // Then, add legacy assignee_id for tasks without assignments
+    tasks.forEach((task) => {
+      if (task.assignee_id && !result[task.id]) {
+        const member = teamMembers.find(m => m.id === task.assignee_id)
+        if (member) {
+          result[task.id] = [member]
+        }
+      }
+    })
+
+    return result
+  }, [tasks, teamMembers, projectTaskAssignments])
 
   // Handle task status change
   const handleTaskStatusChange = useCallback((taskId: string, newStatus: Task['status']) => {
@@ -324,9 +377,48 @@ function DashboardContent() {
   // Handle task form submit
   const handleTaskFormSubmit = useCallback((data: {
     title: string; description?: string; priority: Task['priority']
-    duration: number; estimated_hours?: number; start_date?: string; assignee_id?: string
+    duration: number; estimated_hours?: number; start_date?: string
+    assignee_id?: string; assignee_ids?: string[]
   }) => {
     setTaskErrorMessage(null) // Clear previous errors
+
+    // Helper to sync task assignments after task is saved
+    const syncTaskAssignments = async (taskId: string, newAssigneeIds: string[] = []) => {
+      const currentAssignmentIds = editingTaskAssignments.map(a => a.user_id)
+
+      // Find assignments to add
+      const toAdd = newAssigneeIds.filter(id => !currentAssignmentIds.includes(id))
+
+      // Find assignments to remove
+      const toRemove = editingTaskAssignments.filter(a => !newAssigneeIds.includes(a.user_id))
+
+      // Add new assignments
+      for (const userId of toAdd) {
+        try {
+          await createTaskAssignmentMutation.mutateAsync({
+            task_id: taskId,
+            user_id: userId,
+            allocated_hours: data.estimated_hours || data.duration * 8, // Default 8 hours/day
+          })
+        } catch (error) {
+          console.error('Failed to create task assignment:', error)
+        }
+      }
+
+      // Remove old assignments
+      for (const assignment of toRemove) {
+        try {
+          await deleteTaskAssignmentMutation.mutateAsync({
+            id: assignment.id,
+            taskId: assignment.task_id,
+            userId: assignment.user_id,
+          })
+        } catch (error) {
+          console.error('Failed to delete task assignment:', error)
+        }
+      }
+    }
+
     if (editingTask) {
       // Update existing task
       updateTaskMutation.mutate({
@@ -341,7 +433,11 @@ function DashboardContent() {
           assignee_id: data.assignee_id || null,
         }
       }, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          // Sync task assignments for multi-assignee support
+          if (data.assignee_ids) {
+            await syncTaskAssignments(editingTask.id, data.assignee_ids)
+          }
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
@@ -366,7 +462,21 @@ function DashboardContent() {
         assignee_id: data.assignee_id || null,
         status: 'pending',
       }, {
-        onSuccess: () => {
+        onSuccess: async (newTask) => {
+          // Create task assignments for multi-assignee support
+          if (data.assignee_ids && data.assignee_ids.length > 0 && newTask) {
+            for (const userId of data.assignee_ids) {
+              try {
+                await createTaskAssignmentMutation.mutateAsync({
+                  task_id: newTask.id,
+                  user_id: userId,
+                  allocated_hours: data.estimated_hours || data.duration * 8,
+                })
+              } catch (error) {
+                console.error('Failed to create task assignment:', error)
+              }
+            }
+          }
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
@@ -378,7 +488,7 @@ function DashboardContent() {
         }
       })
     }
-  }, [editingTask, projectId, selectedPhaseId, createTaskMutation, updateTaskMutation])
+  }, [editingTask, projectId, selectedPhaseId, createTaskMutation, updateTaskMutation, editingTaskAssignments, createTaskAssignmentMutation, deleteTaskAssignmentMutation])
 
   // Handle project form submit (for creating or editing project)
   const handleProjectFormSubmit = useCallback((data: {
@@ -484,6 +594,71 @@ function DashboardContent() {
     }
   }, [editingPhase, projectId, phases.length, createPhaseMutation, updatePhaseMutation])
 
+  // Handle calendar exception add
+  const handleAddCalendarException = useCallback(() => {
+    setEditingCalendarException(null)
+    setCalendarErrorMessage(null)
+  }, [])
+
+  // Handle calendar exception edit
+  const handleEditCalendarException = useCallback((exception: CalendarException) => {
+    setEditingCalendarException(exception)
+    setCalendarErrorMessage(null)
+  }, [])
+
+  // Handle calendar exception delete
+  const handleDeleteCalendarException = useCallback((id: string) => {
+    deleteCalendarExceptionMutation.mutate(id, {
+      onError: (error) => {
+        console.error('Failed to delete calendar exception:', error)
+        setCalendarErrorMessage(error instanceof Error ? error.message : 'שגיאה במחיקת החג')
+      }
+    })
+  }, [deleteCalendarExceptionMutation])
+
+  // Handle calendar exception form submit
+  const handleCalendarExceptionFormSubmit = useCallback((data: CalendarExceptionFormData) => {
+    setCalendarErrorMessage(null)
+    if (editingCalendarException) {
+      // Update existing
+      updateCalendarExceptionMutation.mutate({
+        id: editingCalendarException.id,
+        updates: {
+          date: data.date,
+          end_date: data.end_date || null,
+          type: data.type,
+          name: data.name || null,
+        }
+      }, {
+        onSuccess: () => {
+          setEditingCalendarException(null)
+          setCalendarErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to update calendar exception:', error)
+          setCalendarErrorMessage(error instanceof Error ? error.message : 'שגיאה בעדכון החג')
+        }
+      })
+    } else {
+      // Create new
+      createCalendarExceptionMutation.mutate({
+        project_id: projectId,
+        date: data.date,
+        end_date: data.end_date || null,
+        type: data.type,
+        name: data.name || null,
+      }, {
+        onSuccess: () => {
+          setCalendarErrorMessage(null)
+        },
+        onError: (error) => {
+          console.error('Failed to create calendar exception:', error)
+          setCalendarErrorMessage(error instanceof Error ? error.message : 'שגיאה ביצירת החג')
+        }
+      })
+    }
+  }, [editingCalendarException, projectId, createCalendarExceptionMutation, updateCalendarExceptionMutation])
+
   // Loading UI
   if (isLoading) {
     return (
@@ -571,6 +746,14 @@ function DashboardContent() {
             >
               <span className="material-icons text-lg">settings</span>
               הגדרות פרויקט
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-surface border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+              onClick={() => setIsCalendarModalOpen(true)}
+            >
+              <CalendarDays className="w-5 h-5" />
+              חגים
             </Button>
             {FEATURE_FLAGS.AI_CHAT && (
               <Button
@@ -788,14 +971,24 @@ function DashboardContent() {
                         </div>
                       </div>
                     </div>
-                    {selectedTask.assignee_id && (
+                    {/* Show assignees from task_assignments or legacy assignee_id */}
+                    {(taskAssignees[selectedTask.id]?.length > 0 || selectedTask.assignee_id) && (
                       <div className="flex items-center gap-4 text-slate-300">
                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
                           <User className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">אחראי</div>
-                          <div className="text-sm font-bold">{getTeamMemberName(selectedTask.assignee_id)}</div>
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
+                            {taskAssignees[selectedTask.id]?.length > 1 ? 'אחראים' : 'אחראי'}
+                          </div>
+                          <div className="text-sm font-bold">
+                            {taskAssignees[selectedTask.id]?.length > 0
+                              ? taskAssignees[selectedTask.id].map(m =>
+                                  m.display_name || `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.email
+                                ).join(', ')
+                              : getTeamMemberName(selectedTask.assignee_id)
+                            }
+                          </div>
                         </div>
                       </div>
                     )}
@@ -869,9 +1062,12 @@ function DashboardContent() {
             duration: editingTask.duration,
             estimated_hours: editingTask.estimated_hours || undefined,
             start_date: typeof editingTask.start_date === 'string' ? editingTask.start_date : undefined,
-            assignee_id: editingTask.assignee_id || undefined
+            assignee_id: editingTask.assignee_id || undefined,
+            // Use loaded task assignments for multi-assignee support
+            assignee_ids: editingTaskAssigneeIds.length > 0 ? editingTaskAssigneeIds : undefined,
           } : undefined}
           teamMembers={teamMembers}
+          calendarExceptions={calendarExceptions}
           onSubmit={handleTaskFormSubmit}
           onCancel={() => {
             if (!createTaskMutation.isPending && !updateTaskMutation.isPending) {
@@ -948,6 +1144,67 @@ function DashboardContent() {
           }}
           isLoading={createPhaseMutation.isPending || updatePhaseMutation.isPending}
         />
+      </Modal>
+
+      {/* Calendar Exceptions Modal */}
+      <Modal
+        isOpen={isCalendarModalOpen}
+        onClose={() => {
+          if (!createCalendarExceptionMutation.isPending && !updateCalendarExceptionMutation.isPending) {
+            setIsCalendarModalOpen(false)
+            setEditingCalendarException(null)
+            setCalendarErrorMessage(null)
+          }
+        }}
+        title="ניהול חגים וימים לא עובדים"
+        size="lg"
+      >
+        {calendarErrorMessage && (
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+            {calendarErrorMessage}
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {/* Form for adding/editing */}
+          <div className="bg-slate-800/30 rounded-lg p-4 border border-slate-700">
+            <h4 className="text-sm font-medium text-slate-300 mb-4">
+              {editingCalendarException ? 'עריכת חג/יום לא עובד' : 'הוספת חג/יום לא עובד'}
+            </h4>
+            <CalendarExceptionForm
+              mode={editingCalendarException ? 'edit' : 'create'}
+              initialValues={editingCalendarException ? {
+                date: typeof editingCalendarException.date === 'string'
+                  ? new Date(editingCalendarException.date)
+                  : editingCalendarException.date,
+                end_date: editingCalendarException.end_date
+                  ? (typeof editingCalendarException.end_date === 'string'
+                      ? new Date(editingCalendarException.end_date)
+                      : editingCalendarException.end_date)
+                  : undefined,
+                type: editingCalendarException.type,
+                name: editingCalendarException.name || undefined,
+              } : undefined}
+              onSubmit={handleCalendarExceptionFormSubmit}
+              onCancel={() => {
+                if (editingCalendarException) {
+                  setEditingCalendarException(null)
+                } else {
+                  setIsCalendarModalOpen(false)
+                }
+              }}
+              isLoading={createCalendarExceptionMutation.isPending || updateCalendarExceptionMutation.isPending}
+            />
+          </div>
+
+          {/* List of existing exceptions */}
+          <CalendarExceptionsList
+            exceptions={calendarExceptions}
+            isLoading={isLoadingCalendar}
+            onEdit={handleEditCalendarException}
+            onDelete={handleDeleteCalendarException}
+          />
+        </div>
       </Modal>
 
       {/* AI Chat Panel - Disabled via FEATURE_FLAGS.AI_CHAT */}

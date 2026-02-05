@@ -8,12 +8,16 @@
 import * as React from 'react'
 import { cn, formatDateDisplay, parseDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { AvatarStack, AvatarData } from '@/components/ui/avatar-stack'
 import { Check, Calendar, User, Zap, Circle, Target } from 'lucide-react'
 import type { Task, TeamMember } from '@/types/entities'
 
 export interface TaskCardProps {
   task: Task
+  /** @deprecated Use assignees for multi-assignee support */
   assignee?: TeamMember | null
+  /** Array of team members assigned to this task */
+  assignees?: TeamMember[]
   slack?: number
   isCriticalPath?: boolean
   showProgress?: boolean
@@ -63,11 +67,28 @@ function getInitials(member?: TeamMember | null): string {
   return member.email?.charAt(0).toUpperCase() || '?'
 }
 
+/**
+ * Convert TeamMember to AvatarData for AvatarStack
+ */
+function memberToAvatar(member: TeamMember): AvatarData {
+  const displayName = member.display_name ||
+    `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+    member.email || 'Unknown'
+
+  return {
+    id: member.id,
+    name: displayName,
+    email: member.email,
+    avatarUrl: member.avatar_url,
+  }
+}
+
 const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
   (
     {
       task,
       assignee,
+      assignees,
       slack,
       isCriticalPath = false,
       showProgress = false,
@@ -78,6 +99,17 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
     },
     ref
   ) => {
+    // Build avatar list from assignees or legacy assignee
+    const avatarList = React.useMemo((): AvatarData[] => {
+      if (assignees && assignees.length > 0) {
+        return assignees.map(memberToAvatar)
+      }
+      if (assignee) {
+        return [memberToAvatar(assignee)]
+      }
+      return []
+    }, [assignees, assignee])
+
     const handleCardClick = () => {
       if (onClick) {
         onClick(task)
@@ -103,10 +135,18 @@ const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(
         )}
         onClick={handleCardClick}
       >
-        {/* Assignee Avatar (Right side) */}
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0">
-          {getInitials(assignee)}
-        </div>
+        {/* Assignee Avatars (Right side) - use AvatarStack for multi-assignee */}
+        {avatarList.length > 0 ? (
+          <AvatarStack
+            avatars={avatarList}
+            max={3}
+            size="sm"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold flex-shrink-0">
+            ?
+          </div>
+        )}
 
         {/* Title & Info (Middle) */}
         <div className="flex-grow min-w-0">

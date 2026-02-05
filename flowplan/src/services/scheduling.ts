@@ -372,6 +372,88 @@ export class SchedulingService {
   }
 
   /**
+   * Calculate effective duration considering time-off in the task period.
+   * Returns the extended duration and information about conflicting time-off.
+   *
+   * @param estimatedHours - The estimated hours for the task
+   * @param startDate - The task start date
+   * @param member - The team member assigned
+   * @param timeOff - Array of approved time-off periods for the member
+   * @param workDays - Working days of the week (0=Sunday, etc.)
+   * @param holidays - Project-level holidays
+   * @returns Object with effectiveDuration and any overlapping time-off days
+   */
+  calculateDurationWithTimeOff(
+    estimatedHours: number,
+    startDate: Date,
+    member: TeamMember,
+    timeOff: EmployeeTimeOff[],
+    workDays: number[] = [0, 1, 2, 3, 4], // Default: Sunday-Thursday
+    holidays: Date[] = []
+  ): {
+    baseDuration: number
+    effectiveDuration: number
+    timeOffDays: number
+    affectedTimeOff: EmployeeTimeOff[]
+  } {
+    // Calculate base duration from hours
+    const baseDuration = this.calculateEffectiveDuration(estimatedHours, member)
+
+    // Get member's work days
+    const memberWorkDays = member.work_days || workDays
+
+    // Filter to approved time-off only
+    const approvedTimeOff = timeOff.filter(to => to.status === 'approved')
+
+    if (approvedTimeOff.length === 0) {
+      return {
+        baseDuration,
+        effectiveDuration: baseDuration,
+        timeOffDays: 0,
+        affectedTimeOff: [],
+      }
+    }
+
+    // Calculate the initial end date without time-off
+    const initialEndDate = this.addWorkingDays(startDate, baseDuration, memberWorkDays, holidays)
+
+    // Find time-off that overlaps with the task period
+    const affectedTimeOff: EmployeeTimeOff[] = []
+    let timeOffDays = 0
+
+    for (const to of approvedTimeOff) {
+      const toStart = new Date(to.start_date)
+      const toEnd = new Date(to.end_date)
+
+      // Check if time-off overlaps with task period
+      if (toEnd >= startDate && toStart <= initialEndDate) {
+        affectedTimeOff.push(to)
+
+        // Count the time-off days that fall on working days within the task period
+        let current = new Date(Math.max(toStart.getTime(), startDate.getTime()))
+        const periodEnd = new Date(Math.min(toEnd.getTime(), initialEndDate.getTime()))
+
+        while (current <= periodEnd) {
+          if (this.isWorkingDay(current, memberWorkDays, holidays)) {
+            timeOffDays++
+          }
+          current = this.addDays(current, 1)
+        }
+      }
+    }
+
+    // Effective duration = base duration + time-off days that fall on working days
+    const effectiveDuration = baseDuration + timeOffDays
+
+    return {
+      baseDuration,
+      effectiveDuration,
+      timeOffDays,
+      affectedTimeOff,
+    }
+  }
+
+  /**
    * Main method: Calculate complete critical path
    */
   calculateCriticalPath(
