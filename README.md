@@ -8,6 +8,10 @@ and **offline-first** capabilities into a modern, dark-themed web application.
 
 [Features](#features) | [Tech Stack](#tech-stack) | [Getting Started](#getting-started) | [Architecture](#architecture) | [Testing](#testing)
 
+[![Demo Video](https://img.youtube.com/vi/k0eFrVMY10g/maxresdefault.jpg)](https://www.youtube.com/watch?v=k0eFrVMY10g)
+
+**[▶ צפה בסרטון הדמו](https://www.youtube.com/watch?v=k0eFrVMY10g)**
+
 </div>
 
 ---
