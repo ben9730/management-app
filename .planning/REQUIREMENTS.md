@@ -47,21 +47,21 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PDEP-01 | — | Pending |
-| PDEP-02 | — | Pending |
-| PDEP-03 | — | Pending |
-| PDEP-04 | — | Pending |
-| PDEP-05 | — | Pending |
-| PDEP-06 | — | Pending |
-| NOTF-01 | — | Pending |
-| NOTF-02 | — | Pending |
-| NOTF-03 | — | Pending |
+| PDEP-01 | Phase 1 | Pending |
+| PDEP-02 | Phase 1 | Pending |
+| PDEP-03 | Phase 2 | Pending |
+| PDEP-04 | Phase 2 | Pending |
+| PDEP-05 | Phase 1 | Pending |
+| PDEP-06 | Phase 2 | Pending |
+| NOTF-01 | Phase 3 | Pending |
+| NOTF-02 | Phase 3 | Pending |
+| NOTF-03 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after initial definition*
+*Last updated: 2026-02-12 after roadmap creation*
