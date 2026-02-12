@@ -1,0 +1,67 @@
+# Requirements: FlowPlan — Phase Dependencies & Notifications
+
+**Defined:** 2026-02-12
+**Core Value:** Phases execute in order — users cannot start work on Phase N+1 until Phase N is fully complete
+
+## v1 Requirements
+
+### Phase Dependencies
+
+- [ ] **PDEP-01**: System determines phase lock status — a phase is locked if any task in the previous phase (by phase_order) is not completed
+- [ ] **PDEP-02**: First phase in a project is always unlocked
+- [ ] **PDEP-03**: User cannot edit, change status, or modify tasks in a locked phase
+- [ ] **PDEP-04**: Locked phase section displays a visual lock indicator (icon/overlay) showing it's blocked
+- [ ] **PDEP-05**: When the last incomplete task in a phase is marked complete, the next phase automatically unlocks
+- [ ] **PDEP-06**: Phase section header shows completion progress (e.g., "3/5 tasks complete")
+
+### Notifications
+
+- [ ] **NOTF-01**: Toast notification appears when a phase completes and the next phase unlocks
+- [ ] **NOTF-02**: Toast shows phase name that completed and phase name that unlocked
+- [ ] **NOTF-03**: Toast auto-dismisses after 5 seconds with manual close option
+
+## v2 Requirements
+
+### Extended Notifications
+
+- **NOTF-04**: Notification history panel with timeline
+- **NOTF-05**: Email notifications for phase completion
+- **NOTF-06**: Deadline approaching warnings
+
+### Advanced Phase Logic
+
+- **PDEP-07**: Custom phase dependency graphs (non-sequential)
+- **PDEP-08**: Partial phase unlock (configurable completion threshold)
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Email/push notifications | In-app Toast is sufficient for v1 |
+| Notification history panel | Ephemeral Toast only — keep it lightweight |
+| Partial phase unlocking (80% etc.) | Strict 100% completion required — user's explicit choice |
+| Non-sequential phase dependencies | Sequential only — matches existing phase_order model |
+| Phase-level CPM scheduling | Task-level CPM already exists — phase dependencies are simpler |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PDEP-01 | — | Pending |
+| PDEP-02 | — | Pending |
+| PDEP-03 | — | Pending |
+| PDEP-04 | — | Pending |
+| PDEP-05 | — | Pending |
+| PDEP-06 | — | Pending |
+| NOTF-01 | — | Pending |
+| NOTF-02 | — | Pending |
+| NOTF-03 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 9 total
+- Mapped to phases: 0
+- Unmapped: 9
+
+---
+*Requirements defined: 2026-02-12*
+*Last updated: 2026-02-12 after initial definition*
