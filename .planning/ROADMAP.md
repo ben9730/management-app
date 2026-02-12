@@ -6,7 +6,7 @@ This milestone adds sequential phase enforcement to FlowPlan. We start by buildi
 
 ## Phases
 
-- [ ] **Phase 1: Phase Lock Logic** - Service layer that determines phase lock status and detects completion
+- [x] **Phase 1: Phase Lock Logic** - Service layer that determines phase lock status and detects completion
 - [ ] **Phase 2: Lock Enforcement UI** - Visual indicators, interaction blocking, and progress display
 - [ ] **Phase 3: Unlock Notifications** - Toast notifications when phases complete and unlock
 
@@ -23,7 +23,7 @@ This milestone adds sequential phase enforcement to FlowPlan. We start by buildi
 **Plans:** 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — TDD phase lock service (computePhaseLockStatus) + usePhaseLockStatus React hook
+- [x] 01-01-PLAN.md — TDD phase lock service (computePhaseLockStatus) + usePhaseLockStatus React hook
 
 ### Phase 2: Lock Enforcement UI
 **Goal**: Users see which phases are locked, see completion progress, and cannot interact with locked phase tasks
@@ -56,6 +56,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Phase Lock Logic | 0/1 | Not started | - |
+| 1. Phase Lock Logic | 1/1 | ✓ Complete | 2026-02-12 |
 | 2. Lock Enforcement UI | 0/2 | Not started | - |
 | 3. Unlock Notifications | 0/1 | Not started | - |
