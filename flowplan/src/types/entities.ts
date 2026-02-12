@@ -309,3 +309,15 @@ export interface ResourceAvailability {
   workDays: number[]
   timeOff: { start: Date; end: Date }[]
 }
+
+// ============================================
+// Phase Lock Types
+// ============================================
+
+export interface PhaseLockInfo {
+  phaseId: string
+  isLocked: boolean
+  reason: 'first_phase' | 'previous_phase_complete' | 'previous_phase_incomplete'
+  blockedByPhaseId: string | null
+  blockedByPhaseName: string | null
+}
