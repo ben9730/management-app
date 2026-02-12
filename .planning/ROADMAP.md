@@ -20,10 +20,10 @@ This milestone adds sequential phase enforcement to FlowPlan. We start by buildi
   1. Given a project with multiple phases, the system returns correct lock/unlock status for every phase based on prior phase task completion
   2. The first phase in any project is always reported as unlocked regardless of any other state
   3. When the last incomplete task in a phase is marked complete, the next phase transitions from locked to unlocked without page reload
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 01-01: Phase lock service and hook
+- [ ] 01-01-PLAN.md — TDD phase lock service (computePhaseLockStatus) + usePhaseLockStatus React hook
 
 ### Phase 2: Lock Enforcement UI
 **Goal**: Users see which phases are locked, see completion progress, and cannot interact with locked phase tasks
