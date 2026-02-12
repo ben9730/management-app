@@ -59,7 +59,8 @@
       "mcp__supabase__get_logs",
       "Bash(powershell:*)",
       "Bash(wc:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Read(//c/Users/User/.claude/get-shit-done/templates/**)"
     ]
   }
 }
