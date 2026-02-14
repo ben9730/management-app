@@ -46,10 +46,10 @@ Plans:
   1. When a phase completes and the next phase unlocks, a Toast notification appears on screen
   2. The Toast message includes the name of the completed phase and the name of the newly unlocked phase
   3. The Toast auto-dismisses after 5 seconds and can be manually closed before that
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 03-01: Toast component and phase unlock notification
+- [ ] 03-01-PLAN.md — Install Sonner, create usePhaseUnlockNotifier hook, mount Toaster, wire into page
 
 ## Progress
 
