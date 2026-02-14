@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Phases execute in order — users cannot start work on Phase N+1 until Phase N is fully complete
-**Current focus:** Phase 1: Phase Lock Logic
+**Current focus:** Phase 2: Lock Enforcement UI
 
 ## Current Position
 
-Phase: 1 of 3 (Phase Lock Logic)
+Phase: 2 of 3 (Lock Enforcement UI)
 Plan: 1 of 1 in current phase
-Status: Phase 1 complete
-Last activity: 2026-02-12 — Completed 01-01-PLAN.md (phase lock service + hook)
+Status: Phase 2 complete
+Last activity: 2026-02-14 — Completed 02-01-PLAN.md (lock enforcement UI)
 
-Progress: [███░░░░░░░] 33%
+Progress: [██████░░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5min
-- Total execution time: 0.08 hours
+- Total plans completed: 2
+- Average duration: 6min
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-phase-lock-logic | 1 | 5min | 5min |
+| 02-lock-enforcement-ui | 1 | 7min | 7min |
 
 **Recent Trend:**
-- Last 5 plans: 5min
-- Trend: N/A (first plan)
+- Last 5 plans: 5min, 7min
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -48,6 +49,10 @@ Recent decisions affecting current work:
 - Derive lock status from tasks array, not DB completed_tasks/total_tasks (immediate accuracy)
 - Empty phases treated as complete (non-blocking) -- vacuous truth is correct UX
 - Index-based iteration over sorted phases to handle non-contiguous phase_order gaps
+- Progress derived from tasks array instead of DB columns (PDEP-06 immediate accuracy)
+- CSS-level blocking (pointer-events-none + opacity-50 + tabIndex=-1) for locked content areas
+- Accordion toggle preserved on locked phases (view-only access)
+- Removed calculatePercentage from PhaseSection (inline calculation now)
 
 ### Pending Todos
 
@@ -59,6 +64,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-12
-Stopped at: Completed 01-01-PLAN.md (phase lock service + hook). Phase 1 complete. Ready for Phase 2.
+Last session: 2026-02-14
+Stopped at: Completed 02-01-PLAN.md (lock enforcement UI). Phase 2 complete. Ready for Phase 3.
 Resume file: None
