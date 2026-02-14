@@ -24,6 +24,7 @@ import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-member
 import { useCalendarExceptions, useCreateCalendarException, useUpdateCalendarException, useDeleteCalendarException } from '@/hooks/use-calendar-exceptions'
 import { useTaskAssignments, useTaskAssignmentsByProject, useCreateTaskAssignment, useDeleteTaskAssignment } from '@/hooks/use-task-assignments'
 import { usePhaseLockStatus } from '@/hooks/use-phase-lock-status'
+import { usePhaseUnlockNotifier } from '@/hooks/use-phase-unlock-notifier'
 import { CalendarExceptionsList } from '@/components/calendar'
 import { CalendarExceptionForm, type CalendarExceptionFormData } from '@/components/forms/CalendarExceptionForm'
 import type { CalendarException } from '@/types/entities'
@@ -230,7 +231,10 @@ function DashboardContent() {
   const deleteTaskAssignmentMutation = useDeleteTaskAssignment()
 
   // Phase lock status
-  const { isLocked, getLockInfo } = usePhaseLockStatus(projectId)
+  const { lockStatus, isLocked, getLockInfo, isLoading: isLoadingLock } = usePhaseLockStatus(projectId)
+
+  // Phase unlock notifications
+  usePhaseUnlockNotifier(lockStatus, phases, isLoadingLock || isLoadingPhases, projectId)
 
   // Extract assignee IDs from task assignments for edit mode
   const editingTaskAssigneeIds = useMemo(() => {
