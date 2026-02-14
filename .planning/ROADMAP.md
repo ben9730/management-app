@@ -33,11 +33,10 @@ Plans:
   1. A locked phase section displays a visible lock indicator (icon or overlay) that communicates "this phase is blocked"
   2. Users cannot edit, change status, or modify any task within a locked phase — all interactive controls are disabled
   3. Each phase section header shows task completion progress (e.g., "3/5 tasks complete")
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 02-01: Phase section lock UI and interaction blocking
-- [ ] 02-02: Phase completion progress display
+- [ ] 02-01-PLAN.md — Lock UI, interaction blocking, progress display, test reconciliation
 
 ### Phase 3: Unlock Notifications
 **Goal**: Users are notified the moment a phase completes and the next phase becomes available
@@ -57,5 +56,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Phase Lock Logic | 1/1 | ✓ Complete | 2026-02-12 |
-| 2. Lock Enforcement UI | 0/2 | Not started | - |
+| 2. Lock Enforcement UI | 0/1 | Not started | - |
 | 3. Unlock Notifications | 0/1 | Not started | - |
