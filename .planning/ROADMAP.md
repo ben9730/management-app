@@ -8,7 +8,7 @@ This milestone adds sequential phase enforcement to FlowPlan. We start by buildi
 
 - [x] **Phase 1: Phase Lock Logic** - Service layer that determines phase lock status and detects completion
 - [x] **Phase 2: Lock Enforcement UI** - Visual indicators, interaction blocking, and progress display
-- [ ] **Phase 3: Unlock Notifications** - Toast notifications when phases complete and unlock
+- [x] **Phase 3: Unlock Notifications** - Toast notifications when phases complete and unlock
 
 ## Phase Details
 
@@ -49,7 +49,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 03-01-PLAN.md — Install Sonner, create usePhaseUnlockNotifier hook, mount Toaster, wire into page
+- [x] 03-01-PLAN.md — Install Sonner, create usePhaseUnlockNotifier hook, mount Toaster, wire into page
 
 ## Progress
 
@@ -57,4 +57,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Phase Lock Logic | 1/1 | ✓ Complete | 2026-02-12 |
 | 2. Lock Enforcement UI | 1/1 | ✓ Complete | 2026-02-14 |
-| 3. Unlock Notifications | 0/1 | Not started | - |
+| 3. Unlock Notifications | 1/1 | ✓ Complete | 2026-02-14 |
