@@ -6,11 +6,11 @@
  */
 
 import * as React from 'react'
-import { Plus, ChevronDown, Calendar, CheckCircle2, Layout, Edit2 } from 'lucide-react'
-import { cn, formatDateDisplay, calculatePercentage } from '@/lib/utils'
+import { Plus, ChevronDown, Calendar, CheckCircle2, Layout, Edit2, Lock } from 'lucide-react'
+import { cn, formatDateDisplay } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { TaskCard } from '@/components/tasks/TaskCard'
-import type { ProjectPhase, Task, TeamMember } from '@/types/entities'
+import type { ProjectPhase, Task, TeamMember, PhaseLockInfo } from '@/types/entities'
 
 export interface PhaseSectionProps {
   phase: ProjectPhase
@@ -25,6 +25,8 @@ export interface PhaseSectionProps {
   onAddTask?: (phaseId: string) => void
   onEditPhase?: (phase: ProjectPhase) => void
   onTaskStatusChange?: (taskId: string, newStatus: Task['status']) => void
+  isLocked?: boolean
+  lockInfo?: PhaseLockInfo | null
 }
 
 const statusDisplayMap: Record<ProjectPhase['status'], string> = {
@@ -53,16 +55,18 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
       onAddTask,
       onEditPhase,
       onTaskStatusChange,
+      isLocked = false,
+      lockInfo = null,
     },
     ref
   ) => {
     const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
     const contentId = `phase-content-${phase.id}`
 
-    // Use database column names (total_tasks, completed_tasks) with fallback to alternatives
-    const totalTasks = phase.total_tasks ?? phase.task_count ?? 0
-    const completedTasks = phase.completed_tasks ?? phase.completed_task_count ?? 0
-    const progressPercent = calculatePercentage(completedTasks, totalTasks)
+    // Derive progress from actual tasks array (PDEP-06)
+    const totalTasks = tasks.length
+    const completedTasks = tasks.filter(t => t.status === 'done').length
+    const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
     const handleToggle = () => {
       setIsCollapsed(!isCollapsed)
@@ -70,16 +74,14 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
 
     const handleAddTask = (e: React.MouseEvent) => {
       e.stopPropagation()
-      if (onAddTask) {
-        onAddTask(phase.id)
-      }
+      if (isLocked) return
+      if (onAddTask) onAddTask(phase.id)
     }
 
     const handleEditPhase = (e: React.MouseEvent) => {
       e.stopPropagation()
-      if (onEditPhase) {
-        onEditPhase(phase)
-      }
+      if (isLocked) return
+      if (onEditPhase) onEditPhase(phase)
     }
 
     return (
@@ -92,6 +94,7 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
           phase.status === 'pending' && 'opacity-70',
           className
         )}
+        title={isLocked && lockInfo ? `חסום - יש להשלים את "${lockInfo.blockedByPhaseName}" קודם` : undefined}
       >
         {/* Phase Header - Accordion Style */}
         <div
@@ -109,6 +112,13 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
             </button>
             <div>
               <h3 className="font-bold text-lg flex items-center gap-3 text-foreground">
+                {isLocked && (
+                  <Lock
+                    className="w-4 h-4 text-slate-400 flex-shrink-0"
+                    aria-hidden="true"
+                    data-testid="lock-indicator"
+                  />
+                )}
                 {(phase.phase_order ?? 0) + 1}. {phase.name}
                 <Badge
                   className={cn(
@@ -134,7 +144,10 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
             <div className="w-32 hidden sm:block">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] uppercase text-slate-400 font-bold">ביצוע</span>
-                <span className="text-[10px] font-bold text-foreground">{progressPercent}%</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-400 mr-1">{completedTasks}/{totalTasks}</span>
+                  <span className="text-[10px] font-bold text-foreground">{progressPercent}%</span>
+                </div>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                 <div
@@ -148,14 +161,23 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
 
             <button
               onClick={handleEditPhase}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-lg transition-colors"
-              title="ערוך שלב"
+              disabled={isLocked}
+              className={cn(
+                "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-lg transition-colors",
+                isLocked && "opacity-50 cursor-not-allowed pointer-events-none"
+              )}
+              title={isLocked && lockInfo ? `חסום - יש להשלים את "${lockInfo.blockedByPhaseName}" קודם` : 'ערוך שלב'}
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
               onClick={handleAddTask}
-              className="text-primary hover:bg-primary/10 p-2 rounded-lg transition-colors"
+              disabled={isLocked}
+              data-testid="add-task-button"
+              className={cn(
+                "text-primary hover:bg-primary/10 p-2 rounded-lg transition-colors",
+                isLocked && "opacity-50 cursor-not-allowed pointer-events-none"
+              )}
             >
               <span className="material-icons">add_circle_outline</span>
             </button>
@@ -164,7 +186,16 @@ const PhaseSectionComponent = React.forwardRef<HTMLDivElement, PhaseSectionProps
 
         {/* Tasks Content */}
         {!isCollapsed && (
-          <div id={contentId} className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div
+            id={contentId}
+            data-testid="phase-content"
+            className={cn(
+              "divide-y divide-slate-100 dark:divide-slate-800",
+              isLocked && "pointer-events-none opacity-50"
+            )}
+            aria-disabled={isLocked || undefined}
+            tabIndex={isLocked ? -1 : undefined}
+          >
             {tasks.length > 0 ? (
               tasks.map((task) => (
                 <TaskCard

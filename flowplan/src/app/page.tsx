@@ -23,6 +23,7 @@ import { usePhases, useCreatePhase, useUpdatePhase } from '@/hooks/use-phases'
 import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-members'
 import { useCalendarExceptions, useCreateCalendarException, useUpdateCalendarException, useDeleteCalendarException } from '@/hooks/use-calendar-exceptions'
 import { useTaskAssignments, useTaskAssignmentsByProject, useCreateTaskAssignment, useDeleteTaskAssignment } from '@/hooks/use-task-assignments'
+import { usePhaseLockStatus } from '@/hooks/use-phase-lock-status'
 import { CalendarExceptionsList } from '@/components/calendar'
 import { CalendarExceptionForm, type CalendarExceptionFormData } from '@/components/forms/CalendarExceptionForm'
 import type { CalendarException } from '@/types/entities'
@@ -228,6 +229,9 @@ function DashboardContent() {
   const createTaskAssignmentMutation = useCreateTaskAssignment()
   const deleteTaskAssignmentMutation = useDeleteTaskAssignment()
 
+  // Phase lock status
+  const { isLocked, getLockInfo } = usePhaseLockStatus(projectId)
+
   // Extract assignee IDs from task assignments for edit mode
   const editingTaskAssigneeIds = useMemo(() => {
     if (editingTaskAssignments.length > 0) {
@@ -242,6 +246,9 @@ function DashboardContent() {
 
   // AI RAG Service using Gemini via API route
   const ragService = useMemo(() => createGeminiRAGService(), [])
+
+  // Sidebar lock guard: pre-compute whether the selected task's phase is locked
+  const isSelectedTaskLocked = selectedTask ? isLocked(selectedTask.phase_id || '') : false
 
   // Loading state
   const isLoading = isLoadingProjects || (projectId && (isLoadingTasks || isLoadingPhases || isLoadingTeam))
@@ -910,6 +917,7 @@ function DashboardContent() {
                   const phaseWithStatus = getPhaseWithCalculatedStatus(phase)
                   return (
                     <PhaseSection key={phase.id} phase={phaseWithStatus} tasks={getTasksForPhase(phase.id)}
+                      isLocked={isLocked(phase.id)} lockInfo={getLockInfo(phase.id)}
                       taskAssignees={taskAssignees} onTaskClick={setSelectedTask}
                       onTaskStatusChange={handleTaskStatusChange} onAddTask={() => handleAddTask(phase.id)}
                       onEditPhase={handleEditPhase} />
@@ -1015,15 +1023,22 @@ function DashboardContent() {
 
                 <div className="p-8 bg-slate-800/30 flex gap-4">
                   <Button
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 h-12 shadow-lg shadow-red-500/20 rounded-xl font-bold"
+                    className={cn(
+                      "flex-1 bg-red-500 hover:bg-red-600 text-white border-0 h-12 shadow-lg shadow-red-500/20 rounded-xl font-bold",
+                      (deleteTaskMutation.isPending || isSelectedTaskLocked) && "opacity-50 cursor-not-allowed"
+                    )}
                     onClick={() => handleDeleteTask(selectedTask.id)}
-                    disabled={deleteTaskMutation.isPending}
+                    disabled={deleteTaskMutation.isPending || isSelectedTaskLocked}
                   >
                     {deleteTaskMutation.isPending ? 'מוחק...' : 'מחק משימה'}
                   </Button>
                   <Button
-                    className="flex-1 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white border-0 h-12 rounded-xl font-bold"
+                    className={cn(
+                      "flex-1 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white border-0 h-12 rounded-xl font-bold",
+                      isSelectedTaskLocked && "opacity-50 cursor-not-allowed"
+                    )}
                     onClick={() => handleEditTask(selectedTask)}
+                    disabled={isSelectedTaskLocked}
                   >
                     עריכת משימה
                   </Button>
