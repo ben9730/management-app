@@ -2,7 +2,7 @@
 
 ## What This Is
 
-FlowPlan is an AI-native audit management system for Hebrew-speaking users with CPM scheduling, Gantt charts, and offline-first capabilities. This milestone adds phase-level dependency enforcement and completion notifications — phases lock until the previous phase's tasks are all complete, and a Toast notification fires when a phase unlocks.
+FlowPlan is an AI-native audit management system for Hebrew-speaking users with CPM scheduling, Gantt charts, and offline-first capabilities. It now includes sequential phase enforcement — phases lock until the previous phase's tasks are all complete, with visual lock indicators, interaction blocking, progress tracking, and Toast notifications on phase unlock.
 
 ## Core Value
 
@@ -26,16 +26,15 @@ Phases execute in order — users cannot start work on Phase N+1 until Phase N i
 - ✓ Team member management with work hours/days — existing
 - ✓ Task detail sidebar — existing
 - ✓ Hebrew RTL dark-mode UI — existing
+- ✓ Phase dependency enforcement — locked phases block task editing — v1.0
+- ✓ Phase completion detection — automatic check when all tasks done — v1.0
+- ✓ Phase unlock mechanism — next phase opens when previous completes — v1.0
+- ✓ Toast notification on phase completion/unlock — v1.0
+- ✓ Visual lock indicator on phase sections — v1.0
 
 ### Active
 
-<!-- Current scope for this milestone -->
-
-- [ ] Phase dependency enforcement — locked phases block task editing
-- [ ] Phase completion detection — automatic check when all tasks done
-- [ ] Phase unlock mechanism — next phase opens when previous completes
-- [ ] Toast notification on phase completion/unlock
-- [ ] Visual lock indicator on phase sections
+(None — next milestone requirements TBD)
 
 ### Out of Scope
 
@@ -47,28 +46,40 @@ Phases execute in order — users cannot start work on Phase N+1 until Phase N i
 
 ## Context
 
-The existing codebase uses `project_phases` with a `phase_order` column and `status` field. Tasks belong to phases via `phase_id`. The PhaseSection component renders tasks grouped by phase as accordion sections. The main dashboard (`src/app/page.tsx`) is 1,238 lines and manages all state — new features need to integrate carefully.
+Shipped v1.0 with 3 phases (Phase Dependencies & Notifications) in 3 days.
+Codebase: ~5,000 LOC TypeScript across 34 modified files.
+Tech stack: Next.js 16, React 19, Supabase, TanStack Query, Sonner (toast).
 
-Key existing patterns:
+Key patterns established:
 - ServiceResult<T> pattern for service returns
 - React Query for state/cache management
 - Immutable state updates (spread operator)
 - Zod validation for inputs
+- Pure service + derived hook pattern (computePhaseLockStatus + usePhaseLockStatus)
+- useRef-based previous-value comparison for transition detection
+- CSS-level blocking (pointer-events-none + opacity) for locked UI
+
+Known concerns:
+- page.tsx is ~1,300 lines — future work should extract into hooks/components
 
 ## Constraints
 
 - **Tech stack**: Must use existing stack (Next.js 16, React 19, Supabase, TanStack Query)
 - **UI language**: Hebrew RTL, dark mode
 - **File size**: Keep page.tsx from growing further — extract into hooks/components
-- **No new dependencies**: Toast can be built with existing UI primitives or minimal addition
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Restricted access (not just warning) for locked phases | User explicitly chose hard blocking over soft warnings | — Pending |
-| Toast notification (not notification panel) | Lightweight, user's choice — ephemeral is enough for v1 | — Pending |
-| Sequential phase order only | Simplest model, matches phase_order column | — Pending |
+| Restricted access (not just warning) for locked phases | User explicitly chose hard blocking over soft warnings | ✓ Good — clean UX, no confusion |
+| Toast notification (not notification panel) | Lightweight, user's choice — ephemeral is enough for v1 | ✓ Good — Sonner handles RTL, ARIA, auto-dismiss |
+| Sequential phase order only | Simplest model, matches phase_order column | ✓ Good — sufficient for current needs |
+| Derive lock status from tasks array, not DB columns | Immediate accuracy over stale DB counts | ✓ Good — instant client-side reactivity |
+| Empty phases treated as complete (non-blocking) | Vacuous truth of [].every() is correct UX | ✓ Good — no edge-case blocking |
+| Sonner over custom toast component | Handles RTL, animations, ARIA, auto-dismiss, SSR portals | ✓ Good — minimal integration effort |
+| useRef for previous-value tracking | Avoids extra re-render cycle vs useState | ✓ Good — efficient transition detection |
+| CSS-level blocking for locked phases | pointer-events-none + opacity simpler than per-task disabled props | ✓ Good — fewer prop changes |
 
 ---
-*Last updated: 2026-02-12 after initialization*
+*Last updated: 2026-02-14 after v1.0 milestone*

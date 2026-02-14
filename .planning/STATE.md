@@ -2,17 +2,16 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-12)
+See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Phases execute in order — users cannot start work on Phase N+1 until Phase N is fully complete
-**Current focus:** Phase 3: Unlock Notifications (COMPLETE)
+**Current focus:** v1.0 milestone complete — planning next milestone
 
 ## Current Position
 
-Phase: 3 of 3 (Unlock Notifications)
-Plan: 1 of 1 in current phase
-Status: Phase 3 complete — All phases complete
-Last activity: 2026-02-14 — Completed 03-01-PLAN.md (unlock notifications)
+Phase: All complete (v1.0 shipped)
+Status: Milestone v1.0 complete — ready for next milestone
+Last activity: 2026-02-14 — Completed v1.0 milestone (Phase Dependencies & Notifications)
 
 Progress: [██████████] 100%
 
@@ -31,10 +30,6 @@ Progress: [██████████] 100%
 | 02-lock-enforcement-ui | 1 | 7min | 7min |
 | 03-unlock-notifications | 1 | 4min | 4min |
 
-**Recent Trend:**
-- Last 5 plans: 5min, 7min, 4min
-- Trend: Stable
-
 *Updated after each plan completion*
 
 ## Accumulated Context
@@ -42,32 +37,17 @@ Progress: [██████████] 100%
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- Hard blocking for locked phases (not soft warnings) -- user's explicit choice
-- Sequential phase order only -- matches existing phase_order column
-- Toast notification only (no notification panel) -- ephemeral is enough for v1
-- Derive lock status from tasks array, not DB completed_tasks/total_tasks (immediate accuracy)
-- Empty phases treated as complete (non-blocking) -- vacuous truth is correct UX
-- Index-based iteration over sorted phases to handle non-contiguous phase_order gaps
-- Progress derived from tasks array instead of DB columns (PDEP-06 immediate accuracy)
-- CSS-level blocking (pointer-events-none + opacity-50 + tabIndex=-1) for locked content areas
-- Accordion toggle preserved on locked phases (view-only access)
-- Removed calculatePercentage from PhaseSection (inline calculation now)
-- Sonner over custom toast component (handles RTL, animations, ARIA, auto-dismiss, SSR portals)
-- useRef-based previous-value pattern for transition detection (avoids extra re-render)
-- Stable toast id (unlock-{phaseId}) prevents StrictMode duplicate toasts
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- page.tsx is 1,238 lines — new UI work should extract into hooks/components, not add to it
+- page.tsx is ~1,300 lines — new UI work should extract into hooks/components
 
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 03-01-PLAN.md (unlock notifications). Phase 3 complete. All phases complete.
+Stopped at: Completed v1.0 milestone. All 3 phases shipped, 3 UATs passed.
 Resume file: None
