@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { Toaster } from 'sonner'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -46,6 +47,7 @@ export default function RootLayout({
             </div>
           </AuthProvider>
         </QueryProvider>
+        <Toaster dir="rtl" theme="dark" position="top-center" closeButton duration={5000} richColors />
       </body>
     </html>
   )
