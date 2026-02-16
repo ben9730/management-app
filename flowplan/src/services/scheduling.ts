@@ -207,7 +207,91 @@ export class SchedulingService {
   }
 
   /**
+   * Compute candidate ES for a single dependency in the forward pass.
+   * Handles all 4 dependency types (FS, SS, FF, SF) with positive and negative lag.
+   */
+  private computeCandidateES(
+    dep: Dependency,
+    predTask: Task,
+    taskDuration: number,
+    projectStart: Date,
+    workDays: number[],
+    holidays: Date[]
+  ): Date {
+    const predES = predTask.es instanceof Date ? predTask.es : new Date(predTask.es!)
+    const predEF = predTask.ef instanceof Date ? predTask.ef : new Date(predTask.ef!)
+    const lag = dep.lag_days || 0
+
+    let candidateES: Date
+
+    switch (dep.type) {
+      case 'FS': {
+        // Finish-to-Start: successor starts after predecessor finishes
+        // candidateES = predEF + 1 day + lag
+        candidateES = this.addDays(predEF, 1)
+        if (lag > 0) {
+          candidateES = this.addWorkingDays(candidateES, lag, workDays, holidays)
+        } else if (lag < 0) {
+          candidateES = this.subtractWorkingDays(candidateES, Math.abs(lag), workDays, holidays)
+        }
+        break
+      }
+      case 'SS': {
+        // Start-to-Start: successor starts when predecessor starts
+        // candidateES = predES + lag
+        candidateES = new Date(predES)
+        if (lag > 0) {
+          candidateES = this.addWorkingDays(candidateES, lag + 1, workDays, holidays)
+        } else if (lag < 0) {
+          candidateES = this.subtractWorkingDays(candidateES, Math.abs(lag) + 1, workDays, holidays)
+        }
+        break
+      }
+      case 'FF': {
+        // Finish-to-Finish: successor finishes when predecessor finishes
+        // candidateEF = predEF + lag, then candidateES = candidateEF - duration + 1
+        let candidateEF = new Date(predEF)
+        if (lag > 0) {
+          candidateEF = this.addWorkingDays(candidateEF, lag + 1, workDays, holidays)
+        } else if (lag < 0) {
+          candidateEF = this.subtractWorkingDays(candidateEF, Math.abs(lag) + 1, workDays, holidays)
+        }
+        candidateES = this.subtractWorkingDays(candidateEF, taskDuration, workDays, holidays)
+        break
+      }
+      case 'SF': {
+        // Start-to-Finish: successor finishes when predecessor starts
+        // candidateEF = predES + lag, then candidateES = candidateEF - duration + 1
+        let candidateEF = new Date(predES)
+        if (lag > 0) {
+          candidateEF = this.addWorkingDays(candidateEF, lag + 1, workDays, holidays)
+        } else if (lag < 0) {
+          candidateEF = this.subtractWorkingDays(candidateEF, Math.abs(lag) + 1, workDays, holidays)
+        }
+        candidateES = this.subtractWorkingDays(candidateEF, taskDuration, workDays, holidays)
+        break
+      }
+      default:
+        // Fallback to FS behavior
+        candidateES = this.addDays(predEF, 1)
+        break
+    }
+
+    // Clamp to project start
+    const projectStartWorking = this.findNextWorkingDay(projectStart, workDays, holidays)
+    if (candidateES < projectStartWorking) {
+      candidateES = projectStartWorking
+    }
+
+    // Ensure it lands on a working day
+    candidateES = this.findNextWorkingDay(candidateES, workDays, holidays)
+
+    return candidateES
+  }
+
+  /**
    * Forward Pass - Calculate Early Start (ES) and Early Finish (EF)
+   * Supports all 4 dependency types: FS, SS, FF, SF with lead/lag
    */
   forwardPass(
     tasks: Task[],
@@ -240,25 +324,18 @@ export class SchedulingService {
         // No predecessors - start at project start
         task.es = this.findNextWorkingDay(projectStart, workDays, holidays)
       } else {
-        // ES = max(EF of all predecessors) + lag
+        // ES = max(candidateES from all predecessors)
         let maxDate: Date | null = null
 
         for (const dep of predecessors) {
           const predTask = taskMap.get(dep.predecessor_id)
           if (predTask && predTask.ef) {
-            // Add one day after predecessor EF, then add lag
-            let candidateDate = this.addDays(predTask.ef, 1)
+            const candidateES = this.computeCandidateES(
+              dep, predTask, task.duration, projectStart, workDays, holidays
+            )
 
-            // Add lag days (working days)
-            if (dep.lag_days > 0) {
-              candidateDate = this.addWorkingDays(candidateDate, dep.lag_days, workDays, holidays)
-            }
-
-            // Find next working day
-            candidateDate = this.findNextWorkingDay(candidateDate, workDays, holidays)
-
-            if (!maxDate || candidateDate > maxDate) {
-              maxDate = candidateDate
+            if (!maxDate || candidateES > maxDate) {
+              maxDate = candidateES
             }
           }
         }
@@ -274,7 +351,82 @@ export class SchedulingService {
   }
 
   /**
+   * Compute candidate LF for a single dependency in the backward pass.
+   * Handles all 4 dependency types (FS, SS, FF, SF) with positive and negative lag.
+   */
+  private computeCandidateLF(
+    dep: Dependency,
+    succTask: Task,
+    taskDuration: number,
+    workDays: number[],
+    holidays: Date[]
+  ): Date {
+    const succLS = succTask.ls instanceof Date ? succTask.ls : new Date(succTask.ls!)
+    const succLF = succTask.lf instanceof Date ? succTask.lf : new Date(succTask.lf!)
+    const lag = dep.lag_days || 0
+
+    let candidateLF: Date
+
+    switch (dep.type) {
+      case 'FS': {
+        // Finish-to-Start: predecessor LF = successor LS - 1 - lag
+        candidateLF = this.addDays(succLS, -1)
+        if (lag > 0) {
+          candidateLF = this.subtractWorkingDays(candidateLF, lag, workDays, holidays)
+        } else if (lag < 0) {
+          candidateLF = this.addWorkingDays(candidateLF, Math.abs(lag), workDays, holidays)
+        }
+        // Find previous working day
+        candidateLF = this.findPreviousWorkingDay(candidateLF, workDays, holidays)
+        break
+      }
+      case 'SS': {
+        // Start-to-Start: predecessor LS = successor LS - lag
+        // Then predecessor LF = addWorkingDays(predecessor LS, duration)
+        let constrainedLS = new Date(succLS)
+        if (lag > 0) {
+          constrainedLS = this.subtractWorkingDays(constrainedLS, lag + 1, workDays, holidays)
+        } else if (lag < 0) {
+          constrainedLS = this.addWorkingDays(constrainedLS, Math.abs(lag) + 1, workDays, holidays)
+        }
+        candidateLF = this.addWorkingDays(constrainedLS, taskDuration, workDays, holidays)
+        break
+      }
+      case 'FF': {
+        // Finish-to-Finish: predecessor LF = successor LF - lag
+        candidateLF = new Date(succLF)
+        if (lag > 0) {
+          candidateLF = this.subtractWorkingDays(candidateLF, lag + 1, workDays, holidays)
+        } else if (lag < 0) {
+          candidateLF = this.addWorkingDays(candidateLF, Math.abs(lag) + 1, workDays, holidays)
+        }
+        break
+      }
+      case 'SF': {
+        // Start-to-Finish: predecessor LS = successor LF - lag
+        // Then predecessor LF = addWorkingDays(predecessor LS, duration)
+        let constrainedLS = new Date(succLF)
+        if (lag > 0) {
+          constrainedLS = this.subtractWorkingDays(constrainedLS, lag + 1, workDays, holidays)
+        } else if (lag < 0) {
+          constrainedLS = this.addWorkingDays(constrainedLS, Math.abs(lag) + 1, workDays, holidays)
+        }
+        candidateLF = this.addWorkingDays(constrainedLS, taskDuration, workDays, holidays)
+        break
+      }
+      default:
+        // Fallback to FS behavior
+        candidateLF = this.addDays(succLS, -1)
+        candidateLF = this.findPreviousWorkingDay(candidateLF, workDays, holidays)
+        break
+    }
+
+    return candidateLF
+  }
+
+  /**
    * Backward Pass - Calculate Late Start (LS) and Late Finish (LF)
+   * Supports all 4 dependency types: FS, SS, FF, SF with lead/lag
    */
   backwardPass(
     tasks: Task[],
@@ -308,25 +460,18 @@ export class SchedulingService {
         // No successors - LF is project end
         task.lf = new Date(projectEnd)
       } else {
-        // LF = min(LS of all successors) - lag - 1
+        // LF = min(candidateLF from all successors)
         let minDate: Date | null = null
 
         for (const dep of successors) {
           const succTask = taskMap.get(dep.successor_id)
           if (succTask && succTask.ls) {
-            // Subtract one day before successor LS
-            let candidateDate = this.addDays(succTask.ls, -1)
+            const candidateLF = this.computeCandidateLF(
+              dep, succTask, task.duration, workDays, holidays
+            )
 
-            // Subtract lag days
-            if (dep.lag_days > 0) {
-              candidateDate = this.subtractWorkingDays(candidateDate, dep.lag_days, workDays, holidays)
-            }
-
-            // Find previous working day
-            candidateDate = this.findPreviousWorkingDay(candidateDate, workDays, holidays)
-
-            if (!minDate || candidateDate < minDate) {
-              minDate = candidateDate
+            if (!minDate || candidateLF < minDate) {
+              minDate = candidateLF
             }
           }
         }
@@ -565,7 +710,7 @@ export class SchedulingService {
       predecessorMap.set(dep.successor_id, deps)
     }
 
-    // Forward pass with resource constraints
+    // Forward pass with resource constraints (supports all 4 dependency types)
     for (const task of resultTasks) {
       const predecessors = predecessorMap.get(task.id) || []
 
@@ -580,21 +725,18 @@ export class SchedulingService {
       if (predecessors.length === 0) {
         task.es = this.findNextWorkingDay(projectStart, memberWorkDays, allHolidays)
       } else {
+        // ES = max(candidateES from all predecessors) using dependency-type-aware computation
         let maxDate: Date | null = null
 
         for (const dep of predecessors) {
           const predTask = taskMap.get(dep.predecessor_id)
           if (predTask && predTask.ef) {
-            let candidateDate = this.addDays(predTask.ef, 1)
+            const candidateES = this.computeCandidateES(
+              dep, predTask, task.duration, projectStart, memberWorkDays, allHolidays
+            )
 
-            if (dep.lag_days > 0) {
-              candidateDate = this.addWorkingDays(candidateDate, dep.lag_days, memberWorkDays, allHolidays)
-            }
-
-            candidateDate = this.findNextWorkingDay(candidateDate, memberWorkDays, allHolidays)
-
-            if (!maxDate || candidateDate > maxDate) {
-              maxDate = candidateDate
+            if (!maxDate || candidateES > maxDate) {
+              maxDate = candidateES
             }
           }
         }

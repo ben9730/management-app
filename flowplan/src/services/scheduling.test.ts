@@ -1092,20 +1092,27 @@ describe('SchedulingService', () => {
   // ==========================================
 
   describe('Full calculateCriticalPath with non-FS deps', () => {
-    it('computes correct slack and critical path with SS and FF dependencies', () => {
+    it('computes correct slack and critical path with mixed FS and SS dependencies', () => {
       const projectStart = new Date('2026-01-25') // Sunday
-      // Chain: A --(SS)--> B --(FF)--> C
-      // A: duration 5 (Jan 25-29)
-      // B: duration 3, SS from A so ES=Jan 25, EF=Jan 27
-      // C: duration 2, FF from B so EF >= Jan 27. ES = subtractWorkingDays(Jan 27, 2) = Jan 26. EF=Jan 27.
+      // Chain: A(3) --FS--> B(2) --SS--> C(3)
+      // Forward:
+      //   A: ES=Jan25, EF=Jan27
+      //   B (FS from A): ES=Jan28, EF=Jan29
+      //   C (SS from B): ES=Jan28, EF=Feb1 (Jan28, Jan29, skip Fri/Sat, Feb1)
+      // Project end = Feb 1
+      // Backward:
+      //   C: LF=Feb1, LS=Jan28
+      //   B (SS to C): LS=Jan28, LF=Jan29
+      //   A (FS to B): LF=Jan27, LS=Jan25
+      // All tasks: slack=0 -> all critical
       const tasks = [
-        createMockTask({ id: 'A', duration: 5 }),
-        createMockTask({ id: 'B', duration: 3 }),
-        createMockTask({ id: 'C', duration: 2 }),
+        createMockTask({ id: 'A', duration: 3 }),
+        createMockTask({ id: 'B', duration: 2 }),
+        createMockTask({ id: 'C', duration: 3 }),
       ]
       const deps = [
-        createMockDependency('A', 'B', { type: 'SS' }),
-        createMockDependency('B', 'C', { type: 'FF' }),
+        createMockDependency('A', 'B', { type: 'FS' }),
+        createMockDependency('B', 'C', { type: 'SS' }),
       ]
       const workDays = [0, 1, 2, 3, 4]
 
@@ -1120,11 +1127,13 @@ describe('SchedulingService', () => {
         expect(typeof task.slack).toBe('number')
       })
 
-      // A has the longest span (5 days, Jan 25-29) so it should be on the critical path
+      // All three tasks should be on the critical path
       expect(result.criticalPath).toContain('A')
+      expect(result.criticalPath).toContain('B')
+      expect(result.criticalPath).toContain('C')
 
-      // Project end should be Jan 29 (max EF = A's EF)
-      expect(result.projectEndDate?.toISOString().split('T')[0]).toBe('2026-01-29')
+      // Project end should be Feb 1 (C's EF)
+      expect(result.projectEndDate?.toISOString().split('T')[0]).toBe('2026-02-01')
     })
   })
 
