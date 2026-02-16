@@ -72,24 +72,33 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
       holidays
     )
 
-    // 2. Optimistic update: put recalculated tasks into React Query cache immediately
+    // 2. Cancel any in-flight refetches to prevent race condition.
+    // Without this, the mutation's onSuccess invalidation triggers a DB refetch
+    // that can resolve AFTER our optimistic update, overwriting it with stale data.
+    await queryClient.cancelQueries({ queryKey: taskKeys.list(projectId) })
+
+    // 3. Optimistic update: put recalculated tasks into React Query cache immediately
     // This produces a new array reference, which triggers GanttChart re-render
     queryClient.setQueryData(
       taskKeys.list(projectId),
       result.tasks
     )
 
-    // 3. Cancel any in-flight batch persist (serial queue: newest wins)
+    // 4. Cancel any in-flight batch persist (serial queue: newest wins)
     if (persistRef.current) {
       persistRef.current.abort()
     }
     const controller = new AbortController()
     persistRef.current = controller
 
-    // 4. Batch persist to DB in background
+    // 5. Batch persist to DB, then re-sync cache from DB
     try {
       if (!controller.signal.aborted) {
         await batchUpdateTaskCPMFields(result.tasks)
+      }
+      // After DB is up to date, invalidate to re-sync cache with DB truth
+      if (!controller.signal.aborted) {
+        await queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) })
       }
     } catch (err) {
       // If aborted by a newer recalculation, ignore the error
