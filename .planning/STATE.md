@@ -55,7 +55,10 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None.
+3 pending -- `/gsd:check-todos` to review
+- Fix critical path styling to explain meaning not alarm (ui)
+- Add task status change from Gantt view (ui, future)
+- Show task name in narrow Gantt bars (ui, future)
 
 ### Blockers/Concerns
 
