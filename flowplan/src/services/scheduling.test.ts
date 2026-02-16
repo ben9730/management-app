@@ -221,6 +221,28 @@ describe('SchedulingService', () => {
       // Wed, Thu, (skip Fri, Sat), Sun, Mon = 4 working days, difference = 3
       expect(result).toBe(3)
     })
+
+    it('returns negative count when end is before start (negative slack)', () => {
+      const start = new Date('2026-02-16') // Monday (ES)
+      const end = new Date('2026-02-15') // Sunday (LS before ES due to negative lag)
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.workingDaysBetween(start, end, workDays, [])
+
+      // Going backward: Sun is working day, so -1
+      expect(result).toBe(-1)
+    })
+
+    it('does not infinite loop when start > end', () => {
+      const start = new Date('2026-02-18') // Wednesday
+      const end = new Date('2026-02-15') // Sunday (3 days before)
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.workingDaysBetween(start, end, workDays, [])
+
+      // Going backward: Tue, Mon, Sun = 3 working days → -3
+      expect(result).toBe(-3)
+    })
   })
 
   // ==========================================
@@ -1134,6 +1156,47 @@ describe('SchedulingService', () => {
 
       // Project end should be Feb 1 (C's EF)
       expect(result.projectEndDate?.toISOString().split('T')[0]).toBe('2026-02-01')
+    })
+  })
+
+  // ==========================================
+  // Negative Lag (Lead Time) - Full CPM
+  // ==========================================
+
+  describe('Full calculateCriticalPath with negative lag', () => {
+    it('FS with lag=-1 completes without hanging (regression test)', () => {
+      // Reproduces exact user scenario: 2 tasks, FS dependency with lag=-1
+      // This caused an infinite loop in workingDaysBetween when LS < ES
+      const projectStart = new Date('2026-02-16') // Monday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 4 }),
+        createMockTask({ id: 'B', duration: 1 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FS', lag_days: -1 }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      // This should complete in under 1 second (was infinite loop before fix)
+      const start = Date.now()
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+      const elapsed = Date.now() - start
+
+      expect(elapsed).toBeLessThan(1000)
+      expect(result.tasks).toHaveLength(2)
+
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      const taskB = result.tasks.find(t => t.id === 'B')!
+
+      // Task A: critical (slack <= 0 due to over-constraint from negative lag)
+      expect(taskA.is_critical).toBe(true)
+      expect(taskA.es).toBeTruthy()
+      expect(taskA.ef).toBeTruthy()
+
+      // Task B: should have valid scheduling data
+      expect(taskB.es).toBeTruthy()
+      expect(taskB.ef).toBeTruthy()
+      expect(typeof taskB.slack).toBe('number')
     })
   })
 

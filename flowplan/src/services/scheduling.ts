@@ -132,18 +132,23 @@ export class SchedulingService {
       return 0
     }
 
+    // Negative slack: when end < start (e.g. LS before ES due to negative lag),
+    // count backward and return a negative value instead of looping infinitely.
+    const forward = endDate >= startDate
+    const direction = forward ? 1 : -1
+
     let count = 0
     let currentDate = new Date(startDate)
     const endStr = this.toDateString(endDate)
 
     while (this.toDateString(currentDate) !== endStr) {
-      currentDate = this.addDays(currentDate, 1)
+      currentDate = this.addDays(currentDate, direction)
       if (this.isWorkingDay(currentDate, workDays, holidays)) {
         count++
       }
     }
 
-    return count
+    return forward ? count : -count
   }
 
   /**
@@ -500,7 +505,8 @@ export class SchedulingService {
 
       if (task.es && task.ls) {
         newTask.slack = this.workingDaysBetween(task.es, task.ls, workDays, holidays)
-        newTask.is_critical = newTask.slack === 0
+        // Critical = zero slack OR negative slack (over-constrained from negative lag)
+        newTask.is_critical = newTask.slack <= 0
       }
 
       return newTask
