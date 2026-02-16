@@ -1,7 +1,7 @@
 # Requirements: FlowPlan
 
 **Defined:** 2026-02-16
-**Core Value:** Task dependencies drive the schedule automatically — when a predecessor changes, all successors cascade their dates like Microsoft Project
+**Core Value:** Task dependencies drive the schedule automatically -- when a predecessor changes, all successors cascade their dates like Microsoft Project
 
 ## v1.1 Requirements
 
@@ -14,16 +14,16 @@ Requirements for MS Project-Style Scheduling milestone. Each maps to roadmap pha
 - [ ] **SCHED-03**: SS (Start-to-Start) dependencies compute correct dates in forward and backward pass
 - [ ] **SCHED-04**: FF (Finish-to-Finish) dependencies compute correct dates in forward and backward pass
 - [ ] **SCHED-05**: SF (Start-to-Finish) dependencies compute correct dates in forward and backward pass
-- [ ] **SCHED-06**: Dependencies support negative lag (lead time) — e.g., FS -2d means successor starts 2 days before predecessor finishes
+- [ ] **SCHED-06**: Dependencies support negative lag (lead time) -- e.g., FS -2d means successor starts 2 days before predecessor finishes
 - [ ] **SCHED-07**: Scheduling recalculation updates Gantt chart immediately after each change
 - [ ] **SCHED-08**: Changed CPM fields (ES/EF/LS/LF/slack/is_critical) are persisted to database in batch
 
 ### Constraints
 
-- [ ] **CNST-01**: User can set ASAP constraint (default — pure dependency-driven scheduling)
-- [ ] **CNST-02**: User can set Must Start On (MSO) constraint with a date — task starts on that date regardless of dependencies
-- [ ] **CNST-03**: User can set Start No Earlier Than (SNET) constraint — task cannot start before given date
-- [ ] **CNST-04**: User can set Finish No Later Than (FNLT) constraint — warning shown if schedule violates deadline
+- [ ] **CNST-01**: User can set ASAP constraint (default -- pure dependency-driven scheduling)
+- [ ] **CNST-02**: User can set Must Start On (MSO) constraint with a date -- task starts on that date regardless of dependencies
+- [ ] **CNST-03**: User can set Start No Earlier Than (SNET) constraint -- task cannot start before given date
+- [ ] **CNST-04**: User can set Finish No Later Than (FNLT) constraint -- warning shown if schedule violates deadline
 - [ ] **CNST-05**: Scheduling conflicts are detected and shown as warnings (MSO vs dependency conflict, FNLT violation)
 
 ### Manual Scheduling
@@ -39,7 +39,7 @@ Requirements for MS Project-Style Scheduling milestone. Each maps to roadmap pha
 - [ ] **PROG-02**: Percent complete syncs bidirectionally with task status (0%=pending, 1-99%=in_progress, 100%=done)
 - [ ] **PROG-03**: Actual start date auto-records when percent complete first goes above 0
 - [ ] **PROG-04**: Actual finish date auto-records when percent complete reaches 100
-- [ ] **PROG-05**: Completed tasks (100%) are frozen — they do not move when predecessors change
+- [ ] **PROG-05**: Completed tasks (100%) are frozen -- they do not move when predecessors change
 - [ ] **PROG-06**: In-progress tasks with actual_start do not move backward
 - [ ] **PROG-07**: Gantt bars show progress fill (darker portion covering completed percentage)
 
@@ -56,7 +56,7 @@ Deferred to v1.2+. Tracked but not in current roadmap.
 
 ### Advanced Scheduling
 
-- **SCHED-09**: Cascade preview — show affected tasks before saving a change
+- **SCHED-09**: Cascade preview -- show affected tasks before saving a change
 - **SCHED-10**: Dependency-driven status suggestions ("ready to start" when all predecessors complete)
 - **SCHED-11**: Overdue and at-risk task highlighting
 
@@ -71,7 +71,7 @@ Deferred to v1.2+. Tracked but not in current roadmap.
 |---------|--------|
 | Resource leveling | NP-hard, massive complexity, MS Project's leveler is notorious for unexpected results |
 | Effort-driven scheduling | Confusing even to experts, rarely useful in audit management |
-| Multiple baselines | Overkill for v1.1 — defer to future if needed |
+| Multiple baselines | Overkill for v1.1 -- defer to future if needed |
 | Task splitting | Rarely used, complex to visualize |
 | Recurring tasks | Complex interaction with dependencies |
 | ALAP scheduling | Requires backward-scheduled projects, confusing |
@@ -87,36 +87,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHED-01 | — | Pending |
-| SCHED-02 | — | Pending |
-| SCHED-03 | — | Pending |
-| SCHED-04 | — | Pending |
-| SCHED-05 | — | Pending |
-| SCHED-06 | — | Pending |
-| SCHED-07 | — | Pending |
-| SCHED-08 | — | Pending |
-| CNST-01 | — | Pending |
-| CNST-02 | — | Pending |
-| CNST-03 | — | Pending |
-| CNST-04 | — | Pending |
-| CNST-05 | — | Pending |
-| MANU-01 | — | Pending |
-| MANU-02 | — | Pending |
-| MANU-03 | — | Pending |
-| MANU-04 | — | Pending |
-| PROG-01 | — | Pending |
-| PROG-02 | — | Pending |
-| PROG-03 | — | Pending |
-| PROG-04 | — | Pending |
-| PROG-05 | — | Pending |
-| PROG-06 | — | Pending |
-| PROG-07 | — | Pending |
+| SCHED-01 | Phase 4 | Pending |
+| SCHED-02 | Phase 4 | Pending |
+| SCHED-03 | Phase 4 | Pending |
+| SCHED-04 | Phase 4 | Pending |
+| SCHED-05 | Phase 4 | Pending |
+| SCHED-06 | Phase 4 | Pending |
+| SCHED-07 | Phase 4 | Pending |
+| SCHED-08 | Phase 4 | Pending |
+| CNST-01 | Phase 5 | Pending |
+| CNST-02 | Phase 5 | Pending |
+| CNST-03 | Phase 5 | Pending |
+| CNST-04 | Phase 5 | Pending |
+| CNST-05 | Phase 5 | Pending |
+| MANU-01 | Phase 5 | Pending |
+| MANU-02 | Phase 5 | Pending |
+| MANU-03 | Phase 5 | Pending |
+| MANU-04 | Phase 5 | Pending |
+| PROG-01 | Phase 6 | Pending |
+| PROG-02 | Phase 6 | Pending |
+| PROG-03 | Phase 6 | Pending |
+| PROG-04 | Phase 6 | Pending |
+| PROG-05 | Phase 6 | Pending |
+| PROG-06 | Phase 6 | Pending |
+| PROG-07 | Phase 6 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 (awaiting roadmap)
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-16 after initial definition*
+*Last updated: 2026-02-16 after roadmap creation*

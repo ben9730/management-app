@@ -4,17 +4,17 @@
 
 See: .planning/PROJECT.md (updated 2026-02-16)
 
-**Core value:** Task dependencies drive the schedule automatically — when a predecessor changes, all successors cascade their dates like Microsoft Project
-**Current focus:** v1.1 MS Project-Style Scheduling — defining requirements
+**Core value:** Task dependencies drive the schedule automatically -- when a predecessor changes, all successors cascade their dates like Microsoft Project
+**Current focus:** Phase 4 -- Scheduling Engine Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements for v1.1
-Last activity: 2026-02-16 — Milestone v1.1 started
+Phase: 4 of 6 (Scheduling Engine Foundation)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-02-16 -- Roadmap created for v1.1
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33% (v1.0 complete, v1.1 starting)
 
 ## Performance Metrics
 
@@ -38,6 +38,10 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.1 Roadmap]: Merged "wire CPM to UI" and "fix SS/FF/SF + lead/lag" into single Phase 4 -- engine correctness and UI wiring are one delivery boundary
+- [v1.1 Roadmap]: Phase 6 (Progress Tracking) depends on Phase 4 but not Phase 5 -- constraints are not needed for progress tracking
 
 ### Pending Todos
 
@@ -45,10 +49,12 @@ None.
 
 ### Blockers/Concerns
 
-- page.tsx is ~1,300 lines — new UI work should extract into hooks/components
+- page.tsx is ~1,300 lines -- new UI work should extract into hooks/components
+- Infinite cascade loop risk -- scheduling must be one-shot mutations, not reactive useEffect
+- SS/FF/SF dependency types currently broken in engine (treats all as FS) -- must fix in Phase 4
 
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Starting v1.1 milestone — MS Project-Style Scheduling
+Stopped at: Roadmap created for v1.1 milestone -- ready to plan Phase 4
 Resume file: None
