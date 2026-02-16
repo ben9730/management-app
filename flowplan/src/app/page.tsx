@@ -26,6 +26,7 @@ import { useTaskAssignments, useTaskAssignmentsByProject, useCreateTaskAssignmen
 import { useScheduling } from '@/hooks/use-scheduling'
 import { usePhaseLockStatus } from '@/hooks/use-phase-lock-status'
 import { usePhaseUnlockNotifier } from '@/hooks/use-phase-unlock-notifier'
+import { DependencyManager } from '@/components/dependencies/DependencyManager'
 import { CalendarExceptionsList } from '@/components/calendar'
 import { CalendarExceptionForm, type CalendarExceptionFormData } from '@/components/forms/CalendarExceptionForm'
 import type { CalendarException } from '@/types/entities'
@@ -1116,6 +1117,16 @@ function DashboardContent() {
           }}
           isLoading={createTaskMutation.isPending || updateTaskMutation.isPending}
         />
+        {editingTask && (
+          <div className="mt-6 pt-6 border-t border-slate-700/50">
+            <DependencyManager
+              task={editingTask}
+              allTasks={tasks}
+              projectId={projectId}
+              projectStartDate={project?.start_date ?? null}
+            />
+          </div>
+        )}
       </Modal>
 
       {/* Project Modal */}
