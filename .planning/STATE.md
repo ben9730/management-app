@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 5 of 6 (Constraints & Manual Mode)
-Plan: 1/3 complete
-Status: Phase 5 plan 1 complete, ready for plan 2
-Last activity: 2026-02-16 -- Completed 05-01 (constraint types + manual mode in CPM engine)
+Plan: 2/3 complete
+Status: Phase 5 plan 2 complete, ready for plan 3
+Last activity: 2026-02-16 -- Completed 05-02 (constraint/manual service wiring, violation toasts, form UI)
 
-Progress: [████████░░] 78% (v1.0 complete, v1.1 phase 5/6 plan 1/3)
+Progress: [█████████░] 82% (v1.0 complete, v1.1 phase 5/6 plan 2/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 9.9min
-- Total execution time: ~1.2 hours
+- Total plans completed: 8
+- Average duration: 9.5min
+- Total execution time: ~1.3 hours
 
 **By Phase:**
 
@@ -31,7 +31,7 @@ Progress: [████████░░] 78% (v1.0 complete, v1.1 phase 5/6 pl
 | 02-lock-enforcement-ui | 1 | 7min | 7min |
 | 03-unlock-notifications | 1 | 4min | 4min |
 | 04-scheduling-engine-foundation | 3 | 56min | 18.7min |
-| 05-constraints-manual-mode | 1/3 | 5min | 5min |
+| 05-constraints-manual-mode | 2/3 | 11min | 5.5min |
 
 *Updated after each plan completion*
 
@@ -57,6 +57,10 @@ Recent decisions affecting current work:
 - [05-01]: Dependencies always win over constraints (max of dependency ES and constraint date)
 - [05-01]: FNLT violations are transient flags, not persisted to database
 - [05-01]: Manual task skip occurs BEFORE dependency resolution in forward/backward pass
+- [05-02]: batchUpdateTaskCPMFields skips start_date/end_date for manual tasks (preserves user-set dates)
+- [05-02]: Toast violation notifications are fire-and-forget side effects, no setState in detection block
+- [05-02]: Constraint fields hidden (not disabled) when manual mode active -- cleaner UX
+- [05-02]: Manual mode toggle auto-fills start_date from today if empty
 
 ### Pending Todos
 
@@ -75,5 +79,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 05-01-PLAN.md (constraint types + manual mode in CPM engine)
+Stopped at: Completed 05-02-PLAN.md (constraint/manual service wiring, violation toasts, form UI)
 Resume file: None
