@@ -17,6 +17,7 @@
 
 import { useCallback, useMemo, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useTasks, taskKeys } from '@/hooks/use-tasks'
 import { useDependencies } from '@/hooks/use-dependencies'
 import { useCalendarExceptions } from '@/hooks/use-calendar-exceptions'
@@ -91,6 +92,39 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
       taskKeys.list(projectId),
       result.tasks
     )
+
+    // 3b. Detect and notify constraint violations (fire-and-forget, no state updates)
+    for (const task of result.tasks) {
+      const taskAny = task as unknown as Record<string, unknown>
+
+      if (taskAny._constraintOverridden) {
+        // Find the driving predecessor for the toast message
+        const taskDeps = currentDeps.filter(d => d.successor_id === task.id)
+        let drivingPredName = 'משימה קודמת'
+        for (const dep of taskDeps) {
+          const pred = currentTasks.find(t => t.id === dep.predecessor_id)
+          if (pred) {
+            drivingPredName = pred.title
+            break
+          }
+        }
+        toast.warning('אילוץ הותאם', {
+          description: `התלות ב-"${drivingPredName}" דורשת התחלה מאוחרת יותר מתאריך האילוץ של "${task.title}"`,
+          duration: 5000,
+        })
+      }
+
+      if (taskAny._fnltViolation) {
+        const constraintDate = task.constraint_date
+        const dateStr = constraintDate
+          ? (constraintDate instanceof Date ? constraintDate : new Date(constraintDate as string)).toLocaleDateString('he-IL')
+          : ''
+        toast.error('אזהרת דדליין', {
+          description: `"${task.title}" חורג מהדדליין (${dateStr})`,
+          duration: 7000,
+        })
+      }
+    }
 
     // 4. Cancel any in-flight batch persist (serial queue: newest wins)
     if (persistRef.current) {

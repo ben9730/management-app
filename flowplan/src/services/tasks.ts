@@ -23,6 +23,9 @@ export interface CreateTaskInput {
   estimated_hours?: number | null
   start_date?: string | null
   end_date?: string | null
+  constraint_type?: string | null    // 'ASAP' | 'MSO' | 'SNET' | 'FNLT' | null
+  constraint_date?: string | null    // ISO date string
+  scheduling_mode?: string           // 'auto' | 'manual'
 }
 
 export interface UpdateTaskInput {
@@ -36,6 +39,9 @@ export interface UpdateTaskInput {
   estimated_hours?: number | null
   start_date?: string | null
   end_date?: string | null
+  constraint_type?: string | null
+  constraint_date?: string | null
+  scheduling_mode?: string
 }
 
 export interface TasksFilter {
@@ -95,6 +101,9 @@ export async function createTask(
     estimated_hours: input.estimated_hours ?? null,
     start_date: input.start_date ?? null,
     end_date: input.end_date ?? null,
+    constraint_type: input.constraint_type ?? null,
+    constraint_date: input.constraint_date ?? null,
+    scheduling_mode: input.scheduling_mode ?? 'auto',
   }
 
   const { data, error } = await supabase
@@ -226,8 +235,25 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
   // Use individual updates instead of upsert to avoid NOT NULL constraint issues
   // (upsert requires all NOT NULL columns even when updating existing rows)
   const results = await Promise.all(
-    tasks.map(task =>
-      supabase
+    tasks.map(task => {
+      if ((task as unknown as Record<string, unknown>).scheduling_mode === 'manual') {
+        // Manual tasks: update CPM metadata (slack, critical path) but NOT dates
+        // User controls start_date/end_date -- engine must not overwrite them
+        return supabase
+          .from('tasks')
+          .update({
+            es: toDateStr(task.es),
+            ef: toDateStr(task.ef),
+            ls: toDateStr(task.ls),
+            lf: toDateStr(task.lf),
+            slack: task.slack ?? 0,
+            is_critical: task.is_critical ?? false,
+            // CRITICAL: Do NOT set start_date or end_date for manual tasks
+          } as never)
+          .eq('id', task.id)
+      }
+      // Auto tasks: sync start_date/end_date with es/ef as before
+      return supabase
         .from('tasks')
         .update({
           es: toDateStr(task.es),
@@ -240,7 +266,7 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
           end_date: toDateStr(task.ef),
         } as never)
         .eq('id', task.id)
-    )
+    })
   )
 
   const firstError = results.find(r => r.error)
