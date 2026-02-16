@@ -10,9 +10,10 @@
  * - No useEffect watching task/dependency data -- triggered only by explicit mutations
  * - Calendar exceptions expanded from date ranges into individual Date objects
  * - workDays hardcoded to Israeli calendar [0,1,2,3,4] (Sun-Thu)
+ * - workDays/holidays memoized to prevent useCallback invalidation on every render
  */
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTasks, taskKeys } from '@/hooks/use-tasks'
 import { useDependencies } from '@/hooks/use-dependencies'
@@ -44,6 +45,9 @@ function expandCalendarExceptions(exceptions: CalendarException[]): Date[] {
   return dates
 }
 
+// Stable reference: Israeli work week Sun-Thu
+const WORK_DAYS = [0, 1, 2, 3, 4] as const
+
 export function useScheduling(projectId: string, projectStartDate: Date | string | null) {
   const queryClient = useQueryClient()
   const { data: tasks = [] } = useTasks(projectId)
@@ -51,8 +55,11 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
   const { data: calendarExceptions = [] } = useCalendarExceptions(projectId)
   const persistRef = useRef<AbortController | null>(null)
 
-  const workDays = [0, 1, 2, 3, 4] // Sun-Thu (Israeli calendar)
-  const holidays = expandCalendarExceptions(calendarExceptions)
+  // Memoize holidays so useCallback doesn't invalidate on every render
+  const holidays = useMemo(
+    () => expandCalendarExceptions(calendarExceptions),
+    [calendarExceptions]
+  )
 
   const recalculate = useCallback(async (updatedTasks?: Task[], updatedDependencies?: Dependency[]) => {
     const currentTasks = updatedTasks || tasks
@@ -68,7 +75,7 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
       currentTasks,
       currentDeps,
       projectStart,
-      workDays,
+      [...WORK_DAYS],
       holidays
     )
 
@@ -106,7 +113,7 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
       // Log real errors but don't throw -- optimistic update already applied
       console.error('Failed to persist CPM fields:', err)
     }
-  }, [tasks, dependencies, projectStartDate, calendarExceptions, projectId, queryClient, workDays, holidays])
+  }, [tasks, dependencies, projectStartDate, projectId, queryClient, holidays])
 
   return {
     recalculate,

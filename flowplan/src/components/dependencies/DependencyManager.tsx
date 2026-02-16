@@ -13,8 +13,6 @@ import { Input } from '@/components/ui/input'
 import { Plus, Trash2, ArrowLeft } from 'lucide-react'
 import { useDependenciesForTask, useCreateDependency, useDeleteDependency } from '@/hooks/use-dependencies'
 import { useScheduling } from '@/hooks/use-scheduling'
-import { useQueryClient } from '@tanstack/react-query'
-import { dependencyKeys } from '@/hooks/use-dependencies'
 import type { Task, DependencyType, Dependency } from '@/types/entities'
 import { useDependencies } from '@/hooks/use-dependencies'
 
@@ -40,7 +38,6 @@ function DependencyManagerComponent({
   projectStartDate,
   className,
 }: DependencyManagerProps) {
-  const queryClient = useQueryClient()
   const { data: taskDeps = [], isLoading } = useDependenciesForTask(task.id)
   const { data: allDeps = [] } = useDependencies(projectId)
   const createDependency = useCreateDependency()
@@ -91,9 +88,7 @@ function DependencyManagerComponent({
       const updatedDeps = [...allDeps, newDep]
       // Recalculate with fresh dependencies
       await recalculate(undefined, updatedDeps)
-      // Then invalidate caches for UI refresh
-      await queryClient.invalidateQueries({ queryKey: dependencyKeys.lists() })
-      await queryClient.invalidateQueries({ queryKey: dependencyKeys.forTask(task.id) })
+      // NOTE: dependency cache invalidation already handled by useCreateDependency.onSuccess
 
       // Reset form
       setNewDepTaskId('')
@@ -103,7 +98,7 @@ function DependencyManagerComponent({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה ביצירת תלות')
     }
-  }, [newDepTaskId, newDepType, newDepLag, task.id, createDependency, allDeps, queryClient, recalculate])
+  }, [newDepTaskId, newDepType, newDepLag, task.id, createDependency, allDeps, recalculate])
 
   const handleDelete = React.useCallback(async (depId: string) => {
     try {
@@ -112,13 +107,11 @@ function DependencyManagerComponent({
       const updatedDeps = allDeps.filter(d => d.id !== depId)
       // Recalculate with fresh dependencies
       await recalculate(undefined, updatedDeps)
-      // Then invalidate caches for UI refresh
-      await queryClient.invalidateQueries({ queryKey: dependencyKeys.lists() })
-      await queryClient.invalidateQueries({ queryKey: dependencyKeys.forTask(task.id) })
+      // NOTE: dependency cache invalidation already handled by useDeleteDependency.onSuccess
     } catch (err) {
       console.error('Failed to delete dependency:', err)
     }
-  }, [deleteDependency, allDeps, queryClient, task.id, recalculate])
+  }, [deleteDependency, allDeps, recalculate])
 
   const formatDepLabel = (dep: Dependency, linkedTaskId: string) => {
     const lagStr = dep.lag_days !== 0
