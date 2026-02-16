@@ -223,24 +223,29 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
     return value instanceof Date ? value.toISOString().split('T')[0] : String(value)
   }
 
-  const updates = tasks.map(task => ({
-    id: task.id,
-    es: toDateStr(task.es),
-    ef: toDateStr(task.ef),
-    ls: toDateStr(task.ls),
-    lf: toDateStr(task.lf),
-    slack: task.slack ?? 0,
-    is_critical: task.is_critical ?? false,
-    start_date: toDateStr(task.es),
-    end_date: toDateStr(task.ef),
-  }))
+  // Use individual updates instead of upsert to avoid NOT NULL constraint issues
+  // (upsert requires all NOT NULL columns even when updating existing rows)
+  const results = await Promise.all(
+    tasks.map(task =>
+      supabase
+        .from('tasks')
+        .update({
+          es: toDateStr(task.es),
+          ef: toDateStr(task.ef),
+          ls: toDateStr(task.ls),
+          lf: toDateStr(task.lf),
+          slack: task.slack ?? 0,
+          is_critical: task.is_critical ?? false,
+          start_date: toDateStr(task.es),
+          end_date: toDateStr(task.ef),
+        } as never)
+        .eq('id', task.id)
+    )
+  )
 
-  const { error } = await supabase
-    .from('tasks')
-    .upsert(updates as never[], { onConflict: 'id' })
-
-  if (error) {
-    return { data: null, error: { message: error.message, code: error.code } }
+  const firstError = results.find(r => r.error)
+  if (firstError?.error) {
+    return { data: null, error: { message: firstError.error.message, code: firstError.error.code } }
   }
 
   return { data: null, error: null }
