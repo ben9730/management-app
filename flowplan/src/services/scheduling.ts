@@ -323,6 +323,13 @@ export class SchedulingService {
     }
 
     for (const task of resultTasks) {
+      // Step A: Manual task skip -- preserve user dates, skip dependency-driven computation
+      if (task.scheduling_mode === 'manual') {
+        task.es = this.toDate(task.start_date) || task.es
+        task.ef = this.toDate(task.end_date) || task.ef
+        continue
+      }
+
       const predecessors = predecessorMap.get(task.id) || []
 
       if (predecessors.length === 0) {
@@ -348,8 +355,27 @@ export class SchedulingService {
         task.es = maxDate || this.findNextWorkingDay(projectStart, workDays, holidays)
       }
 
-      // Calculate EF
+      // Step B: Apply constraint logic (dependencies already resolved)
+      const constraintDate = this.toDate(task.constraint_date)
+
+      if (constraintDate && (task.constraint_type === 'MSO' || task.constraint_type === 'SNET')) {
+        const depES = task.es as Date
+        const constraintWorking = this.findNextWorkingDay(constraintDate, workDays, holidays)
+        // Dependencies win: take the later date (locked decision)
+        if (constraintWorking > depES) {
+          task.es = constraintWorking
+        }
+        // Track whether constraint was overridden (transient, not persisted)
+        ;(task as unknown as Record<string, unknown>)._constraintOverridden = depES > constraintWorking
+      }
+
+      // Calculate EF (after any constraint adjustment)
       task.ef = this.addWorkingDays(task.es!, task.duration, workDays, holidays)
+
+      // FNLT check (after EF is known)
+      if (task.constraint_type === 'FNLT' && constraintDate) {
+        ;(task as unknown as Record<string, unknown>)._fnltViolation = (task.ef as Date) > constraintDate
+      }
     }
 
     return resultTasks
@@ -459,6 +485,13 @@ export class SchedulingService {
     }
 
     for (const task of resultTasks) {
+      // Manual task: use user dates as LS/LF for backward pass purposes
+      if (task.scheduling_mode === 'manual') {
+        task.ls = this.toDate(task.start_date) || task.ls
+        task.lf = this.toDate(task.end_date) || task.lf
+        continue
+      }
+
       const successors = successorMap.get(task.id) || []
 
       if (successors.length === 0) {
