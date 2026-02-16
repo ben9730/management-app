@@ -209,3 +209,39 @@ export async function deleteTask(id: string): Promise<ServiceResult<void>> {
 
   return { data: null, error: null }
 }
+
+/**
+ * Batch update CPM scheduling fields for multiple tasks.
+ * Also syncs start_date/end_date with es/ef for auto-scheduled tasks,
+ * so the Gantt chart (which reads start_date/end_date) shows correct CPM-computed dates.
+ */
+export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceResult<void>> {
+  if (tasks.length === 0) return { data: null, error: null }
+
+  const toDateStr = (value: Date | string | null): string | null => {
+    if (!value) return null
+    return value instanceof Date ? value.toISOString().split('T')[0] : String(value)
+  }
+
+  const updates = tasks.map(task => ({
+    id: task.id,
+    es: toDateStr(task.es),
+    ef: toDateStr(task.ef),
+    ls: toDateStr(task.ls),
+    lf: toDateStr(task.lf),
+    slack: task.slack ?? 0,
+    is_critical: task.is_critical ?? false,
+    start_date: toDateStr(task.es),
+    end_date: toDateStr(task.ef),
+  }))
+
+  const { error } = await supabase
+    .from('tasks')
+    .upsert(updates as never[], { onConflict: 'id' })
+
+  if (error) {
+    return { data: null, error: { message: error.message, code: error.code } }
+  }
+
+  return { data: null, error: null }
+}
