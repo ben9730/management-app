@@ -5,6 +5,8 @@
  * Uses one-shot mutation pattern (NOT reactive useEffect) to prevent infinite loops.
  *
  * Design decisions:
+ * - recalculate() is SYNCHRONOUS for UI responsiveness -- CPM + cache update happen
+ *   immediately, DB persistence runs in the background (fire-and-forget).
  * - recalculate() accepts optional updatedTasks to avoid stale closure data
  * - AbortController-based serial queue prevents race conditions on rapid changes
  * - No useEffect watching task/dependency data -- triggered only by explicit mutations
@@ -61,7 +63,7 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
     [calendarExceptions]
   )
 
-  const recalculate = useCallback(async (updatedTasks?: Task[], updatedDependencies?: Dependency[]) => {
+  const recalculate = useCallback((updatedTasks?: Task[], updatedDependencies?: Dependency[]) => {
     const currentTasks = updatedTasks || tasks
     const currentDeps = updatedDependencies || dependencies
     if (currentTasks.length === 0 || !projectStartDate) return
@@ -80,9 +82,8 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
     )
 
     // 2. Cancel any in-flight refetches to prevent race condition.
-    // Without this, the mutation's onSuccess invalidation triggers a DB refetch
-    // that can resolve AFTER our optimistic update, overwriting it with stale data.
-    await queryClient.cancelQueries({ queryKey: taskKeys.list(projectId) })
+    // The abort signal is set synchronously; we intentionally don't await cleanup.
+    queryClient.cancelQueries({ queryKey: taskKeys.list(projectId) })
 
     // 3. Optimistic update: put recalculated tasks into React Query cache immediately
     // This produces a new array reference, which triggers GanttChart re-render
@@ -98,21 +99,25 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
     const controller = new AbortController()
     persistRef.current = controller
 
-    // 5. Batch persist to DB, then re-sync cache from DB
-    try {
-      if (!controller.signal.aborted) {
-        await batchUpdateTaskCPMFields(result.tasks)
+    // 5. Fire-and-forget: persist to DB, then re-sync cache from DB.
+    // We intentionally don't await -- the optimistic update is already applied,
+    // so the UI is responsive immediately. Persistence runs in the background.
+    void (async () => {
+      try {
+        if (!controller.signal.aborted) {
+          await batchUpdateTaskCPMFields(result.tasks)
+        }
+        // After DB is up to date, invalidate to re-sync cache with DB truth
+        if (!controller.signal.aborted) {
+          await queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) })
+        }
+      } catch (err) {
+        // If aborted by a newer recalculation, ignore the error
+        if (controller.signal.aborted) return
+        // Log real errors but don't throw -- optimistic update already applied
+        console.error('Failed to persist CPM fields:', err)
       }
-      // After DB is up to date, invalidate to re-sync cache with DB truth
-      if (!controller.signal.aborted) {
-        await queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) })
-      }
-    } catch (err) {
-      // If aborted by a newer recalculation, ignore the error
-      if (controller.signal.aborted) return
-      // Log real errors but don't throw -- optimistic update already applied
-      console.error('Failed to persist CPM fields:', err)
-    }
+    })()
   }, [tasks, dependencies, projectStartDate, projectId, queryClient, holidays])
 
   return {

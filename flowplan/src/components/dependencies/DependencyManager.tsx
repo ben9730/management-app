@@ -86,9 +86,8 @@ function DependencyManagerComponent({
       })
       // Build updated deps array immediately (don't wait for cache)
       const updatedDeps = [...allDeps, newDep]
-      // Recalculate with fresh dependencies
-      await recalculate(undefined, updatedDeps)
-      // NOTE: dependency cache invalidation already handled by useCreateDependency.onSuccess
+      // Recalculate with fresh dependencies (synchronous — updates cache immediately)
+      recalculate(undefined, updatedDeps)
 
       // Reset form
       setNewDepTaskId('')
@@ -105,9 +104,8 @@ function DependencyManagerComponent({
       await deleteDependency.mutateAsync(depId)
       // Build updated deps array immediately (don't wait for cache)
       const updatedDeps = allDeps.filter(d => d.id !== depId)
-      // Recalculate with fresh dependencies
-      await recalculate(undefined, updatedDeps)
-      // NOTE: dependency cache invalidation already handled by useDeleteDependency.onSuccess
+      // Recalculate with fresh dependencies (synchronous — updates cache immediately)
+      recalculate(undefined, updatedDeps)
     } catch (err) {
       console.error('Failed to delete dependency:', err)
     }

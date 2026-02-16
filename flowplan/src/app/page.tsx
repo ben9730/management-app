@@ -368,9 +368,9 @@ function DashboardContent() {
         status: newStatus,
       }
     })
-    // Recalculate CPM with the updated task merged in
+    // Recalculate CPM with the updated task merged in (synchronous)
     const currentTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
-    await recalculate(currentTasks)
+    recalculate(currentTasks)
   }, [tasks, updateTaskMutation, recalculate])
 
   // Handle add task
@@ -391,9 +391,9 @@ function DashboardContent() {
   const handleDeleteTask = useCallback(async (taskId: string) => {
     await deleteTaskMutation.mutateAsync(taskId)
     if (selectedTask?.id === taskId) setSelectedTask(null)
-    // Recalculate CPM with the deleted task removed
+    // Recalculate CPM with the deleted task removed (synchronous)
     const remainingTasks = tasks.filter(t => t.id !== taskId)
-    await recalculate(remainingTasks)
+    recalculate(remainingTasks)
   }, [selectedTask, deleteTaskMutation, tasks, recalculate])
 
   // Handle task form submit
@@ -460,9 +460,9 @@ function DashboardContent() {
           if (data.assignee_ids) {
             await syncTaskAssignments(editingTask.id, data.assignee_ids)
           }
-          // Recalculate CPM with the updated task merged in
+          // Recalculate CPM with the updated task merged in (synchronous)
           const currentTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
-          await recalculate(currentTasks)
+          recalculate(currentTasks)
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
@@ -502,10 +502,10 @@ function DashboardContent() {
               }
             }
           }
-          // Recalculate CPM with the new task added
+          // Recalculate CPM with the new task added (synchronous)
           if (newTask) {
             const currentTasks = [...tasks, newTask]
-            await recalculate(currentTasks)
+            recalculate(currentTasks)
           }
           setIsTaskModalOpen(false)
           setEditingTask(null)
