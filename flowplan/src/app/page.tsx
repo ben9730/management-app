@@ -23,6 +23,7 @@ import { usePhases, useCreatePhase, useUpdatePhase } from '@/hooks/use-phases'
 import { useTeamMembersByProject, useTeamMembers } from '@/hooks/use-team-members'
 import { useCalendarExceptions, useCreateCalendarException, useUpdateCalendarException, useDeleteCalendarException } from '@/hooks/use-calendar-exceptions'
 import { useTaskAssignments, useTaskAssignmentsByProject, useCreateTaskAssignment, useDeleteTaskAssignment } from '@/hooks/use-task-assignments'
+import { useScheduling } from '@/hooks/use-scheduling'
 import { usePhaseLockStatus } from '@/hooks/use-phase-lock-status'
 import { usePhaseUnlockNotifier } from '@/hooks/use-phase-unlock-notifier'
 import { CalendarExceptionsList } from '@/components/calendar'
@@ -201,6 +202,9 @@ function DashboardContent() {
   const createPhaseMutation = useCreatePhase()
   const updatePhaseMutation = useUpdatePhase()
 
+  // Scheduling: CPM recalculation on task/dependency mutations
+  const { recalculate, dependencies } = useScheduling(projectId, project?.start_date ?? null)
+
   // UI State
   const [viewMode, setViewMode] = useState<ViewMode>('phases')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -353,17 +357,20 @@ function DashboardContent() {
   }, [tasks, teamMembers, projectTaskAssignments])
 
   // Handle task status change
-  const handleTaskStatusChange = useCallback((taskId: string, newStatus: Task['status']) => {
+  const handleTaskStatusChange = useCallback(async (taskId: string, newStatus: Task['status']) => {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
 
-    updateTaskMutation.mutate({
+    const updatedTask = await updateTaskMutation.mutateAsync({
       id: taskId,
       updates: {
         status: newStatus,
       }
     })
-  }, [tasks, updateTaskMutation])
+    // Recalculate CPM with the updated task merged in
+    const currentTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
+    await recalculate(currentTasks)
+  }, [tasks, updateTaskMutation, recalculate])
 
   // Handle add task
   const handleAddTask = useCallback((phaseId: string) => {
@@ -380,10 +387,13 @@ function DashboardContent() {
   }, [])
 
   // Handle delete task
-  const handleDeleteTask = useCallback((taskId: string) => {
-    deleteTaskMutation.mutate(taskId)
+  const handleDeleteTask = useCallback(async (taskId: string) => {
+    await deleteTaskMutation.mutateAsync(taskId)
     if (selectedTask?.id === taskId) setSelectedTask(null)
-  }, [selectedTask, deleteTaskMutation])
+    // Recalculate CPM with the deleted task removed
+    const remainingTasks = tasks.filter(t => t.id !== taskId)
+    await recalculate(remainingTasks)
+  }, [selectedTask, deleteTaskMutation, tasks, recalculate])
 
   // Handle task form submit
   const handleTaskFormSubmit = useCallback((data: {
@@ -444,11 +454,14 @@ function DashboardContent() {
           assignee_id: data.assignee_id || null,
         }
       }, {
-        onSuccess: async () => {
+        onSuccess: async (updatedTask) => {
           // Sync task assignments for multi-assignee support
           if (data.assignee_ids) {
             await syncTaskAssignments(editingTask.id, data.assignee_ids)
           }
+          // Recalculate CPM with the updated task merged in
+          const currentTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
+          await recalculate(currentTasks)
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
@@ -488,6 +501,11 @@ function DashboardContent() {
               }
             }
           }
+          // Recalculate CPM with the new task added
+          if (newTask) {
+            const currentTasks = [...tasks, newTask]
+            await recalculate(currentTasks)
+          }
           setIsTaskModalOpen(false)
           setEditingTask(null)
           setSelectedPhaseId(null)
@@ -499,7 +517,7 @@ function DashboardContent() {
         }
       })
     }
-  }, [editingTask, projectId, selectedPhaseId, createTaskMutation, updateTaskMutation, editingTaskAssignments, createTaskAssignmentMutation, deleteTaskAssignmentMutation])
+  }, [editingTask, projectId, selectedPhaseId, createTaskMutation, updateTaskMutation, editingTaskAssignments, createTaskAssignmentMutation, deleteTaskAssignmentMutation, tasks, recalculate])
 
   // Handle project form submit (for creating or editing project)
   const handleProjectFormSubmit = useCallback((data: {
@@ -930,7 +948,7 @@ function DashboardContent() {
               </div>
             ) : (
               <div className="fp-card p-4">
-                <GanttChart tasks={tasks} dependencies={[]} onTaskClick={setSelectedTask} showTodayMarker />
+                <GanttChart tasks={tasks} dependencies={dependencies} onTaskClick={setSelectedTask} showTodayMarker />
               </div>
             )}
           </div>
