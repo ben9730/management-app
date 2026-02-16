@@ -100,6 +100,7 @@ function DependencyManagerComponent({
   }, [newDepTaskId, newDepType, newDepLag, task.id, createDependency, allDeps, recalculate])
 
   const handleDelete = React.useCallback(async (depId: string) => {
+    setError(null)
     try {
       await deleteDependency.mutateAsync(depId)
       // Build updated deps array immediately (don't wait for cache)
@@ -107,6 +108,8 @@ function DependencyManagerComponent({
       // Recalculate with fresh dependencies (synchronous — updates cache immediately)
       recalculate(undefined, updatedDeps)
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'שגיאה במחיקת תלות'
+      setError(msg)
       console.error('Failed to delete dependency:', err)
     }
   }, [deleteDependency, allDeps, recalculate])
@@ -137,6 +140,11 @@ function DependencyManagerComponent({
         )}
       </div>
 
+      {/* Error feedback (visible for both add and delete errors) */}
+      {error && !isAdding && (
+        <p className="text-xs text-red-400">{error}</p>
+      )}
+
       {/* Predecessors */}
       {predecessors.length > 0 && (
         <div className="space-y-2">
@@ -155,7 +163,12 @@ function DependencyManagerComponent({
               <button
                 type="button"
                 onClick={() => handleDelete(dep.id)}
-                className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                className={cn(
+                  'transition-colors p-1',
+                  deleteDependency.isPending
+                    ? 'text-slate-600 cursor-wait'
+                    : 'text-slate-500 hover:text-red-400'
+                )}
                 disabled={deleteDependency.isPending}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -183,7 +196,12 @@ function DependencyManagerComponent({
               <button
                 type="button"
                 onClick={() => handleDelete(dep.id)}
-                className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                className={cn(
+                  'transition-colors p-1',
+                  deleteDependency.isPending
+                    ? 'text-slate-600 cursor-wait'
+                    : 'text-slate-500 hover:text-red-400'
+                )}
                 disabled={deleteDependency.isPending}
               >
                 <Trash2 className="w-3.5 h-3.5" />

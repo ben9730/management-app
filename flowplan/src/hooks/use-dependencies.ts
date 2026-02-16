@@ -160,11 +160,10 @@ export function useDeleteDependency() {
     onSuccess: (id) => {
       // Remove from cache
       queryClient.removeQueries({ queryKey: dependencyKeys.detail(id) })
-      // Invalidate lists
-      queryClient.invalidateQueries({ queryKey: dependencyKeys.lists() })
-      // Note: We can't easily invalidate task-specific queries here
-      // since we don't have the predecessor/successor IDs
-      // The lists invalidation will handle most cases
+      // Invalidate ALL dependency queries (lists + task-specific)
+      // We use dependencyKeys.all because we don't have predecessor/successor IDs
+      // and need to ensure useDependenciesForTask caches are also refreshed
+      queryClient.invalidateQueries({ queryKey: dependencyKeys.all })
     },
   })
 }
