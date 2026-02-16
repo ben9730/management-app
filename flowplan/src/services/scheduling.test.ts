@@ -73,7 +73,7 @@ function createMockTeamMember(overrides: Partial<TeamMember> = {}): TeamMember {
 function createMockTimeOff(overrides: Partial<EmployeeTimeOff> = {}): EmployeeTimeOff {
   return {
     id: 'timeoff-1',
-    user_id: 'user-1',
+    team_member_id: 'user-1',
     start_date: new Date('2026-02-15'),
     end_date: new Date('2026-02-17'),
     type: 'vacation',
@@ -539,7 +539,7 @@ describe('SchedulingService', () => {
       ]
       const timeOff = [
         createMockTimeOff({
-          user_id: 'user-1',
+          team_member_id: 'user-1',
           start_date: new Date('2026-02-15'), // Sunday
           end_date: new Date('2026-02-17'),   // Tuesday
         }),
@@ -719,6 +719,412 @@ describe('SchedulingService', () => {
       ]
 
       expect(() => service.topologicalSort(tasks, deps)).toThrow('Circular dependency detected')
+    })
+  })
+
+  // ==========================================
+  // Forward Pass - SS Dependencies
+  // ==========================================
+
+  describe('Forward Pass - SS dependencies', () => {
+    it('SS dependency: successor ES equals predecessor ES', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 27
+      // B (SS): ES should equal A's ES = Jan 25
+      expect(result[0].es?.toISOString().split('T')[0]).toBe('2026-01-25')
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-25')
+      // B: EF = ES + 2 days = Jan 26
+      expect(result[1].ef?.toISOString().split('T')[0]).toBe('2026-01-26')
+    })
+
+    it('SS dependency with positive lag: successor ES = predecessor ES + lag', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS', lag_days: 2 }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25
+      // B (SS+2): ES = A's ES + 2 working days = Jan 25 + 2 = Jan 27
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-27')
+    })
+
+    it('SS dependency with negative lag (lead): clamps to project start', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS', lag_days: -1 }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25
+      // B (SS-1): candidateES = A's ES - 1 = Jan 24 (Sat, not a working day)
+      // Clamped to project start = Jan 25
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-25')
+    })
+  })
+
+  // ==========================================
+  // Forward Pass - FF Dependencies
+  // ==========================================
+
+  describe('Forward Pass - FF dependencies', () => {
+    it('FF dependency: successor EF aligns to predecessor EF', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5 }),
+        createMockTask({ id: 'B', duration: 3 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FF' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 29 (5 days: Sun-Thu)
+      // B (FF): EF must >= A's EF = Jan 29
+      // B's ES = subtractWorkingDays(Jan 29, 3) = Jan 27 (Tue)
+      expect(result[0].ef?.toISOString().split('T')[0]).toBe('2026-01-29')
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-27')
+      expect(result[1].ef?.toISOString().split('T')[0]).toBe('2026-01-29')
+    })
+
+    it('FF dependency with positive lag: successor EF = predecessor EF + lag', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5 }),
+        createMockTask({ id: 'B', duration: 3 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FF', lag_days: 1 }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 29 (Thu)
+      // B (FF+1): EF must >= A's EF + 1 working day = Jan 30 -> Fri (weekend) -> Feb 1 (Sun)
+      // B's ES = subtractWorkingDays(Feb 1, 3) = Jan 29 (Thu)
+      // Actually: Jan 29 is the EF constraint + 1 working day.
+      // EF constraint = addWorkingDays(Jan 29, 1+1) since lag is applied as working days from EF
+      // Let me recalculate: predEF = Jan 29. candidateEF = addWorkingDays(Jan 29, 1+1) - no.
+      // FF+lag: candidateEF = predEF + lag working days.
+      // predEF = Jan 29. Add 1 working day from Jan 29: next working day after Jan 29 = Jan 30 (Fri is weekend), so Feb 1 (Sun).
+      // Wait, addWorkingDays(Jan 29, 1) starts from Jan 29, duration 1 = same day. So that's still Jan 29.
+      // Actually addWorkingDays adds from start: addWorkingDays(Jan 29, 2) = Jan 29 (day 1), then +1 = Feb 1 (skip Fri/Sat, day 2).
+      // The lag should be: candidateEF = Jan 29, then shift by lag_days working days forward.
+      // If lag=1: shift 1 working day forward from Jan 29. Next working day after Jan 29 = Feb 1 (Sun).
+      // So candidateEF = Feb 1. B's ES = subtractWorkingDays(Feb 1, 3) = Jan 29 (Thu).
+      // Actually Feb 1 is Sunday. subtractWorkingDays(Feb 1, 3): Feb 1 (day 3), then back: Jan 29 (Thu, day 2), Jan 28 (Wed, day 1) = Jan 28.
+      // Hmm, let me just check the expected value more carefully.
+      // Duration 3: if EF is Feb 1, then ES = subtractWorkingDays(Feb 1, 3).
+      // subtractWorkingDays: Feb 1 is working day, duration 3, subtract 2 more:
+      //   Feb 1 -> Jan 29 (skip Fri/Sat) -> Jan 28 = Jan 28 (Wed).
+      // No wait: subtractWorkingDays(Feb 1, 3) means go back 3 working days including Feb 1.
+      // Feb 1 (3), back to Jan 29 (2, skip Fri/Sat), Jan 28 (1) -> result Jan 28?
+      // Looking at the code: subtractWorkingDays subtracts (daysToSubtract - 1) working days backwards.
+      // Duration 1 = same day. Duration 3: same day + 2 backwards.
+      // Feb 1 is the "end", go back 2 working days: Jan 29 (skip Fri/Sat = Thu), Jan 28 (Wed).
+      // So LS = Jan 28? No, ES, not LS.
+      // ES for B with EF=Feb 1, duration 3: Feb 1 - 2 working days back = Jan 28 (Wed).
+      // Hmm actually I need to think about this differently. Let me just test the core assertion.
+      // The key point: with FF+1 lag, B finishes 1 working day AFTER A finishes.
+      // A finishes Jan 29 (Thu). 1 working day after = Feb 1 (Sun, skip Fri/Sat).
+      // B finishes Feb 1, B has duration 3, so B starts at subtractWorkingDays(Feb 1, 3).
+      // subtractWorkingDays(Feb 1, 3): Feb 1 (day 1), -1 -> Jan 31 (Sat, skip), Jan 30 (Fri, skip), Jan 29 (Thu, day 2), -1 -> Jan 28 (Wed, day 3). Result = Jan 28.
+      // Wait, I'm confusing myself. Let me look at the code for subtractWorkingDays.
+      // subtractWorkingDays(endDate, daysToSubtract): starts at endDate. If it's a working day, and daysToSubtract=1, return it.
+      // If daysToSubtract=3: stay at endDate (accounts for 1), then go backwards (3-1=2) more working days.
+      // Feb 1 (Sun): working day? Yes (day 0 = Sun in [0,1,2,3,4]). Good, stays.
+      // Then go back 2 working days: Feb 1 -> Jan 31 (Sat=not working) -> Jan 30 (Fri=not working) -> Jan 29 (Thu=working, count 1) -> Jan 28 (Wed=working, count 2) -> result Jan 28.
+      // So B: ES=Jan 28, EF=Feb 1.
+      expect(result[1].ef?.toISOString().split('T')[0]).toBe('2026-02-01')
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-28')
+    })
+  })
+
+  // ==========================================
+  // Forward Pass - SF Dependencies
+  // ==========================================
+
+  describe('Forward Pass - SF dependencies', () => {
+    it('SF dependency: successor EF aligns to predecessor ES', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SF' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25
+      // B (SF): EF constraint = A's ES = Jan 25
+      // B's ES = subtractWorkingDays(Jan 25, 2) = Jan 22 (Thu)
+      // But Jan 22 is before project start (Jan 25), so clamp ES to Jan 25
+      // Then EF = addWorkingDays(Jan 25, 2) = Jan 26
+      // Actually if ES is clamped to project start, the SF constraint might push EF later.
+      // Let me reconsider: SF means predecessor Start -> successor Finish.
+      // Successor cannot finish before predecessor starts.
+      // So B's EF >= A's ES = Jan 25.
+      // B has duration 2. If EF = Jan 25, ES = subtractWorkingDays(Jan 25, 2) = Jan 22 (Thu).
+      // But that's before project start. So ES gets clamped to project start Jan 25.
+      // With ES = Jan 25 and duration 2, EF = Jan 26.
+      // The constraint EF >= Jan 25 is satisfied (Jan 26 >= Jan 25).
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-25')
+      expect(result[1].ef?.toISOString().split('T')[0]).toBe('2026-01-26')
+    })
+  })
+
+  // ==========================================
+  // Forward Pass - Negative Lag (Lead Time)
+  // ==========================================
+
+  describe('Forward Pass - Negative lag (lead time)', () => {
+    it('FS with negative lag: successor starts before predecessor finishes', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5 }),
+        createMockTask({ id: 'B', duration: 3 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FS', lag_days: -2 }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 29 (5 days: Sun-Thu)
+      // B (FS-2): candidateES = predEF + 1 - 2 = predEF - 1
+      // Normal FS: ES = Jan 30 (day after EF). With -2 lead: Jan 30 - 2 working days.
+      // subtractWorkingDays from Jan 30: Jan 30 is Fri (not working), back to Jan 29 (Thu).
+      // Actually: FS with lag: candidateES = predEF + 1 day + lag_days.
+      // For negative lag: candidateES = addDays(predEF, 1) then adjust by lag.
+      // predEF = Jan 29. addDays(Jan 29, 1) = Jan 30.
+      // lag = -2: subtract 2 working days from Jan 30.
+      // Jan 30 is Fri (not working in Israeli week). subtractWorkingDays(Jan 30, 2):
+      //   First find working day going back: Jan 29 (Thu).
+      //   Duration 2: Jan 29 (day 1), then Jan 28 (Wed, day 2) = result Jan 28.
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-28')
+    })
+
+    it('negative lag that would push before project start clamps to project start', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 2 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FS', lag_days: -5 }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 26 (2 days)
+      // B (FS-5): way before project start
+      // Should clamp to project start Jan 25
+      expect(result[1].es?.toISOString().split('T')[0]).toBe('2026-01-25')
+    })
+  })
+
+  // ==========================================
+  // Backward Pass - SS/FF/SF
+  // ==========================================
+
+  describe('Backward Pass - SS/FF/SF dependencies', () => {
+    it('SS backward pass: predecessor LF derived from successor LS', () => {
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          es: new Date('2026-01-25'),
+          ef: new Date('2026-01-27'),
+        }),
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          es: new Date('2026-01-25'),
+          ef: new Date('2026-01-26'),
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS' }),
+      ]
+      const projectEnd = new Date('2026-01-27')
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.backwardPass(tasks, deps, projectEnd, workDays, [])
+
+      // B: LF = projectEnd = Jan 27, LS = subtractWorkingDays(Jan 27, 2) = Jan 26
+      // A (SS): SS constrains successor's LS based on predecessor's ES.
+      // Backward: predecessor LS <= successor LS - lag.
+      // predecessor LS = B's LS - 0 = Jan 26.
+      // predecessor LF = addWorkingDays(LS, duration) = addWorkingDays(Jan 26, 3) = Jan 28.
+      const taskA = result.find(t => t.id === 'A')
+      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-26')
+      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-28')
+    })
+
+    it('FF backward pass: predecessor LF equals successor LF minus lag', () => {
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 5,
+          es: new Date('2026-01-25'),
+          ef: new Date('2026-01-29'),
+        }),
+        createMockTask({
+          id: 'B',
+          duration: 3,
+          es: new Date('2026-01-27'),
+          ef: new Date('2026-01-29'),
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FF' }),
+      ]
+      const projectEnd = new Date('2026-01-29')
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.backwardPass(tasks, deps, projectEnd, workDays, [])
+
+      // B: LF = projectEnd = Jan 29, LS = subtractWorkingDays(Jan 29, 3) = Jan 27
+      // A (FF): candidateLF = B's LF - lag = Jan 29 - 0 = Jan 29
+      // A: LF = Jan 29, LS = subtractWorkingDays(Jan 29, 5) = Jan 25
+      const taskA = result.find(t => t.id === 'A')
+      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-29')
+      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-25')
+    })
+
+    it('SF backward pass: predecessor LS derived from successor LF', () => {
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          es: new Date('2026-01-25'),
+          ef: new Date('2026-01-27'),
+        }),
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          es: new Date('2026-01-25'),
+          ef: new Date('2026-01-26'),
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SF' }),
+      ]
+      const projectEnd = new Date('2026-01-27')
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.backwardPass(tasks, deps, projectEnd, workDays, [])
+
+      // B: LF = projectEnd = Jan 27, LS = subtractWorkingDays(Jan 27, 2) = Jan 26
+      // A (SF): SF constrains successor's finish based on predecessor's start.
+      // Backward: predecessor LS <= successor LF - lag.
+      // predecessor LS = B's LF - 0 = Jan 27.
+      // predecessor LF = addWorkingDays(Jan 27, 3) = Jan 29.
+      const taskA = result.find(t => t.id === 'A')
+      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-27')
+      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-29')
+    })
+  })
+
+  // ==========================================
+  // Mixed Dependency Types
+  // ==========================================
+
+  describe('Mixed dependency types on one successor', () => {
+    it('resolves max ES from mixed FS and SS dependencies', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3 }), // EF = Jan 27
+        createMockTask({ id: 'B', duration: 5 }), // ES = Jan 25
+        createMockTask({ id: 'C', duration: 2 }),  // depends on A (FS) and B (SS)
+      ]
+      const deps = [
+        createMockDependency('A', 'C', { type: 'FS' }),
+        createMockDependency('B', 'C', { type: 'SS' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 27
+      // B: ES=Jan 25, EF=Jan 29
+      // C from A (FS): candidateES = Jan 28 (day after Jan 27)
+      // C from B (SS): candidateES = Jan 25 (same as B's ES)
+      // C's ES = max(Jan 28, Jan 25) = Jan 28
+      const taskC = result.find(t => t.id === 'C')
+      expect(taskC?.es?.toISOString().split('T')[0]).toBe('2026-01-28')
+    })
+  })
+
+  // ==========================================
+  // Full CPM with Non-FS Dependencies
+  // ==========================================
+
+  describe('Full calculateCriticalPath with non-FS deps', () => {
+    it('computes correct slack and critical path with SS and FF dependencies', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      // Chain: A --(SS)--> B --(FF)--> C
+      // A: duration 5 (Jan 25-29)
+      // B: duration 3, SS from A so ES=Jan 25, EF=Jan 27
+      // C: duration 2, FF from B so EF >= Jan 27. ES = subtractWorkingDays(Jan 27, 2) = Jan 26. EF=Jan 27.
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5 }),
+        createMockTask({ id: 'B', duration: 3 }),
+        createMockTask({ id: 'C', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS' }),
+        createMockDependency('B', 'C', { type: 'FF' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // All tasks should have scheduling data
+      result.tasks.forEach(task => {
+        expect(task.es).not.toBeNull()
+        expect(task.ef).not.toBeNull()
+        expect(task.ls).not.toBeNull()
+        expect(task.lf).not.toBeNull()
+        expect(typeof task.slack).toBe('number')
+      })
+
+      // A has the longest span (5 days, Jan 25-29) so it should be on the critical path
+      expect(result.criticalPath).toContain('A')
+
+      // Project end should be Jan 29 (max EF = A's EF)
+      expect(result.projectEndDate?.toISOString().split('T')[0]).toBe('2026-01-29')
     })
   })
 
