@@ -16,6 +16,7 @@ import { useScheduling } from '@/hooks/use-scheduling'
 import { useQueryClient } from '@tanstack/react-query'
 import { dependencyKeys } from '@/hooks/use-dependencies'
 import type { Task, DependencyType, Dependency } from '@/types/entities'
+import { useDependencies } from '@/hooks/use-dependencies'
 
 interface DependencyManagerProps {
   task: Task
@@ -41,6 +42,7 @@ function DependencyManagerComponent({
 }: DependencyManagerProps) {
   const queryClient = useQueryClient()
   const { data: taskDeps = [], isLoading } = useDependenciesForTask(task.id)
+  const { data: allDeps = [] } = useDependencies(projectId)
   const createDependency = useCreateDependency()
   const deleteDependency = useDeleteDependency()
   const { recalculate } = useScheduling(projectId, projectStartDate)
@@ -79,16 +81,19 @@ function DependencyManagerComponent({
     setError(null)
 
     try {
-      await createDependency.mutateAsync({
+      const newDep = await createDependency.mutateAsync({
         predecessor_id: newDepTaskId,
         successor_id: task.id,
         type: newDepType,
         lag_days: newDepLag,
       })
-      // Wait for dependency cache to refresh then recalculate
+      // Build updated deps array immediately (don't wait for cache)
+      const updatedDeps = [...allDeps, newDep]
+      // Recalculate with fresh dependencies
+      await recalculate(undefined, updatedDeps)
+      // Then invalidate caches for UI refresh
       await queryClient.invalidateQueries({ queryKey: dependencyKeys.lists() })
       await queryClient.invalidateQueries({ queryKey: dependencyKeys.forTask(task.id) })
-      await recalculate()
 
       // Reset form
       setNewDepTaskId('')
@@ -98,18 +103,22 @@ function DependencyManagerComponent({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה ביצירת תלות')
     }
-  }, [newDepTaskId, newDepType, newDepLag, task.id, createDependency, queryClient, recalculate])
+  }, [newDepTaskId, newDepType, newDepLag, task.id, createDependency, allDeps, queryClient, recalculate])
 
   const handleDelete = React.useCallback(async (depId: string) => {
     try {
       await deleteDependency.mutateAsync(depId)
+      // Build updated deps array immediately (don't wait for cache)
+      const updatedDeps = allDeps.filter(d => d.id !== depId)
+      // Recalculate with fresh dependencies
+      await recalculate(undefined, updatedDeps)
+      // Then invalidate caches for UI refresh
       await queryClient.invalidateQueries({ queryKey: dependencyKeys.lists() })
       await queryClient.invalidateQueries({ queryKey: dependencyKeys.forTask(task.id) })
-      await recalculate()
     } catch (err) {
       console.error('Failed to delete dependency:', err)
     }
-  }, [deleteDependency, queryClient, task.id, recalculate])
+  }, [deleteDependency, allDeps, queryClient, task.id, recalculate])
 
   const formatDepLabel = (dep: Dependency, linkedTaskId: string) => {
     const lagStr = dep.lag_days !== 0

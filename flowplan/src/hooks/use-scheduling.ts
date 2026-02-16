@@ -19,7 +19,7 @@ import { useDependencies } from '@/hooks/use-dependencies'
 import { useCalendarExceptions } from '@/hooks/use-calendar-exceptions'
 import { schedulingService } from '@/services/scheduling'
 import { batchUpdateTaskCPMFields } from '@/services/tasks'
-import type { Task, CalendarException } from '@/types/entities'
+import type { Task, Dependency, CalendarException } from '@/types/entities'
 
 /**
  * Expand CalendarException date ranges into individual Date objects.
@@ -54,8 +54,9 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
   const workDays = [0, 1, 2, 3, 4] // Sun-Thu (Israeli calendar)
   const holidays = expandCalendarExceptions(calendarExceptions)
 
-  const recalculate = useCallback(async (updatedTasks?: Task[]) => {
+  const recalculate = useCallback(async (updatedTasks?: Task[], updatedDependencies?: Dependency[]) => {
     const currentTasks = updatedTasks || tasks
+    const currentDeps = updatedDependencies || dependencies
     if (currentTasks.length === 0 || !projectStartDate) return
 
     const projectStart = projectStartDate instanceof Date
@@ -65,7 +66,7 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
     // 1. Compute synchronously (fast, deterministic)
     const result = schedulingService.calculateCriticalPath(
       currentTasks,
-      dependencies,
+      currentDeps,
       projectStart,
       workDays,
       holidays
