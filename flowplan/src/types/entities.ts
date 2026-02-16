@@ -19,6 +19,8 @@ export type TimeOffType = 'vacation' | 'sick' | 'personal' | 'other'
 export type TimeOffStatus = 'pending' | 'approved' | 'rejected'
 export type UserRole = 'admin' | 'member'
 export type PhaseStatus = 'pending' | 'active' | 'completed'
+export type ConstraintType = 'ASAP' | 'MSO' | 'SNET' | 'FNLT'
+export type SchedulingMode = 'auto' | 'manual'
 
 // ============================================
 // Base Types
@@ -75,6 +77,11 @@ export interface Task extends BaseEntity {
   slack: number // Slack = LS - ES (in working days)
   is_critical: boolean // On Critical Path?
 
+  // Constraint fields (Phase 5)
+  constraint_type: ConstraintType | null  // null = no constraint (default)
+  constraint_date: Date | string | null   // Required for MSO, SNET, FNLT
+  scheduling_mode: SchedulingMode         // 'auto' (default) or 'manual'
+
   updated_at: Date | string
 }
 
@@ -88,6 +95,9 @@ export interface CreateTaskInput {
   duration?: number
   estimated_hours?: number | null
   start_date?: Date | null
+  constraint_type?: ConstraintType | null
+  constraint_date?: Date | string | null
+  scheduling_mode?: SchedulingMode
 }
 
 // ============================================

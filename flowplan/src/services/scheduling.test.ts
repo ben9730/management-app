@@ -37,6 +37,9 @@ function createMockTask(overrides: Partial<Task> = {}): Task {
     lf: null,
     slack: 0,
     is_critical: false,
+    constraint_type: null,
+    constraint_date: null,
+    scheduling_mode: 'auto',
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
     ...overrides,
@@ -1290,6 +1293,302 @@ describe('SchedulingService', () => {
 
       // Should start on Feb 1 (Sunday, next week)
       expect(result.tasks[0].es?.toISOString().split('T')[0]).toBe('2026-02-01')
+    })
+  })
+
+  // ==========================================
+  // Constraint Types and Manual Mode (Phase 5)
+  // ==========================================
+
+  describe('Constraint types and manual mode', () => {
+    const workDays = [0, 1, 2, 3, 4] // Sun-Thu (Israeli calendar)
+    const projectStart = new Date('2026-01-25') // Sunday
+
+    // --- MSO Constraint ---
+
+    it('MSO constraint -- no dependency conflict: ES equals MSO date', () => {
+      // Task with MSO date and no predecessors
+      // ES should equal the MSO date (snapped to working day if needed)
+      const msoDate = new Date('2026-01-28') // Wednesday
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          constraint_type: 'MSO',
+          constraint_date: msoDate,
+        }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // ES should be Jan 28 (MSO date, not project start Jan 25)
+      expect(result[0].es?.toISOString().split('T')[0]).toBe('2026-01-28')
+    })
+
+    it('MSO constraint -- dependency wins: dependency pushes ES later than MSO', () => {
+      // Predecessor FS dependency finishes AFTER the MSO date
+      // ES should equal the dependency-driven date (later), NOT the MSO date
+      // This validates the locked decision: "dependencies win over constraints"
+      const msoDate = new Date('2026-01-27') // Tuesday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5 }), // ES=Jan 25, EF=Jan 29
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          constraint_type: 'MSO',
+          constraint_date: msoDate,
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B'), // FS: B starts after A finishes
+      ]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: EF = Jan 29 (Thu). B dependency ES = Jan 30 -> Fri (weekend) -> Feb 1 (Sun)
+      // MSO date = Jan 27, but dependency pushes to Feb 1 which is LATER
+      // Dependencies win: B's ES = Feb 1
+      const taskB = result.find(t => t.id === 'B')
+      expect(taskB?.es?.toISOString().split('T')[0]).toBe('2026-02-01')
+    })
+
+    it('MSO constraint -- constraint wins: MSO date later than dependency ES', () => {
+      // Predecessor finishes BEFORE the MSO date
+      // ES should equal the MSO date (constraint wins because it's later)
+      const msoDate = new Date('2026-02-04') // Wednesday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 2 }), // ES=Jan 25, EF=Jan 26
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          constraint_type: 'MSO',
+          constraint_date: msoDate,
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B'), // FS: B starts after A finishes
+      ]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: EF = Jan 26. B dependency ES = Jan 27.
+      // MSO date = Feb 4, which is LATER than Jan 27.
+      // Constraint wins: B's ES = Feb 4
+      const taskB = result.find(t => t.id === 'B')
+      expect(taskB?.es?.toISOString().split('T')[0]).toBe('2026-02-04')
+    })
+
+    // --- SNET Constraint ---
+
+    it('SNET constraint -- standard behavior: SNET later than dependency', () => {
+      // Task with SNET date later than dependency-driven ES
+      // ES = max(dependency_ES, SNET_date) = SNET_date
+      const snetDate = new Date('2026-02-04') // Wednesday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 2 }), // ES=Jan 25, EF=Jan 26
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          constraint_type: 'SNET',
+          constraint_date: snetDate,
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B'),
+      ]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // Dependency ES = Jan 27. SNET = Feb 4. max(Jan 27, Feb 4) = Feb 4.
+      const taskB = result.find(t => t.id === 'B')
+      expect(taskB?.es?.toISOString().split('T')[0]).toBe('2026-02-04')
+    })
+
+    it('SNET constraint -- dependency later: dependency pushes past SNET', () => {
+      // Dependency pushes ES later than SNET date
+      // ES = max(dependency_ES, SNET_date) = dependency_ES
+      const snetDate = new Date('2026-01-27') // Tuesday (early)
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5 }), // ES=Jan 25, EF=Jan 29
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          constraint_type: 'SNET',
+          constraint_date: snetDate,
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B'),
+      ]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // Dependency ES = Feb 1 (day after Jan 29, skip weekend).
+      // SNET = Jan 27. max(Feb 1, Jan 27) = Feb 1.
+      const taskB = result.find(t => t.id === 'B')
+      expect(taskB?.es?.toISOString().split('T')[0]).toBe('2026-02-01')
+    })
+
+    // --- FNLT Constraint ---
+
+    it('FNLT constraint -- no violation: task finishes before deadline', () => {
+      // Task with FNLT date that finishes before the deadline
+      // No violation flag
+      const fnltDate = new Date('2026-02-05') // Thursday (generous deadline)
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          constraint_type: 'FNLT',
+          constraint_date: fnltDate,
+        }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 27 (3 days). FNLT=Feb 5. Jan 27 < Feb 5 -> no violation.
+      const taskA = result[0] as unknown as Record<string, unknown>
+      expect(taskA._fnltViolation).toBe(false)
+    })
+
+    it('FNLT constraint -- violation detected: task finishes after deadline', () => {
+      // Task with FNLT date that finishes AFTER the deadline
+      // Violation flag should be set
+      const fnltDate = new Date('2026-01-26') // Monday (tight deadline)
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 5, // 5 days from Jan 25 = Jan 29
+          constraint_type: 'FNLT',
+          constraint_date: fnltDate,
+        }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // A: ES=Jan 25, EF=Jan 29. FNLT=Jan 26. Jan 29 > Jan 26 -> VIOLATION.
+      const taskA = result[0] as unknown as Record<string, unknown>
+      expect(taskA._fnltViolation).toBe(true)
+    })
+
+    // --- ASAP Constraint ---
+
+    it('ASAP constraint -- identical to no constraint', () => {
+      // Task with constraint_type='ASAP' should behave identically to null constraint
+      const tasksWithASAP = [
+        createMockTask({ id: 'A', duration: 2 }),
+        createMockTask({
+          id: 'B',
+          duration: 3,
+          constraint_type: 'ASAP',
+        }),
+      ]
+      const tasksWithNull = [
+        createMockTask({ id: 'A', duration: 2 }),
+        createMockTask({
+          id: 'B',
+          duration: 3,
+          constraint_type: null,
+        }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B'),
+      ]
+
+      const resultASAP = service.forwardPass(tasksWithASAP, deps, projectStart, workDays, [])
+      const resultNull = service.forwardPass(tasksWithNull, deps, projectStart, workDays, [])
+
+      const bASAP = resultASAP.find(t => t.id === 'B')
+      const bNull = resultNull.find(t => t.id === 'B')
+      expect((bASAP?.es as Date)?.toISOString().split('T')[0]).toBe((bNull?.es as Date)?.toISOString().split('T')[0])
+      expect((bASAP?.ef as Date)?.toISOString().split('T')[0]).toBe((bNull?.ef as Date)?.toISOString().split('T')[0])
+    })
+
+    // --- Manual Mode ---
+
+    it('Manual task -- preserves user dates as ES/EF', () => {
+      // Task with scheduling_mode='manual' and user-set start_date/end_date
+      // Forward pass uses those dates as ES/EF without modification
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          scheduling_mode: 'manual',
+          start_date: new Date('2026-02-10'), // Tuesday
+          end_date: new Date('2026-02-12'),   // Thursday
+        }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // Manual task: ES = start_date, EF = end_date (user's dates preserved)
+      expect((result[0].es as Date)?.toISOString().split('T')[0]).toBe('2026-02-10')
+      expect((result[0].ef as Date)?.toISOString().split('T')[0]).toBe('2026-02-12')
+    })
+
+    it('Manual task -- drives successor dates', () => {
+      // Manual task is predecessor (FS) to an auto task
+      // Successor's ES is computed from manual task's end_date
+      const tasks = [
+        createMockTask({
+          id: 'manual-task',
+          duration: 3,
+          scheduling_mode: 'manual',
+          start_date: new Date('2026-02-10'), // Tuesday
+          end_date: new Date('2026-02-12'),   // Thursday
+        }),
+        createMockTask({
+          id: 'auto-task',
+          duration: 2,
+          scheduling_mode: 'auto',
+        }),
+      ]
+      const deps = [
+        createMockDependency('manual-task', 'auto-task'), // FS dependency
+      ]
+
+      const result = service.forwardPass(tasks, deps, projectStart, workDays, [])
+
+      // Manual task: EF = Feb 12 (Thu). Auto task ES = day after = Feb 15 (Sun, skip Fri/Sat).
+      const autoTask = result.find(t => t.id === 'auto-task')
+      expect((autoTask?.es as Date)?.toISOString().split('T')[0]).toBe('2026-02-15')
+    })
+
+    it('Manual task -- not modified by backward pass', () => {
+      // Manual task's LS/LF come from its user dates, not backward pass computation
+      const tasks = [
+        createMockTask({
+          id: 'manual-task',
+          duration: 3,
+          scheduling_mode: 'manual',
+          start_date: new Date('2026-02-10'), // Tuesday
+          end_date: new Date('2026-02-12'),   // Thursday
+          es: new Date('2026-02-10'),
+          ef: new Date('2026-02-12'),
+        }),
+        createMockTask({
+          id: 'auto-task',
+          duration: 2,
+          scheduling_mode: 'auto',
+          es: new Date('2026-02-15'),
+          ef: new Date('2026-02-16'),
+        }),
+      ]
+      const deps = [
+        createMockDependency('manual-task', 'auto-task'),
+      ]
+      const projectEnd = new Date('2026-02-16') // Monday
+
+      const result = service.backwardPass(tasks, deps, projectEnd, workDays, [])
+
+      // Manual task: LS = start_date, LF = end_date (user's dates preserved, NOT computed)
+      const manualTask = result.find(t => t.id === 'manual-task')
+      expect((manualTask?.ls as Date)?.toISOString().split('T')[0]).toBe('2026-02-10')
+      expect((manualTask?.lf as Date)?.toISOString().split('T')[0]).toBe('2026-02-12')
     })
   })
 })
