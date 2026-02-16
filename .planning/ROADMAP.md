@@ -36,11 +36,12 @@
   3. User creates an FF dependency and the successor's finish date aligns to the predecessor's finish date (plus any lag)
   4. User sets a negative lag (lead time) on a dependency and the successor starts before the predecessor finishes
   5. After any scheduling change, the Gantt chart reflects the new dates and critical path without manual refresh
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md -- Fix CPM engine for all dependency types (SS/FF/SF) with lead/lag (TDD)
+- [ ] 04-02-PLAN.md -- Create useScheduling hook, batch persistence, wire to UI mutations
+- [ ] 04-03-PLAN.md -- Update Gantt chart with type-aware dependency lines and hover tooltips
 
 ### Phase 5: Constraints & Manual Mode
 **Goal**: Users can pin tasks to specific dates using constraint types and toggle individual tasks to manual scheduling mode that the engine respects but does not move
@@ -82,6 +83,6 @@ Plans:
 | 1. Phase Lock Logic | v1.0 | 1/1 | Complete | 2026-02-12 |
 | 2. Lock Enforcement UI | v1.0 | 1/1 | Complete | 2026-02-14 |
 | 3. Unlock Notifications | v1.0 | 1/1 | Complete | 2026-02-14 |
-| 4. Scheduling Engine Foundation | v1.1 | 0/? | Not started | - |
+| 4. Scheduling Engine Foundation | v1.1 | 0/3 | Planning complete | - |
 | 5. Constraints & Manual Mode | v1.1 | 0/? | Not started | - |
 | 6. Progress Tracking | v1.1 | 0/? | Not started | - |
