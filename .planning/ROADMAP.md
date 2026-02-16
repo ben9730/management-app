@@ -20,7 +20,7 @@
 
 **Milestone Goal:** Task dependencies drive the schedule automatically -- when a predecessor changes, all successors cascade their dates like Microsoft Project. Constraint types, manual scheduling, and progress tracking bring feature parity with MS Project.
 
-- [ ] **Phase 4: Scheduling Engine Foundation** -- Fix all dependency types, add lead/lag, wire CPM to UI with auto-cascading
+- [x] **Phase 4: Scheduling Engine Foundation** -- Fix all dependency types, add lead/lag, wire CPM to UI with auto-cascading (completed 2026-02-16)
 - [ ] **Phase 5: Constraints & Manual Mode** -- Constraint types (ASAP/MSO/SNET/FNLT) and per-task manual scheduling toggle
 - [ ] **Phase 6: Progress Tracking** -- Percent complete, actual dates, frozen completed tasks, Gantt progress bars
 
@@ -39,9 +39,9 @@
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Fix CPM engine for all dependency types (SS/FF/SF) with lead/lag (TDD)
-- [ ] 04-02-PLAN.md -- Create useScheduling hook, batch persistence, wire to UI mutations
-- [ ] 04-03-PLAN.md -- Update Gantt chart with type-aware dependency lines and hover tooltips
+- [x] 04-01-PLAN.md -- Fix CPM engine for all dependency types (SS/FF/SF) with lead/lag (TDD)
+- [x] 04-02-PLAN.md -- Create useScheduling hook, batch persistence, wire to UI mutations
+- [x] 04-03-PLAN.md -- Update Gantt chart with type-aware dependency lines and hover tooltips
 
 ### Phase 5: Constraints & Manual Mode
 **Goal**: Users can pin tasks to specific dates using constraint types and toggle individual tasks to manual scheduling mode that the engine respects but does not move
@@ -83,6 +83,6 @@ Plans:
 | 1. Phase Lock Logic | v1.0 | 1/1 | Complete | 2026-02-12 |
 | 2. Lock Enforcement UI | v1.0 | 1/1 | Complete | 2026-02-14 |
 | 3. Unlock Notifications | v1.0 | 1/1 | Complete | 2026-02-14 |
-| 4. Scheduling Engine Foundation | v1.1 | 0/3 | Planning complete | - |
+| 4. Scheduling Engine Foundation | v1.1 | 3/3 | Complete | 2026-02-16 |
 | 5. Constraints & Manual Mode | v1.1 | 0/? | Not started | - |
 | 6. Progress Tracking | v1.1 | 0/? | Not started | - |
