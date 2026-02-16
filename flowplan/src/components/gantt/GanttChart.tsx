@@ -8,7 +8,7 @@
 
 import * as React from 'react'
 import { cn, formatDateDisplay, parseDate } from '@/lib/utils'
-import type { Task, Dependency } from '@/types/entities'
+import type { Task, Dependency, DependencyType } from '@/types/entities'
 
 export interface GanttChartProps {
   tasks: Task[]
@@ -128,6 +128,46 @@ function getMonthLabels(start: Date, end: Date): { month: string; width: number;
   return months
 }
 
+function getDependencyEndpoints(
+  depType: DependencyType,
+  predPos: TaskPosition,
+  succPos: TaskPosition,
+  rowHeight: number
+): { startX: number; startY: number; endX: number; endY: number } {
+  const predBarHeight = rowHeight - 12
+  const predCenterY = predPos.top + 6 + predBarHeight / 2
+  const succCenterY = succPos.top + 6 + predBarHeight / 2
+
+  // Use Math.max to ensure minimum bar width is accounted for
+  const predRight = predPos.left + Math.max(predPos.width, MIN_BAR_WIDTH)
+  const succRight = succPos.left + Math.max(succPos.width, MIN_BAR_WIDTH)
+
+  switch (depType) {
+    case 'FS':
+      // Finish-to-Start: predecessor END -> successor START
+      return { startX: predRight, startY: predCenterY, endX: succPos.left, endY: succCenterY }
+    case 'SS':
+      // Start-to-Start: predecessor START -> successor START
+      return { startX: predPos.left, startY: predCenterY, endX: succPos.left, endY: succCenterY }
+    case 'FF':
+      // Finish-to-Finish: predecessor END -> successor END
+      return { startX: predRight, startY: predCenterY, endX: succRight, endY: succCenterY }
+    case 'SF':
+      // Start-to-Finish: predecessor START -> successor END
+      return { startX: predPos.left, startY: predCenterY, endX: succRight, endY: succCenterY }
+    default:
+      // Fallback to FS
+      return { startX: predRight, startY: predCenterY, endX: succPos.left, endY: succCenterY }
+  }
+}
+
+function getDependencyTooltipContent(dep: Dependency): string {
+  const lagStr = dep.lag_days !== 0
+    ? ` ${dep.lag_days > 0 ? '+' : ''}${dep.lag_days}d`
+    : ''
+  return `${dep.type}${lagStr}`
+}
+
 const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
   (
     {
@@ -147,6 +187,8 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
   ) => {
     const [dayWidth, setDayWidth] = React.useState(initialDayWidth)
     const [hoveredTaskId, setHoveredTaskId] = React.useState<string | null>(null)
+    const [hoveredDepId, setHoveredDepId] = React.useState<string | null>(null)
+    const [hoveredDepPos, setHoveredDepPos] = React.useState<{ x: number; y: number } | null>(null)
     const timelineRef = React.useRef<HTMLDivElement>(null)
 
     // Memoize date range calculation
@@ -516,31 +558,57 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
 
               {/* Dependencies */}
               {showDependencies && (
-                <svg className="absolute inset-0 pointer-events-none" style={{ width: timelineWidth, height: tasks.length * ROW_HEIGHT }}>
+                <svg className="absolute inset-0" style={{ width: timelineWidth, height: tasks.length * ROW_HEIGHT, pointerEvents: 'none' }}>
                   {dependencies.map((dep) => {
                     const predecessorPos = taskPositions.find((p) => p.task.id === dep.predecessor_id)
                     const successorPos = taskPositions.find((p) => p.task.id === dep.successor_id)
-
                     if (!predecessorPos || !successorPos) return null
 
-                    const startX = predecessorPos.left + predecessorPos.width
-                    const startY = predecessorPos.top + ROW_HEIGHT / 2
-                    const endX = successorPos.left
-                    const endY = successorPos.top + ROW_HEIGHT / 2
+                    const { startX, startY, endX, endY } = getDependencyEndpoints(
+                      dep.type, predecessorPos, successorPos, ROW_HEIGHT
+                    )
 
-                    // Use curved paths for better visuals
-                    const path = `M ${startX} ${startY} 
-                                  C ${startX + 15} ${startY}, ${endX - 15} ${endY}, ${endX} ${endY}`
+                    // Adaptive curve: adjust control points based on direction
+                    const dx = endX - startX
+                    const curveOffset = Math.max(15, Math.abs(dx) * 0.3)
+
+                    const path = `M ${startX} ${startY} C ${startX + curveOffset} ${startY}, ${endX - curveOffset} ${endY}, ${endX} ${endY}`
 
                     return (
                       <g key={dep.id} data-testid={`dependency-${dep.id}`}>
                         <path
                           d={path}
                           fill="none"
-                          stroke="var(--fp-border-medium)"
-                          strokeWidth="1.5"
+                          stroke={hoveredDepId === dep.id ? 'var(--fp-brand-primary)' : 'var(--fp-border-medium)'}
+                          strokeWidth={hoveredDepId === dep.id ? 2 : 1.5}
                           markerEnd="url(#arrowhead)"
                           strokeDasharray="4 2"
+                        />
+                        {/* Invisible wider path for easier hover detection */}
+                        <path
+                          d={path}
+                          fill="none"
+                          stroke="transparent"
+                          strokeWidth="12"
+                          className="cursor-pointer"
+                          style={{ pointerEvents: 'stroke' }}
+                          onMouseEnter={(e) => {
+                            setHoveredDepId(dep.id)
+                            const rect = (e.currentTarget.ownerSVGElement?.closest('[data-testid="gantt-chart"]') as HTMLElement)?.getBoundingClientRect()
+                            if (rect) {
+                              setHoveredDepPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                            }
+                          }}
+                          onMouseMove={(e) => {
+                            const rect = (e.currentTarget.ownerSVGElement?.closest('[data-testid="gantt-chart"]') as HTMLElement)?.getBoundingClientRect()
+                            if (rect) {
+                              setHoveredDepPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredDepId(null)
+                            setHoveredDepPos(null)
+                          }}
                         />
                       </g>
                     )
@@ -563,7 +631,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
           </div>
         </div>
 
-        {/* Tooltip */}
+        {/* Task Tooltip */}
         {hoveredTask && (
           <div
             data-testid="task-tooltip"
@@ -599,6 +667,24 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
             </div>
           </div>
         )}
+
+        {/* Dependency Tooltip */}
+        {hoveredDepId && hoveredDepPos && (() => {
+          const dep = dependencies.find(d => d.id === hoveredDepId)
+          if (!dep) return null
+          return (
+            <div
+              data-testid="dependency-tooltip"
+              className="absolute z-50 bg-[var(--fp-bg-secondary)] text-[var(--fp-text-primary)] px-3 py-1.5 text-sm border border-[var(--fp-border-light)] rounded-lg shadow-xl pointer-events-none font-mono font-bold"
+              style={{
+                left: hoveredDepPos.x + 12,
+                top: hoveredDepPos.y - 20,
+              }}
+            >
+              {getDependencyTooltipContent(dep)}
+            </div>
+          )
+        })()}
       </div>
     )
   }
