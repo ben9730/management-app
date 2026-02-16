@@ -10,6 +10,13 @@ import * as React from 'react'
 import { cn, formatDateDisplay, parseDate } from '@/lib/utils'
 import type { Task, Dependency, DependencyType } from '@/types/entities'
 
+const constraintTypeLabels: Record<string, string> = {
+  ASAP: 'בהקדם האפשרי',
+  MSO: 'חייב להתחיל ב-',
+  SNET: 'לא לפני',
+  FNLT: 'לסיים לא אחרי',
+}
+
 export interface GanttChartProps {
   tasks: Task[]
   dependencies: Dependency[]
@@ -552,7 +559,55 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                           {task.status === 'done' ? '' : '•••'}
                         </span>
                       )}
+
+                      {/* FNLT violation red tint overlay */}
+                      {Boolean((task as unknown as Record<string, unknown>)._fnltViolation) && (
+                        <div className="absolute inset-0 bg-red-500/20 rounded pointer-events-none" />
+                      )}
+
+                      {/* Manual mode dashed border */}
+                      {task.scheduling_mode === 'manual' && (
+                        <div className="absolute inset-0 border-2 border-dashed border-white/40 rounded pointer-events-none" />
+                      )}
                     </div>
+
+                    {/* MSO/SNET constraint indicator (blue dot) */}
+                    {task.constraint_type && (task.constraint_type === 'MSO' || task.constraint_type === 'SNET') && (
+                      <span
+                        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center z-10 pointer-events-none"
+                        title={`${constraintTypeLabels[task.constraint_type]}: ${task.constraint_date ? formatDateDisplay(task.constraint_date) : ''}`}
+                      >
+                        <span className="text-[7px] text-white font-bold">C</span>
+                      </span>
+                    )}
+
+                    {/* FNLT constraint indicator (red dot with !) */}
+                    {task.constraint_type === 'FNLT' && (
+                      <span
+                        className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center z-10 pointer-events-none"
+                        title={`${constraintTypeLabels.FNLT}: ${task.constraint_date ? formatDateDisplay(task.constraint_date) : ''}`}
+                      >
+                        <span className="text-[8px] text-white font-bold">!</span>
+                      </span>
+                    )}
+
+                    {/* FNLT deadline diamond marker on timeline */}
+                    {task.constraint_type === 'FNLT' && task.constraint_date && (() => {
+                      const deadlineDate = task.constraint_date instanceof Date
+                        ? task.constraint_date
+                        : new Date(task.constraint_date as string)
+                      const deadlineLeft = getDaysBetween(dateRangeStart, deadlineDate) * dayWidth - left
+                      return (
+                        <div
+                          className="absolute w-3 h-3 bg-red-500 rotate-45 z-10"
+                          style={{
+                            left: `${deadlineLeft}px`,
+                            top: `${(barHeight / 2) - 6}px`,
+                          }}
+                          title={`דדליין: ${formatDateDisplay(task.constraint_date)}`}
+                        />
+                      )
+                    })()}
                   </div>
                 )
               })}
@@ -665,6 +720,27 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                   </span>
                 )}
               </div>
+
+              {/* Constraint info */}
+              {hoveredTask.constraint_type && hoveredTask.constraint_type !== 'ASAP' && (
+                <div className="text-xs text-slate-400">
+                  {constraintTypeLabels[hoveredTask.constraint_type]}{hoveredTask.constraint_date ? `: ${formatDateDisplay(hoveredTask.constraint_date)}` : ''}
+                </div>
+              )}
+
+              {/* FNLT violation warning */}
+              {Boolean((hoveredTask as unknown as Record<string, unknown>)._fnltViolation) && (
+                <div className="text-xs text-red-400 font-medium">
+                  חריגה מהדדליין!
+                </div>
+              )}
+
+              {/* Manual mode indicator */}
+              {hoveredTask.scheduling_mode === 'manual' && (
+                <div className="text-xs text-amber-400">
+                  תזמון ידני
+                </div>
+              )}
             </div>
           </div>
         )}
