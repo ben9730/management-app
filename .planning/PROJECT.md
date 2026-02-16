@@ -1,12 +1,23 @@
-# FlowPlan — Phase Dependencies & Notifications
+# FlowPlan — MS Project-Style Scheduling
 
 ## What This Is
 
-FlowPlan is an AI-native audit management system for Hebrew-speaking users with CPM scheduling, Gantt charts, and offline-first capabilities. It now includes sequential phase enforcement — phases lock until the previous phase's tasks are all complete, with visual lock indicators, interaction blocking, progress tracking, and Toast notifications on phase unlock.
+FlowPlan is an AI-native audit management system for Hebrew-speaking users with CPM scheduling, Gantt charts, and offline-first capabilities. It includes sequential phase enforcement and is now adding MS Project-style scheduling — automatic date cascading through dependency chains, constraint types, lead/lag time, manual vs auto scheduling, and progress tracking.
 
 ## Core Value
 
-Phases execute in order — users cannot start work on Phase N+1 until Phase N is fully complete. This ensures sequential discipline in project execution.
+Task dependencies drive the schedule automatically — when a predecessor changes, all successors cascade their dates like Microsoft Project. This is the foundation that makes FlowPlan a real scheduling tool.
+
+## Current Milestone: v1.1 MS Project-Style Scheduling
+
+**Goal:** Bring task dependency scheduling to MS Project parity — auto-cascading dates, constraint types, lead/lag, manual scheduling mode, and progress tracking.
+
+**Target features:**
+- Auto-rescheduling: CPM engine wired to UI, cascading successor dates on any change
+- Lead/lag time: Negative lag (lead) support on dependencies
+- Constraint types: ASAP, Must Start On, Start No Earlier Than, Finish No Later Than
+- Manual vs auto scheduling: Per-task toggle to skip CPM
+- Progress tracking: Percent complete, actual start/finish, remaining duration
 
 ## Requirements
 
@@ -34,7 +45,11 @@ Phases execute in order — users cannot start work on Phase N+1 until Phase N i
 
 ### Active
 
-(None — next milestone requirements TBD)
+- [ ] Auto-rescheduling — CPM recalc cascades when task/dependency changes
+- [ ] Lead/lag time — negative lag (lead) on dependencies
+- [ ] Constraint types — ASAP, MSO, SNET, FNLT
+- [ ] Manual vs auto scheduling — per-task toggle
+- [ ] Percent complete — drives remaining duration and actual dates
 
 ### Out of Scope
 
@@ -59,8 +74,17 @@ Key patterns established:
 - useRef-based previous-value comparison for transition detection
 - CSS-level blocking (pointer-events-none + opacity) for locked UI
 
+Current scheduling state (v1.1 starting point):
+- SchedulingService class (682 lines) with full CPM: forwardPass, backwardPass, calculateCriticalPath
+- Calendar-aware (holidays, workdays, per-resource time-off)
+- Topological sort via Kahn's algorithm with cycle detection
+- Dependencies table has FS/SS/FF/SF + lag_days (positive only)
+- **NOT wired to UI** — scheduling service exists but never triggered by task/dependency mutations
+- Gantt chart is read-only (no drag-to-reschedule)
+
 Known concerns:
 - page.tsx is ~1,300 lines — future work should extract into hooks/components
+- Scheduling engine disconnected from UI mutation flow
 
 ## Constraints
 
@@ -82,4 +106,4 @@ Known concerns:
 | CSS-level blocking for locked phases | pointer-events-none + opacity simpler than per-task disabled props | ✓ Good — fewer prop changes |
 
 ---
-*Last updated: 2026-02-14 after v1.0 milestone*
+*Last updated: 2026-02-16 after v1.1 milestone start*

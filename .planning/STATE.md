@@ -2,18 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-14)
+See: .planning/PROJECT.md (updated 2026-02-16)
 
-**Core value:** Phases execute in order — users cannot start work on Phase N+1 until Phase N is fully complete
-**Current focus:** v1.0 milestone complete — planning next milestone
+**Core value:** Task dependencies drive the schedule automatically — when a predecessor changes, all successors cascade their dates like Microsoft Project
+**Current focus:** v1.1 MS Project-Style Scheduling — defining requirements
 
 ## Current Position
 
-Phase: All complete (v1.0 shipped)
-Status: Milestone v1.0 complete — ready for next milestone
-Last activity: 2026-02-14 — Completed v1.0 milestone (Phase Dependencies & Notifications)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.1
+Last activity: 2026-02-16 — Milestone v1.1 started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -48,6 +49,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-14
-Stopped at: Completed v1.0 milestone. All 3 phases shipped, 3 UATs passed.
+Last session: 2026-02-16
+Stopped at: Starting v1.1 milestone — MS Project-Style Scheduling
 Resume file: None
