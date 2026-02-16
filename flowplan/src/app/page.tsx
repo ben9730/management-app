@@ -401,6 +401,7 @@ function DashboardContent() {
     title: string; description?: string; priority: Task['priority']
     duration: number; estimated_hours?: number; start_date?: string
     assignee_id?: string; assignee_ids?: string[]
+    constraint_type?: string | null; constraint_date?: string | null; scheduling_mode?: string
   }) => {
     setTaskErrorMessage(null) // Clear previous errors
 
@@ -453,6 +454,9 @@ function DashboardContent() {
           estimated_hours: data.estimated_hours || null,
           start_date: data.start_date || null,
           assignee_id: data.assignee_id || null,
+          constraint_type: data.constraint_type || null,
+          constraint_date: data.constraint_date || null,
+          scheduling_mode: data.scheduling_mode || 'auto',
         }
       }, {
         onSuccess: async (updatedTask) => {
@@ -486,6 +490,9 @@ function DashboardContent() {
         start_date: data.start_date || null,
         assignee_id: data.assignee_id || null,
         status: 'pending',
+        constraint_type: data.constraint_type || null,
+        constraint_date: data.constraint_date || null,
+        scheduling_mode: data.scheduling_mode || 'auto',
       }, {
         onSuccess: async (newTask) => {
           // Create task assignments for multi-assignee support
@@ -1103,6 +1110,14 @@ function DashboardContent() {
             assignee_id: editingTask.assignee_id || undefined,
             // Use loaded task assignments for multi-assignee support
             assignee_ids: editingTaskAssigneeIds.length > 0 ? editingTaskAssigneeIds : undefined,
+            // Constraint & manual mode (Phase 5)
+            constraint_type: editingTask.constraint_type || '',
+            constraint_date: editingTask.constraint_date
+              ? (editingTask.constraint_date instanceof Date
+                ? editingTask.constraint_date.toISOString().split('T')[0]
+                : String(editingTask.constraint_date))
+              : '',
+            scheduling_mode: editingTask.scheduling_mode || 'auto',
           } : undefined}
           teamMembers={teamMembers}
           calendarExceptions={calendarExceptions}

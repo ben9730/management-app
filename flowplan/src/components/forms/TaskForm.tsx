@@ -26,6 +26,10 @@ export interface TaskFormData {
   assignee_id?: string
   /** Array of team member IDs assigned to this task */
   assignee_ids?: string[]
+  // Constraint & Manual mode (Phase 5)
+  constraint_type?: string | null    // 'ASAP' | 'MSO' | 'SNET' | 'FNLT' | null
+  constraint_date?: string | null    // ISO date string for MSO/SNET/FNLT
+  scheduling_mode?: string           // 'auto' | 'manual'
 }
 
 /**
@@ -61,6 +65,14 @@ const priorityOptions: SelectOption[] = [
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
   { value: 'critical', label: 'Critical' },
+]
+
+const constraintOptions: SelectOption[] = [
+  { value: '', label: 'ללא אילוץ' },
+  { value: 'ASAP', label: 'בהקדם האפשרי (ASAP)' },
+  { value: 'MSO', label: 'חייב להתחיל ב- (MSO)' },
+  { value: 'SNET', label: 'לא לפני (SNET)' },
+  { value: 'FNLT', label: 'לסיים לא אחרי (FNLT)' },
 ]
 
 /**
@@ -300,6 +312,17 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
 
   const [errors, setErrors] = React.useState<FormErrors>({})
 
+  // Constraint & manual mode state (Phase 5)
+  const [constraintType, setConstraintType] = React.useState<string>(
+    initialValues?.constraint_type || ''
+  )
+  const [constraintDate, setConstraintDate] = React.useState<string>(
+    initialValues?.constraint_date || ''
+  )
+  const [schedulingMode, setSchedulingMode] = React.useState<string>(
+    initialValues?.scheduling_mode || 'auto'
+  )
+
   // Update assignee_ids when initialValues changes (handles async loading of task assignments)
   React.useEffect(() => {
     if (initialValues?.assignee_ids && initialValues.assignee_ids.length > 0) {
@@ -422,6 +445,33 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
     }))
   }, [])
 
+  // Handle manual mode toggle (Phase 5)
+  const handleSchedulingModeChange = React.useCallback((isManual: boolean) => {
+    const newMode = isManual ? 'manual' : 'auto'
+    setSchedulingMode(newMode)
+    if (isManual) {
+      // Auto-fill start_date from current value or today (Pitfall 3 prevention)
+      if (!formData.start_date) {
+        setFormData(prev => ({
+          ...prev,
+          start_date: new Date().toISOString().split('T')[0],
+        }))
+      }
+      // Clear constraint when switching to manual (manual tasks don't use constraints)
+      setConstraintType('')
+      setConstraintDate('')
+    }
+  }, [formData.start_date])
+
+  // Handle constraint type change (Phase 5)
+  const handleConstraintTypeChange = React.useCallback((value: string) => {
+    setConstraintType(value)
+    // Clear constraint date when switching to no constraint or ASAP (no date needed)
+    if (!value || value === 'ASAP') {
+      setConstraintDate('')
+    }
+  }, [])
+
   const handleSubmit = React.useCallback((e: React.FormEvent) => {
     e.preventDefault()
 
@@ -434,9 +484,13 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
         // Include both for backward compatibility
         assignee_id: formData.assignee_ids?.[0] || undefined,
         assignee_ids: formData.assignee_ids?.length ? formData.assignee_ids : undefined,
+        // Constraint & manual mode (Phase 5)
+        constraint_type: constraintType || null,
+        constraint_date: constraintDate || null,
+        scheduling_mode: schedulingMode,
       })
     }
-  }, [formData, onSubmit, validate])
+  }, [formData, onSubmit, validate, constraintType, constraintDate, schedulingMode])
 
   const isEditMode = mode === 'edit'
 
@@ -554,6 +608,56 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
           fullWidth
           data-testid="task-estimated-hours-input"
         />
+      </div>
+
+      {/* Advanced Scheduling Section (Phase 5) */}
+      <div className="space-y-3 border-t border-[var(--fp-border-light,theme(colors.slate.700/50))] pt-4 mt-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            תזמון מתקדם
+          </span>
+          {/* Manual mode toggle */}
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={schedulingMode === 'manual'}
+              onChange={(e) => handleSchedulingModeChange(e.target.checked)}
+              className="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500"
+              data-testid="task-manual-mode-toggle"
+            />
+            <span className="text-slate-400">תזמון ידני</span>
+          </label>
+        </div>
+
+        {/* Constraint fields -- only shown in auto mode */}
+        {schedulingMode === 'auto' && (
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="סוג אילוץ"
+              options={constraintOptions}
+              value={constraintType}
+              onChange={(e) => handleConstraintTypeChange(e.target.value)}
+              data-testid="task-constraint-type-select"
+            />
+            {(constraintType === 'MSO' || constraintType === 'SNET' || constraintType === 'FNLT') && (
+              <Input
+                label="תאריך אילוץ"
+                type="date"
+                value={constraintDate}
+                onChange={(e) => setConstraintDate(e.target.value)}
+                required
+                data-testid="task-constraint-date-input"
+              />
+            )}
+          </div>
+        )}
+
+        {/* Manual mode info text */}
+        {schedulingMode === 'manual' && (
+          <p className="text-xs text-slate-500">
+            המשימה תישמר בתאריכים שנקבעו ידנית ולא תזוז כשמשימות קודמות משתנות.
+          </p>
+        )}
       </div>
 
       {/* Multi-Assignee Selection - Only show if team members are provided */}
