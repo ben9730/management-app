@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Task dependencies drive the schedule automatically -- when a predecessor changes, all successors cascade their dates like Microsoft Project
-**Current focus:** Phase 4 complete -- ready for Phase 5
+**Current focus:** Phase 5 in progress -- Constraints & Manual Mode
 
 ## Current Position
 
-Phase: 4 of 6 (Scheduling Engine Foundation) -- COMPLETE
-Plan: 3/3 complete
-Status: Phase 4 complete, ready for Phase 5
-Last activity: 2026-02-16 -- Completed all 3 plans + checkpoint verification
+Phase: 5 of 6 (Constraints & Manual Mode)
+Plan: 1/3 complete
+Status: Phase 5 plan 1 complete, ready for plan 2
+Last activity: 2026-02-16 -- Completed 05-01 (constraint types + manual mode in CPM engine)
 
-Progress: [███████░░░] 67% (v1.0 complete, v1.1 phase 4/6 done)
+Progress: [████████░░] 78% (v1.0 complete, v1.1 phase 5/6 plan 1/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 10.7min
-- Total execution time: ~1.1 hours
+- Total plans completed: 7
+- Average duration: 9.9min
+- Total execution time: ~1.2 hours
 
 **By Phase:**
 
@@ -31,6 +31,7 @@ Progress: [███████░░░] 67% (v1.0 complete, v1.1 phase 4/6 do
 | 02-lock-enforcement-ui | 1 | 7min | 7min |
 | 03-unlock-notifications | 1 | 4min | 4min |
 | 04-scheduling-engine-foundation | 3 | 56min | 18.7min |
+| 05-constraints-manual-mode | 1/3 | 5min | 5min |
 
 *Updated after each plan completion*
 
@@ -52,6 +53,10 @@ Recent decisions affecting current work:
 - [04-03]: batchUpdateTaskCPMFields must use individual .update() not .upsert() (PostgreSQL NOT NULL constraint on INSERT payload)
 - [04-03]: recalculate() accepts updatedDependencies param to avoid stale closure after dependency mutations
 - [04-03]: DependencyManager auto-opens add form for better UX discoverability
+- [05-01]: constraint_type default is null (no constraint), NOT ASAP -- locked user decision
+- [05-01]: Dependencies always win over constraints (max of dependency ES and constraint date)
+- [05-01]: FNLT violations are transient flags, not persisted to database
+- [05-01]: Manual task skip occurs BEFORE dependency resolution in forward/backward pass
 
 ### Pending Todos
 
@@ -70,5 +75,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Phase 4 complete -- ready for Phase 5 (Constraints & Manual Mode)
+Stopped at: Completed 05-01-PLAN.md (constraint types + manual mode in CPM engine)
 Resume file: None
