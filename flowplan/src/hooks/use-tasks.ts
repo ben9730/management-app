@@ -76,12 +76,11 @@ export function useCreateTask() {
       return result.data as Task
     },
     onSuccess: (data) => {
-      // Invalidate tasks list to refetch
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // Add the new task to the detail cache
+      queryClient.setQueryData(taskKeys.detail(data.id), data)
+      // NOTE: Do NOT invalidate taskKeys.lists() here -- recalculate() handles cache.
       // Invalidate phases to update progress counts (DB triggers update phase counts)
       queryClient.invalidateQueries({ queryKey: phaseKeys.lists() })
-      // Also add the new task to the cache
-      queryClient.setQueryData(taskKeys.detail(data.id), data)
     },
   })
 }
@@ -109,8 +108,11 @@ export function useUpdateTask() {
     onSuccess: (data) => {
       // Update the task in cache
       queryClient.setQueryData(taskKeys.detail(data.id), data)
-      // Invalidate lists to refresh
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // NOTE: Do NOT invalidate taskKeys.lists() here.
+      // All callers follow mutations with recalculate() which handles cache
+      // via setQueryData + batchUpdateTaskCPMFields + invalidateQueries.
+      // Invalidating here causes a race: the refetch resolves with stale DB
+      // data and overwrites the optimistic CPM update from recalculate().
       // Invalidate phases to update progress counts (DB triggers update phase counts)
       queryClient.invalidateQueries({ queryKey: phaseKeys.lists() })
     },
@@ -134,8 +136,7 @@ export function useDeleteTask() {
     onSuccess: (id) => {
       // Remove from cache
       queryClient.removeQueries({ queryKey: taskKeys.detail(id) })
-      // Invalidate lists
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
+      // NOTE: Do NOT invalidate taskKeys.lists() here -- recalculate() handles cache.
       // Invalidate phases to update progress counts (DB triggers update phase counts)
       queryClient.invalidateQueries({ queryKey: phaseKeys.lists() })
     },

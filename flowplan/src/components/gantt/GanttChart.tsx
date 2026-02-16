@@ -413,10 +413,11 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
             </div>
           </div>
 
-          {/* Timeline Panel */}
+          {/* Timeline Panel - force LTR so timeline flows left-to-right regardless of page RTL */}
           <div
             ref={timelineRef}
             data-testid="timeline-container"
+            dir="ltr"
             className="flex-1 overflow-x-auto"
           >
             {/* Timeline Header */}
