@@ -45,7 +45,8 @@ function DependencyManagerComponent({
   const deleteDependency = useDeleteDependency()
   const { recalculate } = useScheduling(projectId, projectStartDate)
 
-  const [isAdding, setIsAdding] = React.useState(false)
+  // Auto-open the add form when there are no dependencies yet
+  const [isAdding, setIsAdding] = React.useState(true)
   const [newDepTaskId, setNewDepTaskId] = React.useState('')
   const [newDepType, setNewDepType] = React.useState<DependencyType>('FS')
   const [newDepLag, setNewDepLag] = React.useState(0)
