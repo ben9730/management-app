@@ -112,6 +112,9 @@ export interface Database {
           lf: string | null
           slack: number
           is_critical: boolean
+          constraint_type: string | null
+          constraint_date: string | null
+          scheduling_mode: string
           created_at: string
           updated_at: string
         }
@@ -134,6 +137,9 @@ export interface Database {
           lf?: string | null
           slack?: number
           is_critical?: boolean
+          constraint_type?: string | null
+          constraint_date?: string | null
+          scheduling_mode?: string
           created_at?: string
           updated_at?: string
         }
@@ -156,6 +162,9 @@ export interface Database {
           lf?: string | null
           slack?: number
           is_critical?: boolean
+          constraint_type?: string | null
+          constraint_date?: string | null
+          scheduling_mode?: string
           created_at?: string
           updated_at?: string
         }
