@@ -237,8 +237,8 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
   const results = await Promise.all(
     tasks.map(task => {
       if ((task as unknown as Record<string, unknown>).scheduling_mode === 'manual') {
-        // Manual tasks: update CPM metadata (slack, critical path) but NOT dates
-        // User controls start_date/end_date -- engine must not overwrite them
+        // Manual tasks: preserve user's start_date, sync end_date from computed EF
+        // (EF = start_date + duration, computed in scheduling engine)
         return supabase
           .from('tasks')
           .update({
@@ -248,7 +248,7 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
             lf: toDateStr(task.lf),
             slack: task.slack ?? 0,
             is_critical: task.is_critical ?? false,
-            // CRITICAL: Do NOT set start_date or end_date for manual tasks
+            end_date: toDateStr(task.ef),
           } as never)
           .eq('id', task.id)
       }

@@ -323,10 +323,16 @@ export class SchedulingService {
     }
 
     for (const task of resultTasks) {
-      // Step A: Manual task skip -- preserve user dates, skip dependency-driven computation
+      // Step A: Manual task skip -- preserve user start date, compute EF from start + duration
       if (task.scheduling_mode === 'manual') {
         task.es = this.toDate(task.start_date) || task.es
-        task.ef = this.toDate(task.end_date) || task.ef
+        // Compute EF from start + duration (not stale end_date) so Gantt bar width is correct
+        const esDate = this.toDate(task.es)
+        if (esDate) {
+          task.ef = this.addWorkingDays(esDate, task.duration, workDays, holidays)
+        } else {
+          task.ef = this.toDate(task.end_date) || task.ef
+        }
         continue
       }
 
@@ -485,10 +491,10 @@ export class SchedulingService {
     }
 
     for (const task of resultTasks) {
-      // Manual task: use user dates as LS/LF for backward pass purposes
+      // Manual task: use ES/EF (already set in forward pass) as LS/LF
       if (task.scheduling_mode === 'manual') {
-        task.ls = this.toDate(task.start_date) || task.ls
-        task.lf = this.toDate(task.end_date) || task.lf
+        task.ls = task.es || this.toDate(task.start_date) || task.ls
+        task.lf = task.ef || this.toDate(task.end_date) || task.lf
         continue
       }
 
