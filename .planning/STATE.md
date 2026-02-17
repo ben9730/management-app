@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 6 of 6 (Progress Tracking)
-Plan: 1/3 complete
-Status: Plan 06-01 complete -- database schema and sync function ready
-Last activity: 2026-02-17 -- Plan 06-01 complete, 16 tests passing
+Plan: 2/3 complete
+Status: Plan 06-02 complete -- CPM engine handles frozen/in-progress tasks
+Last activity: 2026-02-17 -- Plan 06-02 complete, scheduling engine extended
 
-Progress: [█████████░] 91% (v1.0 complete, v1.1 phase 6/6 plan 1/3)
+Progress: [██████████] 94% (v1.0 complete, v1.1 phase 6/6 plan 2/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 9min
-- Total execution time: ~1.4 hours
+- Total plans completed: 10
+- Average duration: 8.7min
+- Total execution time: ~1.5 hours
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [█████████░] 91% (v1.0 complete, v1.1 phase 6/6 pl
 | 03-unlock-notifications | 1 | 4min | 4min |
 | 04-scheduling-engine-foundation | 3 | 56min | 18.7min |
 | 05-constraints-manual-mode | 4/4 | 26min | 6.5min |
-| 06-progress-tracking | 1/3 | 5min | 5min |
+| 06-progress-tracking | 2/3 | 9min | 4.5min |
 
 *Updated after each plan completion*
 
@@ -69,6 +69,9 @@ Recent decisions affecting current work:
 - [06-01]: actual_start_date never cleared on revert to 0%/pending -- MS Project convention, historical record
 - [06-01]: percent_complete clamped to 0-100 silently rather than throwing error -- defensive boundary
 - [06-01]: syncProgressAndStatus is a pure function with injectable today parameter for deterministic testing
+- [06-02]: Completed task freeze check occurs BEFORE dependency resolution -- frozen tasks skip entire forward pass computation
+- [06-02]: Completed task check in batchUpdateTaskCPMFields takes priority over manual mode (frozen > manual > auto)
+- [06-02]: Removed scheduling_mode cast in tasks.ts -- Task type now has the field directly
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 06-01-PLAN.md -- progress tracking schema and sync function
+Stopped at: Completed 06-02-PLAN.md -- CPM engine frozen/in-progress task handling
 Resume file: None
