@@ -12,7 +12,7 @@ import { GanttChart } from '@/components/gantt/GanttChart'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { ProjectForm } from '@/components/forms/ProjectForm'
 import { PhaseForm } from '@/components/forms/PhaseForm'
-import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown, MessageSquare, X, CalendarDays } from 'lucide-react'
+import { Plus, Clock, Calendar, User, AlertTriangle, Loader2, ChevronDown, MessageSquare, X, CalendarDays, BarChart3 } from 'lucide-react'
 import { AIChat } from '@/components/ai'
 import type { RAGResponse, RAGService } from '@/services/rag'
 
@@ -26,6 +26,7 @@ import { useTaskAssignments, useTaskAssignmentsByProject, useCreateTaskAssignmen
 import { useScheduling } from '@/hooks/use-scheduling'
 import { usePhaseLockStatus } from '@/hooks/use-phase-lock-status'
 import { usePhaseUnlockNotifier } from '@/hooks/use-phase-unlock-notifier'
+import { syncProgressAndStatus } from '@/services/progress-sync'
 import { DependencyManager } from '@/components/dependencies/DependencyManager'
 import { CalendarExceptionsList } from '@/components/calendar'
 import { CalendarExceptionForm, type CalendarExceptionFormData } from '@/components/forms/CalendarExceptionForm'
@@ -362,10 +363,24 @@ function DashboardContent() {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
 
+    // Apply progress sync (Phase 6)
+    const syncResult = syncProgressAndStatus(
+      {
+        percent_complete: task.percent_complete ?? 0,
+        status: task.status,
+        actual_start_date: task.actual_start_date as string | null,
+        actual_finish_date: task.actual_finish_date as string | null,
+      },
+      { status: newStatus }
+    )
+
     const updatedTask = await updateTaskMutation.mutateAsync({
       id: taskId,
       updates: {
-        status: newStatus,
+        status: syncResult.status,
+        percent_complete: syncResult.percent_complete,
+        ...(syncResult.actual_start_date !== undefined && { actual_start_date: syncResult.actual_start_date }),
+        ...(syncResult.actual_finish_date !== undefined && { actual_finish_date: syncResult.actual_finish_date }),
       }
     })
     // Recalculate CPM with the updated task merged in (synchronous)
@@ -402,6 +417,7 @@ function DashboardContent() {
     duration: number; estimated_hours?: number; start_date?: string
     assignee_id?: string; assignee_ids?: string[]
     constraint_type?: string | null; constraint_date?: string | null; scheduling_mode?: string
+    percent_complete?: number
   }) => {
     setTaskErrorMessage(null) // Clear previous errors
 
@@ -443,6 +459,26 @@ function DashboardContent() {
     }
 
     if (editingTask) {
+      // Apply progress sync for percent_complete changes (Phase 6)
+      let progressUpdates: Record<string, unknown> = {}
+      if (data.percent_complete !== undefined) {
+        const syncResult = syncProgressAndStatus(
+          {
+            percent_complete: editingTask.percent_complete ?? 0,
+            status: editingTask.status,
+            actual_start_date: editingTask.actual_start_date as string | null,
+            actual_finish_date: editingTask.actual_finish_date as string | null,
+          },
+          { percent_complete: data.percent_complete }
+        )
+        progressUpdates = {
+          status: syncResult.status,
+          percent_complete: syncResult.percent_complete,
+          ...(syncResult.actual_start_date !== undefined && { actual_start_date: syncResult.actual_start_date }),
+          ...(syncResult.actual_finish_date !== undefined && { actual_finish_date: syncResult.actual_finish_date }),
+        }
+      }
+
       // Update existing task
       updateTaskMutation.mutate({
         id: editingTask.id,
@@ -457,6 +493,7 @@ function DashboardContent() {
           constraint_type: data.constraint_type || null,
           constraint_date: data.constraint_date || null,
           scheduling_mode: data.scheduling_mode || 'auto',
+          ...progressUpdates,
         }
       }, {
         onSuccess: async (updatedTask) => {
@@ -478,6 +515,26 @@ function DashboardContent() {
         }
       })
     } else {
+      // Apply progress sync for new tasks with percent_complete > 0 (Phase 6)
+      let newTaskProgressFields: Record<string, unknown> = {}
+      if (data.percent_complete !== undefined && data.percent_complete > 0) {
+        const syncResult = syncProgressAndStatus(
+          {
+            percent_complete: 0,
+            status: 'pending',
+            actual_start_date: null,
+            actual_finish_date: null,
+          },
+          { percent_complete: data.percent_complete }
+        )
+        newTaskProgressFields = {
+          status: syncResult.status,
+          percent_complete: syncResult.percent_complete,
+          ...(syncResult.actual_start_date !== undefined && { actual_start_date: syncResult.actual_start_date }),
+          ...(syncResult.actual_finish_date !== undefined && { actual_finish_date: syncResult.actual_finish_date }),
+        }
+      }
+
       // Create new task
       createTaskMutation.mutate({
         project_id: projectId,
@@ -493,6 +550,7 @@ function DashboardContent() {
         constraint_type: data.constraint_type || null,
         constraint_date: data.constraint_date || null,
         scheduling_mode: data.scheduling_mode || 'auto',
+        ...newTaskProgressFields,
       }, {
         onSuccess: async (newTask) => {
           // Create task assignments for multi-assignee support
@@ -992,6 +1050,30 @@ function DashboardContent() {
                         <div className="text-sm font-bold">{selectedTask.duration} ימים</div>
                       </div>
                     </div>
+                    {/* Progress bar (Phase 6) */}
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                        <BarChart3 className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">התקדמות</div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[var(--fp-brand-primary)] rounded-full transition-all"
+                              style={{ width: `${selectedTask.percent_complete ?? 0}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-bold w-10 text-left">{selectedTask.percent_complete ?? 0}%</span>
+                        </div>
+                        {selectedTask.actual_start_date && (
+                          <div className="text-[10px] text-slate-500 mt-1">
+                            התחלה בפועל: {formatDate(selectedTask.actual_start_date)}
+                            {selectedTask.actual_finish_date && ` | סיום בפועל: ${formatDate(selectedTask.actual_finish_date)}`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex items-center gap-4 text-slate-300">
                       <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
                         <Calendar className="w-5 h-5" />
@@ -1110,6 +1192,8 @@ function DashboardContent() {
             assignee_id: editingTask.assignee_id || undefined,
             // Use loaded task assignments for multi-assignee support
             assignee_ids: editingTaskAssigneeIds.length > 0 ? editingTaskAssigneeIds : undefined,
+            // Progress tracking (Phase 6)
+            percent_complete: editingTask.percent_complete ?? 0,
             // Constraint & manual mode (Phase 5)
             constraint_type: editingTask.constraint_type || '',
             constraint_date: editingTask.constraint_date

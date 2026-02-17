@@ -30,6 +30,8 @@ export interface TaskFormData {
   constraint_type?: string | null    // 'ASAP' | 'MSO' | 'SNET' | 'FNLT' | null
   constraint_date?: string | null    // ISO date string for MSO/SNET/FNLT
   scheduling_mode?: string           // 'auto' | 'manual'
+  // Progress tracking (Phase 6)
+  percent_complete?: number          // 0-100
 }
 
 /**
@@ -297,6 +299,11 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
   // Use external prop if provided, otherwise use internal state
   const vacationConflict = externalVacationConflict ?? internalVacationConflict
 
+  // Percent complete state (Phase 6)
+  const [percentComplete, setPercentComplete] = React.useState<number>(
+    initialValues?.percent_complete ?? 0
+  )
+
   const [formData, setFormData] = React.useState<TaskFormData>({
     title: initialValues?.title || '',
     description: initialValues?.description || '',
@@ -488,9 +495,11 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
         constraint_type: constraintType || null,
         constraint_date: constraintDate || null,
         scheduling_mode: schedulingMode,
+        // Progress tracking (Phase 6)
+        percent_complete: percentComplete,
       })
     }
-  }, [formData, onSubmit, validate, constraintType, constraintDate, schedulingMode])
+  }, [formData, onSubmit, validate, constraintType, constraintDate, schedulingMode, percentComplete])
 
   const isEditMode = mode === 'edit'
 
@@ -608,6 +617,35 @@ const TaskFormComponent: React.FC<TaskFormProps> = ({
           fullWidth
           data-testid="task-estimated-hours-input"
         />
+      </div>
+
+      {/* Percent Complete (Phase 6) */}
+      <div className="space-y-1">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          אחוז השלמה
+        </label>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={percentComplete}
+            onChange={(e) => setPercentComplete(Number(e.target.value))}
+            className="flex-1 accent-[var(--fp-brand-primary)]"
+            data-testid="percent-complete-slider"
+          />
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={percentComplete}
+            onChange={(e) => setPercentComplete(Math.max(0, Math.min(100, Number(e.target.value))))}
+            className="w-16 text-center bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-sm"
+            data-testid="percent-complete-input"
+          />
+          <span className="text-sm font-bold w-4">%</span>
+        </div>
       </div>
 
       {/* Advanced Scheduling Section (Phase 5) */}
