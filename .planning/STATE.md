@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Task dependencies drive the schedule automatically -- when a predecessor changes, all successors cascade their dates like Microsoft Project
-**Current focus:** Phase 5 in progress -- Constraints & Manual Mode
+**Current focus:** Phase 6 in progress -- Progress Tracking
 
 ## Current Position
 
-Phase: 5 of 6 (Constraints & Manual Mode) -- COMPLETE
-Plan: 4/4 complete (all plans including gap closure)
-Status: Phase 5 complete -- all constraints, manual mode, and visual indicators verified
-Last activity: 2026-02-17 -- Phase 5 complete, all UAT tests passing
+Phase: 6 of 6 (Progress Tracking)
+Plan: 1/3 complete
+Status: Plan 06-01 complete -- database schema and sync function ready
+Last activity: 2026-02-17 -- Plan 06-01 complete, 16 tests passing
 
-Progress: [█████████░] 88% (v1.0 complete, v1.1 phase 5/6 complete)
+Progress: [█████████░] 91% (v1.0 complete, v1.1 phase 6/6 plan 1/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 9.5min
-- Total execution time: ~1.3 hours
+- Total plans completed: 9
+- Average duration: 9min
+- Total execution time: ~1.4 hours
 
 **By Phase:**
 
@@ -32,6 +32,7 @@ Progress: [█████████░] 88% (v1.0 complete, v1.1 phase 5/6 co
 | 03-unlock-notifications | 1 | 4min | 4min |
 | 04-scheduling-engine-foundation | 3 | 56min | 18.7min |
 | 05-constraints-manual-mode | 4/4 | 26min | 6.5min |
+| 06-progress-tracking | 1/3 | 5min | 5min |
 
 *Updated after each plan completion*
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - [05-03]: FNLT diamond marker removed -- red tint + ! badge are sufficient
 - [05-04]: Manual task end_date = start_date + duration (computed in engine, synced in batchUpdate)
 - [05-04]: as never casts retained in tasks.ts -- supabase-js@2.91.1 resolves params to never
+- [06-01]: actual_start_date never cleared on revert to 0%/pending -- MS Project convention, historical record
+- [06-01]: percent_complete clamped to 0-100 silently rather than throwing error -- defensive boundary
+- [06-01]: syncProgressAndStatus is a pure function with injectable today parameter for deterministic testing
 
 ### Pending Todos
 
@@ -83,5 +87,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Phase 5 complete -- ready for Phase 6
+Stopped at: Completed 06-01-PLAN.md -- progress tracking schema and sync function
 Resume file: None
