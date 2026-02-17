@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-Phase: 5 of 6 (Constraints & Manual Mode)
-Plan: 2/3 complete
-Status: Phase 5 plan 2 complete, ready for plan 3
-Last activity: 2026-02-16 -- Completed 05-02 (constraint/manual service wiring, violation toasts, form UI)
+Phase: 5 of 6 (Constraints & Manual Mode) -- COMPLETE
+Plan: 4/4 complete (all plans including gap closure)
+Status: Phase 5 complete -- all constraints, manual mode, and visual indicators verified
+Last activity: 2026-02-17 -- Phase 5 complete, all UAT tests passing
 
-Progress: [█████████░] 82% (v1.0 complete, v1.1 phase 5/6 plan 2/3)
+Progress: [█████████░] 88% (v1.0 complete, v1.1 phase 5/6 complete)
 
 ## Performance Metrics
 
@@ -31,7 +31,7 @@ Progress: [█████████░] 82% (v1.0 complete, v1.1 phase 5/6 pl
 | 02-lock-enforcement-ui | 1 | 7min | 7min |
 | 03-unlock-notifications | 1 | 4min | 4min |
 | 04-scheduling-engine-foundation | 3 | 56min | 18.7min |
-| 05-constraints-manual-mode | 2/3 | 11min | 5.5min |
+| 05-constraints-manual-mode | 4/4 | 26min | 6.5min |
 
 *Updated after each plan completion*
 
@@ -61,6 +61,10 @@ Recent decisions affecting current work:
 - [05-02]: Toast violation notifications are fire-and-forget side effects, no setState in detection block
 - [05-02]: Constraint fields hidden (not disabled) when manual mode active -- cleaner UX
 - [05-02]: Manual mode toggle auto-fills start_date from today if empty
+- [05-03]: FNLT violation computed inline in GanttChart from ef vs constraint_date (not transient flag)
+- [05-03]: FNLT diamond marker removed -- red tint + ! badge are sufficient
+- [05-04]: Manual task end_date = start_date + duration (computed in engine, synced in batchUpdate)
+- [05-04]: as never casts retained in tasks.ts -- supabase-js@2.91.1 resolves params to never
 
 ### Pending Todos
 
@@ -78,6 +82,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-16
-Stopped at: Completed 05-02-PLAN.md (constraint/manual service wiring, violation toasts, form UI)
+Last session: 2026-02-17
+Stopped at: Phase 5 complete -- ready for Phase 6
 Resume file: None
