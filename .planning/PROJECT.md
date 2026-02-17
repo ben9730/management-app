@@ -1,23 +1,12 @@
-# FlowPlan — MS Project-Style Scheduling
+# FlowPlan — AI-Native Audit Management
 
 ## What This Is
 
-FlowPlan is an AI-native audit management system for Hebrew-speaking users with CPM scheduling, Gantt charts, and offline-first capabilities. It includes sequential phase enforcement and is now adding MS Project-style scheduling — automatic date cascading through dependency chains, constraint types, lead/lag time, manual vs auto scheduling, and progress tracking.
+FlowPlan is an AI-native audit management system for Hebrew-speaking users with MS Project-style CPM scheduling, Gantt charts, and offline-first capabilities. It features automatic date cascading through dependency chains, constraint types, lead/lag time, manual vs auto scheduling, progress tracking, and sequential phase enforcement.
 
 ## Core Value
 
 Task dependencies drive the schedule automatically — when a predecessor changes, all successors cascade their dates like Microsoft Project. This is the foundation that makes FlowPlan a real scheduling tool.
-
-## Current Milestone: v1.1 MS Project-Style Scheduling
-
-**Goal:** Bring task dependency scheduling to MS Project parity — auto-cascading dates, constraint types, lead/lag, manual scheduling mode, and progress tracking.
-
-**Target features:**
-- Auto-rescheduling: CPM engine wired to UI, cascading successor dates on any change
-- Lead/lag time: Negative lag (lead) support on dependencies
-- Constraint types: ASAP, Must Start On, Start No Earlier Than, Finish No Later Than
-- Manual vs auto scheduling: Per-task toggle to skip CPM
-- Progress tracking: Percent complete, actual start/finish, remaining duration
 
 ## Requirements
 
@@ -42,14 +31,17 @@ Task dependencies drive the schedule automatically — when a predecessor change
 - ✓ Phase unlock mechanism — next phase opens when previous completes — v1.0
 - ✓ Toast notification on phase completion/unlock — v1.0
 - ✓ Visual lock indicator on phase sections — v1.0
+- ✓ Auto-rescheduling — CPM recalc cascades when task/dependency changes — v1.1
+- ✓ Lead/lag time — negative lag (lead) on dependencies — v1.1
+- ✓ Constraint types — MSO, SNET, FNLT with violation detection — v1.1
+- ✓ Manual vs auto scheduling — per-task toggle preserving user dates — v1.1
+- ✓ Percent complete — bidirectional sync with status, actual dates, frozen tasks — v1.1
+- ✓ Gantt progress bars — filled portion showing completion percentage — v1.1
+- ✓ Dependency line visualization — type-aware rendering with tooltips — v1.1
 
 ### Active
 
-- [ ] Auto-rescheduling — CPM recalc cascades when task/dependency changes
-- [ ] Lead/lag time — negative lag (lead) on dependencies
-- [ ] Constraint types — ASAP, MSO, SNET, FNLT
-- [ ] Manual vs auto scheduling — per-task toggle
-- [ ] Percent complete — drives remaining duration and actual dates
+(No active requirements — next milestone not yet defined)
 
 ### Out of Scope
 
@@ -57,13 +49,18 @@ Task dependencies drive the schedule automatically — when a predecessor change
 - Email/push notifications — in-app Toast only for now
 - Notification history panel — just ephemeral Toast
 - Custom phase ordering (non-sequential) — phases follow phase_order
-- Phase-level dependencies beyond sequential (e.g., Phase 3 depends on Phase 1 but not 2) — sequential only
+- Phase-level dependencies beyond sequential — sequential only
+- Resource leveling — NP-hard, massive complexity
+- Effort-driven scheduling — confusing even to experts
+- Multiple baselines — defer to future if needed
+- ALAP scheduling — requires backward-scheduled projects
+- Drag-to-reschedule on Gantt — read-only for now
 
 ## Context
 
-Shipped v1.0 with 3 phases (Phase Dependencies & Notifications) in 3 days.
-Codebase: ~5,000 LOC TypeScript across 34 modified files.
-Tech stack: Next.js 16, React 19, Supabase, TanStack Query, Sonner (toast).
+Shipped v1.0 (Phase Dependencies & Notifications) in 3 days, v1.1 (MS Project-Style Scheduling) in 2 days.
+Codebase: ~14,000 LOC TypeScript across 86 modified files.
+Tech stack: Next.js 16, React 19, Supabase, TanStack Query, Sonner (toast), Yjs (CRDT).
 
 Key patterns established:
 - ServiceResult<T> pattern for service returns
@@ -73,18 +70,13 @@ Key patterns established:
 - Pure service + derived hook pattern (computePhaseLockStatus + usePhaseLockStatus)
 - useRef-based previous-value comparison for transition detection
 - CSS-level blocking (pointer-events-none + opacity) for locked UI
-
-Current scheduling state (v1.1 starting point):
-- SchedulingService class (682 lines) with full CPM: forwardPass, backwardPass, calculateCriticalPath
-- Calendar-aware (holidays, workdays, per-resource time-off)
-- Topological sort via Kahn's algorithm with cycle detection
-- Dependencies table has FS/SS/FF/SF + lag_days (positive only)
-- **NOT wired to UI** — scheduling service exists but never triggered by task/dependency mutations
-- Gantt chart is read-only (no drag-to-reschedule)
+- One-shot recalculate pattern (explicit mutation trigger, not reactive useEffect)
+- AbortController serial queue for newest-wins recalculation
+- syncProgressAndStatus pure function with injectable today for deterministic testing
+- Three-branch batch persist: completed (frozen) → manual (end_date) → auto (both dates)
 
 Known concerns:
 - page.tsx is ~1,300 lines — future work should extract into hooks/components
-- Scheduling engine disconnected from UI mutation flow
 
 ## Constraints
 
@@ -102,8 +94,15 @@ Known concerns:
 | Derive lock status from tasks array, not DB columns | Immediate accuracy over stale DB counts | ✓ Good — instant client-side reactivity |
 | Empty phases treated as complete (non-blocking) | Vacuous truth of [].every() is correct UX | ✓ Good — no edge-case blocking |
 | Sonner over custom toast component | Handles RTL, animations, ARIA, auto-dismiss, SSR portals | ✓ Good — minimal integration effort |
-| useRef for previous-value tracking | Avoids extra re-render cycle vs useState | ✓ Good — efficient transition detection |
-| CSS-level blocking for locked phases | pointer-events-none + opacity simpler than per-task disabled props | ✓ Good — fewer prop changes |
+| One-shot recalculate pattern | Explicit mutation trigger prevents infinite cascade loops vs reactive useEffect | ✓ Good — stable, predictable |
+| Dependencies always win over constraints | max(dependency ES, constraint date) — consistent, predictable | ✓ Good — no surprising overrides |
+| constraint_type default is null, not ASAP | Explicit user decision required — locked by user preference | ✓ Good — clearer UX intent |
+| FNLT violations are transient (not persisted) | Computed inline from ef vs constraint_date — always fresh | ✓ Good — no stale flags |
+| Manual task skip before dependency resolution | Manual tasks skip entire forward/backward pass computation | ✓ Good — clean separation |
+| Completed task freeze before all other checks | frozen > manual > auto priority chain in batch persist | ✓ Good — clear precedence |
+| actual_start_date never cleared on revert to 0% | MS Project convention — historical record preserved | ✓ Good — matches industry standard |
+| Critical path styled as informational blue, not alarming red | Users confused critical path with errors — blue conveys information | ✓ Good — clearer UX |
+| batchUpdateTaskCPMFields uses individual .update() not .upsert() | PostgreSQL NOT NULL constraint on INSERT payload prevents upsert | ✓ Good — workaround for Supabase limitation |
 
 ---
-*Last updated: 2026-02-16 after v1.1 milestone start*
+*Last updated: 2026-02-17 after v1.1 milestone completion*

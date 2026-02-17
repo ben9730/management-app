@@ -16,3 +16,20 @@
 
 ---
 
+
+## v1.1 MS Project-Style Scheduling (Shipped: 2026-02-17)
+
+**Phases completed:** 3 phases (4-6), 10 plans
+**Timeline:** 2 days (2026-02-16 → 2026-02-17)
+**Stats:** 17 feature commits, 52 files changed, +8,800 lines
+
+**Key accomplishments:**
+- Complete CPM engine with all 4 dependency types (FS/SS/FF/SF) and lead/lag support (51+ tests)
+- Auto-cascading: useScheduling hook wires engine to UI — duration/dependency changes propagate instantly
+- Constraint types (MSO/SNET/FNLT) with violation detection, toast alerts, and visual indicators
+- Manual scheduling mode: per-task toggle preserves user-set dates while successors still cascade
+- Progress tracking: bidirectional percent/status sync, actual dates, frozen completed tasks
+- Gantt visualization: type-aware dependency lines, progress bar overlay, constraint indicators
+
+---
+
