@@ -17,6 +17,18 @@ const constraintTypeLabels: Record<string, string> = {
   FNLT: 'לסיים לא אחרי',
 }
 
+/** Compute FNLT violation inline from persisted fields (not transient flags) */
+function isFnltViolation(task: Task): boolean {
+  if (task.constraint_type !== 'FNLT' || !task.constraint_date) return false
+  const ef = task.ef || task.end_date
+  if (!ef) return false
+  const efDate = ef instanceof Date ? ef : new Date(ef as string)
+  const cdDate = task.constraint_date instanceof Date
+    ? task.constraint_date
+    : new Date(task.constraint_date as string)
+  return efDate > cdDate
+}
+
 export interface GanttChartProps {
   tasks: Task[]
   dependencies: Dependency[]
@@ -561,7 +573,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                       )}
 
                       {/* FNLT violation red tint overlay */}
-                      {Boolean((task as unknown as Record<string, unknown>)._fnltViolation) && (
+                      {isFnltViolation(task) && (
                         <div className="absolute inset-0 bg-red-500/20 rounded pointer-events-none" />
                       )}
 
@@ -729,7 +741,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
               )}
 
               {/* FNLT violation warning */}
-              {Boolean((hoveredTask as unknown as Record<string, unknown>)._fnltViolation) && (
+              {isFnltViolation(hoveredTask) && (
                 <div className="text-xs text-red-400 font-medium">
                   חריגה מהדדליין!
                 </div>
