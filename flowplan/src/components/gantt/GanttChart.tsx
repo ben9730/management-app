@@ -603,24 +603,29 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                       </span>
                     )}
 
-                    {/* FNLT deadline diamond marker on timeline */}
-                    {task.constraint_type === 'FNLT' && task.constraint_date && (() => {
-                      const deadlineDate = task.constraint_date instanceof Date
-                        ? task.constraint_date
-                        : new Date(task.constraint_date as string)
-                      const deadlineLeft = getDaysBetween(dateRangeStart, deadlineDate) * dayWidth - left
-                      return (
-                        <div
-                          className="absolute w-3 h-3 bg-red-500 rotate-45 z-10"
-                          style={{
-                            left: `${deadlineLeft}px`,
-                            top: `${(barHeight / 2) - 6}px`,
-                          }}
-                          title={`דדליין: ${formatDateDisplay(task.constraint_date)}`}
-                        />
-                      )
-                    })()}
+                    {/* FNLT deadline diamond — rendered below as standalone timeline marker */}
                   </div>
+                )
+              })}
+
+              {/* FNLT deadline diamond markers (standalone timeline elements) */}
+              {taskPositions.map(({ task, top }) => {
+                if (task.constraint_type !== 'FNLT' || !task.constraint_date) return null
+                const deadlineDate = task.constraint_date instanceof Date
+                  ? task.constraint_date
+                  : new Date(task.constraint_date as string)
+                const deadlineLeft = getDaysBetween(dateRangeStart, deadlineDate) * dayWidth
+                const barHeight = ROW_HEIGHT - 12
+                return (
+                  <div
+                    key={`fnlt-${task.id}`}
+                    className="absolute w-3 h-3 bg-red-500 rotate-45 z-10 pointer-events-none"
+                    style={{
+                      left: deadlineLeft - 6,
+                      top: top + 6 + (barHeight / 2) - 6,
+                    }}
+                    title={`דדליין: ${formatDateDisplay(task.constraint_date)}`}
+                  />
                 )
               })}
 
