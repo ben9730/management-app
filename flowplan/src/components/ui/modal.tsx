@@ -136,14 +136,14 @@ const Modal: React.FC<ModalProps> = ({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'relative w-full bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-visible fp-animate-slide-up',
+          'relative w-full max-h-[90vh] bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-hidden flex flex-col fp-animate-slide-up',
           sizes[size],
           className
         )}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 pb-2">
+          <div className="flex items-center justify-between p-6 pb-2 sticky top-0 bg-white dark:bg-slate-800 z-10 border-b border-slate-200/10">
             <div>
               {title && (
                 <h2
@@ -173,13 +173,13 @@ const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content */}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
 
         {/* Footer */}
         {footer && (
           <div
             data-testid="modal-footer"
-            className="p-6 pt-2 bg-slate-50/50 dark:bg-slate-900/50"
+            className="p-6 pt-2 bg-slate-50/50 dark:bg-slate-900/50 shrink-0"
           >
             {footer}
           </div>
