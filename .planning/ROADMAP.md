@@ -53,12 +53,13 @@ Plans:
   3. User sets a Finish No Later Than constraint and a warning appears if the calculated finish date exceeds the deadline
   4. User toggles a task to manual mode, sets custom dates, and those dates remain fixed when predecessors are rescheduled -- but the manual task's successors still cascade from its dates
   5. Manual tasks display a distinct visual style in the Gantt chart distinguishing them from auto-scheduled tasks
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [ ] 05-01-PLAN.md -- Types, DB migration, and CPM engine constraint/manual logic (TDD)
 - [ ] 05-02-PLAN.md -- Service/hook wiring, constraint violation toasts, TaskForm UI
 - [ ] 05-03-PLAN.md -- Gantt visual indicators and end-to-end verification
+- [ ] 05-04-PLAN.md -- Gap closure: fix constraint persistence (database types) and modal UX
 
 ### Phase 6: Progress Tracking
 **Goal**: Users can track task completion with percent complete, automatic actual dates, and visual progress on the Gantt chart -- completed tasks are frozen in the schedule
@@ -85,5 +86,5 @@ Plans:
 | 2. Lock Enforcement UI | v1.0 | 1/1 | Complete | 2026-02-14 |
 | 3. Unlock Notifications | v1.0 | 1/1 | Complete | 2026-02-14 |
 | 4. Scheduling Engine Foundation | v1.1 | 3/3 | Complete | 2026-02-16 |
-| 5. Constraints & Manual Mode | v1.1 | 0/3 | Planned | - |
+| 5. Constraints & Manual Mode | v1.1 | 0/4 | Planned | - |
 | 6. Progress Tracking | v1.1 | 0/? | Not started | - |
