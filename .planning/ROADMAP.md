@@ -70,11 +70,12 @@ Plans:
   2. When user first moves a task above 0% complete, the actual start date is recorded automatically
   3. A task at 100% complete does not move when its predecessor dates change -- it is frozen in the schedule
   4. Gantt bars show a darker filled portion representing the completed percentage of each task
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- Database migration, type extensions, and TDD bidirectional percent/status sync function
+- [ ] 06-02-PLAN.md -- Scheduling engine frozen/in-progress task handling and batch persist
+- [ ] 06-03-PLAN.md -- UI controls (percent slider, sidebar progress), Gantt progress bar overlay
 
 ## Progress
 
@@ -87,4 +88,4 @@ Plans:
 | 3. Unlock Notifications | v1.0 | 1/1 | Complete | 2026-02-14 |
 | 4. Scheduling Engine Foundation | v1.1 | 3/3 | Complete | 2026-02-16 |
 | 5. Constraints & Manual Mode | v1.1 | 0/4 | Planned | - |
-| 6. Progress Tracking | v1.1 | 0/? | Not started | - |
+| 6. Progress Tracking | v1.1 | 0/3 | Planned | - |
