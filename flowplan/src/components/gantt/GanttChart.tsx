@@ -360,6 +360,12 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                 <span className="w-3 h-3 rounded bg-[var(--fp-critical)] ring-2 ring-[var(--fp-critical)]/30"></span>
                 <span className="text-[var(--fp-text-secondary)]">קריטי</span>
               </div>
+              <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="w-6 h-3 rounded bg-[var(--fp-status-warning)] relative overflow-hidden">
+                  <span className="absolute inset-y-0 left-0 w-1/2 bg-black/20" />
+                </span>
+                התקדמות
+              </span>
             </div>
           </div>
           {showZoomControls && (
@@ -549,9 +555,20 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                         'hover:scale-[1.02] hover:z-20'
                       )}
                     >
-                      {/* Progress stripe pattern for in_progress */}
-                      {task.status === 'in_progress' && (
+                      {/* Progress stripe for in_progress tasks without explicit percent */}
+                      {task.status === 'in_progress' && (task.percent_complete === 0 || task.percent_complete === undefined) && (
                         <div className="absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse" />
+                      )}
+                      {/* Progress fill overlay (Phase 6) */}
+                      {task.percent_complete > 0 && task.percent_complete < 100 && (
+                        <div
+                          className="absolute inset-y-0 left-0 bg-black/20 pointer-events-none"
+                          style={{
+                            width: `${task.percent_complete}%`,
+                            borderRadius: task.percent_complete < 95 ? '0.5rem 0 0 0.5rem' : '0.5rem',
+                          }}
+                          data-testid={`progress-fill-${task.id}`}
+                        />
                       )}
                       {/* Checkmark icon for done tasks */}
                       {task.status === 'done' && (
