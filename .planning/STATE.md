@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Task dependencies drive the schedule automatically -- when a predecessor changes, all successors cascade their dates like Microsoft Project
-**Current focus:** Phase 6 in progress -- Progress Tracking
+**Current focus:** Phase 6 complete -- Progress Tracking
 
 ## Current Position
 
 Phase: 6 of 6 (Progress Tracking)
-Plan: 2/3 complete
-Status: Plan 06-02 complete -- CPM engine handles frozen/in-progress tasks
-Last activity: 2026-02-17 -- Plan 06-02 complete, scheduling engine extended
+Plan: 3/3 complete
+Status: Phase 06 complete -- all progress tracking plans delivered
+Last activity: 2026-02-17 -- Plan 06-03 complete, UI controls and Gantt overlay
 
-Progress: [██████████] 94% (v1.0 complete, v1.1 phase 6/6 plan 2/3)
+Progress: [██████████] 100% (v1.0 complete, v1.1 phase 6/6 plan 3/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 8.7min
-- Total execution time: ~1.5 hours
+- Total plans completed: 11
+- Average duration: 8.5min
+- Total execution time: ~1.6 hours
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [██████████] 94% (v1.0 complete, v1.1 phase 6/6 pl
 | 03-unlock-notifications | 1 | 4min | 4min |
 | 04-scheduling-engine-foundation | 3 | 56min | 18.7min |
 | 05-constraints-manual-mode | 4/4 | 26min | 6.5min |
-| 06-progress-tracking | 2/3 | 9min | 4.5min |
+| 06-progress-tracking | 3/3 | 14min | 4.7min |
 
 *Updated after each plan completion*
 
@@ -72,6 +72,9 @@ Recent decisions affecting current work:
 - [06-02]: Completed task freeze check occurs BEFORE dependency resolution -- frozen tasks skip entire forward pass computation
 - [06-02]: Completed task check in batchUpdateTaskCPMFields takes priority over manual mode (frozen > manual > auto)
 - [06-02]: Removed scheduling_mode cast in tasks.ts -- Task type now has the field directly
+- [06-03]: Percent complete slider uses step=5 for practical increments rather than continuous 0-100
+- [06-03]: Gantt progress overlay uses bg-black/20 (subtle darkening) that works across all status colors
+- [06-03]: Pulse animation restricted to in_progress tasks without explicit percent -- fill overlay replaces it
 
 ### Pending Todos
 
@@ -90,5 +93,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 06-02-PLAN.md -- CPM engine frozen/in-progress task handling
+Stopped at: Completed 06-03-PLAN.md -- Phase 6 complete, all progress tracking delivered
 Resume file: None
