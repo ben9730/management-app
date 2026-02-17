@@ -206,6 +206,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
   ) => {
     const [dayWidth, setDayWidth] = React.useState(initialDayWidth)
     const [hoveredTaskId, setHoveredTaskId] = React.useState<string | null>(null)
+    const [mousePos, setMousePos] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 })
     const [hoveredDepId, setHoveredDepId] = React.useState<string | null>(null)
     const [hoveredDepPos, setHoveredDepPos] = React.useState<{ x: number; y: number } | null>(null)
     const timelineRef = React.useRef<HTMLDivElement>(null)
@@ -357,8 +358,8 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                 <span className="text-[var(--fp-text-secondary)]">הושלם</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-[var(--fp-critical)] ring-2 ring-[var(--fp-critical)]/30"></span>
-                <span className="text-[var(--fp-text-secondary)]">קריטי</span>
+                <span className="w-3 h-3 rounded bg-[var(--fp-critical)] ring-1 ring-[var(--fp-critical)]/30"></span>
+                <span className="text-[var(--fp-text-secondary)]">נתיב קריטי</span>
               </div>
               <span className="flex items-center gap-1.5 text-xs text-slate-400">
                 <span className="w-6 h-3 rounded bg-[var(--fp-status-warning)] relative overflow-hidden">
@@ -412,7 +413,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     className={cn(
                       'flex items-center gap-2 px-4 border-b border-[var(--fp-border-light)]/50 cursor-pointer hover:bg-[var(--fp-bg-tertiary)] transition-colors',
                       'focus:outline-none focus:bg-[var(--fp-bg-tertiary)]',
-                      isCritical && 'bg-[var(--fp-status-error-bg)]'
+                      isCritical && 'bg-[var(--fp-critical-bg)]'
                     )}
                     style={{ height: ROW_HEIGHT }}
                   >
@@ -430,7 +431,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                       {task.title}
                     </span>
                     {isCritical && (
-                      <span className="text-[10px] px-1.5 py-0.5 bg-[var(--fp-critical)] text-white rounded font-bold flex-shrink-0">!</span>
+                      <span className="text-[9px] px-1.5 py-0.5 bg-[var(--fp-critical-bg)] text-[var(--fp-critical)] rounded font-medium flex-shrink-0 border border-[var(--fp-critical)]/30" title="נתיב קריטי: אפס מרווח זמן — כל עיכוב ישפיע על תאריך סיום הפרויקט">נק</span>
                     )}
                   </div>
                 )
@@ -512,7 +513,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
               {showTodayMarker && todayOffset >= 0 && todayOffset < totalDays && (
                 <div
                   data-testid="today-marker"
-                  className="absolute top-0 bottom-0 w-[3px] bg-[var(--fp-critical)] z-10 shadow-md"
+                  className="absolute top-0 bottom-0 w-[3px] bg-[var(--fp-today-marker)] z-10 shadow-md"
                   style={{ left: todayPosition }}
                 />
               )}
@@ -541,7 +542,8 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                       height: barHeight,
                     }}
                     onClick={(e) => handleTaskBarClick(e, task)}
-                    onMouseEnter={() => setHoveredTaskId(task.id)}
+                    onMouseEnter={(e) => { setHoveredTaskId(task.id); setMousePos({ x: e.clientX, y: e.clientY }) }}
+                    onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredTaskId(null)}
                   >
                     <div
@@ -551,7 +553,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                           task.status === 'in_progress' ? 'bg-[var(--fp-status-warning)] border-[var(--fp-status-warning)]' :
                             task.status === 'pending' ? 'bg-[var(--fp-status-pending)] border-[var(--fp-status-pending)]' :
                               'bg-[var(--fp-brand-primary)] border-[var(--fp-brand-primary)]',
-                        isCritical && 'ring-2 ring-[var(--fp-critical)] ring-offset-2 ring-offset-[var(--fp-bg-secondary)]',
+                        isCritical && 'ring-1 ring-[var(--fp-critical)] ring-offset-1 ring-offset-[var(--fp-bg-secondary)]',
                         'hover:scale-[1.02] hover:z-20'
                       )}
                     >
@@ -705,6 +707,7 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
             data-testid="task-tooltip"
             className="fixed z-50 bg-[var(--fp-bg-secondary)] text-[var(--fp-text-primary)] px-4 py-3 text-sm border border-[var(--fp-border-light)] rounded-xl shadow-2xl pointer-events-none min-w-[200px]"
             dir="rtl"
+            style={{ top: mousePos.y + 16, left: mousePos.x - 100 }}
           >
             <div className="font-bold mb-2 text-base">{hoveredTask.title}</div>
             <div className="space-y-1.5 text-[var(--fp-text-secondary)]">
@@ -727,8 +730,8 @@ const GanttChartComponent = React.forwardRef<HTMLDivElement, GanttChartProps>(
                     hoveredTask.status === 'in_progress' ? 'בביצוע' : 'ממתין'}
                 </span>
                 {(criticalPathTaskIds.includes(hoveredTask.id) || hoveredTask.is_critical) && (
-                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[var(--fp-status-error-bg)] text-[var(--fp-critical)]">
-                    קריטי
+                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--fp-critical-bg)] text-[var(--fp-critical)] border border-[var(--fp-critical)]/20" title="אפס מרווח זמן — כל עיכוב ישפיע על תאריך סיום הפרויקט">
+                    נתיב קריטי
                   </span>
                 )}
               </div>

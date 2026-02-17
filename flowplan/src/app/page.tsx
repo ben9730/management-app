@@ -937,12 +937,15 @@ function DashboardContent() {
             <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">נתיב קריטי</span>
-                <span className="material-icons text-red-500">priority_high</span>
+                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-red-500">{criticalTasks}</span>
+                <span className="text-3xl font-bold text-blue-400">{criticalTasks}</span>
                 <span className="text-xs text-slate-400">משימות קריטיות</span>
               </div>
+              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">אפס מרווח זמן — כל עיכוב ישפיע על תאריך הסיום</p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700/50 transition-all hover:bg-white dark:hover:bg-slate-800">
@@ -1122,12 +1125,12 @@ function DashboardContent() {
                   </div>
 
                   {/* Critical Path Alert */}
-                  {selectedTask.priority === 'critical' && (
-                    <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4">
-                      <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" />
+                  {selectedTask.is_critical && (
+                    <div className="p-5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex gap-4">
+                      <AlertTriangle className="w-6 h-6 text-blue-400 shrink-0" />
                       <div>
-                        <div className="text-sm font-bold text-red-100 mb-1">משימה בנתיב הקריטי</div>
-                        <div className="text-xs text-red-200/60 font-medium leading-relaxed">עיכוב במשימה זו ישפיע ישירות על תאריך סיום הפרויקט.</div>
+                        <div className="text-sm font-bold text-blue-100 mb-1">משימה בנתיב הקריטי</div>
+                        <div className="text-xs text-blue-200/60 font-medium leading-relaxed">למשימה זו אפס מרווח זמן (slack) — כל עיכוב ישפיע ישירות על תאריך סיום הפרויקט.</div>
                       </div>
                     </div>
                   )}

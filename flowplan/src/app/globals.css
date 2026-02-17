@@ -23,8 +23,10 @@
   --fp-status-error-bg: rgba(239, 68, 68, 0.15);
   --fp-status-info-bg: rgba(59, 130, 246, 0.15);
 
-  /* Critical Path */
-  --fp-critical: #ef4444;
+  /* Critical Path (informational blue, not alarming red) */
+  --fp-critical: #60a5fa;
+  --fp-critical-bg: rgba(96, 165, 250, 0.12);
+  --fp-today-marker: #ef4444;
 
   /* Light Theme Specifics */
   --fp-bg-primary: #f8fafc;
@@ -69,7 +71,9 @@
   --fp-status-warning-bg: rgba(251, 191, 36, 0.2);
   --fp-status-error-bg: rgba(248, 113, 113, 0.2);
   --fp-status-info-bg: rgba(96, 165, 250, 0.2);
-  --fp-critical: #f87171;
+  --fp-critical: #93c5fd;
+  --fp-critical-bg: rgba(147, 197, 253, 0.15);
+  --fp-today-marker: #f87171;
 }
 
 @theme inline {
