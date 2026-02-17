@@ -336,6 +336,13 @@ export class SchedulingService {
         continue
       }
 
+      // Step B: Completed task freeze (Phase 6) -- frozen tasks use actual dates, never recompute
+      if (task.percent_complete === 100 && task.actual_start_date && task.actual_finish_date) {
+        task.es = this.toDate(task.actual_start_date)
+        task.ef = this.toDate(task.actual_finish_date)
+        continue  // frozen, skip dependency resolution entirely
+      }
+
       const predecessors = predecessorMap.get(task.id) || []
 
       if (predecessors.length === 0) {
@@ -361,7 +368,15 @@ export class SchedulingService {
         task.es = maxDate || this.findNextWorkingDay(projectStart, workDays, holidays)
       }
 
-      // Step B: Apply constraint logic (dependencies already resolved)
+      // Step C: In-progress floor clamp (Phase 6) -- cannot move backward past actual start
+      if (task.percent_complete > 0 && task.actual_start_date) {
+        const actualStart = this.toDate(task.actual_start_date)
+        if (actualStart && task.es instanceof Date && task.es < actualStart) {
+          task.es = actualStart
+        }
+      }
+
+      // Step D: Apply constraint logic (dependencies already resolved)
       const constraintDate = this.toDate(task.constraint_date)
 
       if (constraintDate && (task.constraint_type === 'MSO' || task.constraint_type === 'SNET')) {
@@ -495,6 +510,13 @@ export class SchedulingService {
       if (task.scheduling_mode === 'manual') {
         task.ls = task.es || this.toDate(task.start_date) || task.ls
         task.lf = task.ef || this.toDate(task.end_date) || task.lf
+        continue
+      }
+
+      // Completed task freeze: LS=ES, LF=EF (Phase 6)
+      if (task.percent_complete === 100) {
+        task.ls = task.es
+        task.lf = task.ef
         continue
       }
 
