@@ -115,6 +115,9 @@ export interface Database {
           constraint_type: string | null
           constraint_date: string | null
           scheduling_mode: string
+          percent_complete: number
+          actual_start_date: string | null
+          actual_finish_date: string | null
           created_at: string
           updated_at: string
         }
@@ -140,6 +143,9 @@ export interface Database {
           constraint_type?: string | null
           constraint_date?: string | null
           scheduling_mode?: string
+          percent_complete?: number
+          actual_start_date?: string | null
+          actual_finish_date?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -165,6 +171,9 @@ export interface Database {
           constraint_type?: string | null
           constraint_date?: string | null
           scheduling_mode?: string
+          percent_complete?: number
+          actual_start_date?: string | null
+          actual_finish_date?: string | null
           created_at?: string
           updated_at?: string
         }

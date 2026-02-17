@@ -26,6 +26,9 @@ export interface CreateTaskInput {
   constraint_type?: string | null    // 'ASAP' | 'MSO' | 'SNET' | 'FNLT' | null
   constraint_date?: string | null    // ISO date string
   scheduling_mode?: string           // 'auto' | 'manual'
+  percent_complete?: number
+  actual_start_date?: string | null
+  actual_finish_date?: string | null
 }
 
 export interface UpdateTaskInput {
@@ -42,6 +45,9 @@ export interface UpdateTaskInput {
   constraint_type?: string | null
   constraint_date?: string | null
   scheduling_mode?: string
+  percent_complete?: number
+  actual_start_date?: string | null
+  actual_finish_date?: string | null
 }
 
 export interface TasksFilter {

@@ -82,6 +82,11 @@ export interface Task extends BaseEntity {
   constraint_date: Date | string | null   // Required for MSO, SNET, FNLT
   scheduling_mode: SchedulingMode         // 'auto' (default) or 'manual'
 
+  // Progress tracking fields (Phase 6)
+  percent_complete: number                   // 0-100
+  actual_start_date: Date | string | null    // Set when work begins
+  actual_finish_date: Date | string | null   // Set when work completes
+
   updated_at: Date | string
 }
 
@@ -98,6 +103,9 @@ export interface CreateTaskInput {
   constraint_type?: ConstraintType | null
   constraint_date?: Date | string | null
   scheduling_mode?: SchedulingMode
+  percent_complete?: number
+  actual_start_date?: Date | string | null
+  actual_finish_date?: Date | string | null
 }
 
 // ============================================
