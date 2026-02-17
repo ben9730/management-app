@@ -242,9 +242,24 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
   // (upsert requires all NOT NULL columns even when updating existing rows)
   const results = await Promise.all(
     tasks.map(task => {
-      if ((task as unknown as Record<string, unknown>).scheduling_mode === 'manual') {
-        // Manual tasks: preserve user's start_date, sync end_date from computed EF
-        // (EF = start_date + duration, computed in scheduling engine)
+      // Completed task freeze: persist CPM fields only, do NOT overwrite start_date/end_date
+      if (task.percent_complete === 100) {
+        return supabase
+          .from('tasks')
+          .update({
+            es: toDateStr(task.es),
+            ef: toDateStr(task.ef),
+            ls: toDateStr(task.ls),
+            lf: toDateStr(task.lf),
+            slack: task.slack ?? 0,
+            is_critical: task.is_critical ?? false,
+          } as never)
+          .eq('id', task.id)
+      }
+
+      // Manual tasks: preserve user's start_date, sync end_date from computed EF
+      // (EF = start_date + duration, computed in scheduling engine)
+      if (task.scheduling_mode === 'manual') {
         return supabase
           .from('tasks')
           .update({
@@ -258,6 +273,7 @@ export async function batchUpdateTaskCPMFields(tasks: Task[]): Promise<ServiceRe
           } as never)
           .eq('id', task.id)
       }
+
       // Auto tasks: sync start_date/end_date with es/ef as before
       return supabase
         .from('tasks')
