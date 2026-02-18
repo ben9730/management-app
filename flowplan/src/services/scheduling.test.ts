@@ -1008,13 +1008,13 @@ describe('SchedulingService', () => {
       const result = service.backwardPass(tasks, deps, projectEnd, workDays, [])
 
       // B: LF = projectEnd = Jan 27, LS = subtractWorkingDays(Jan 27, 2) = Jan 26
-      // A (SS): SS constrains successor's LS based on predecessor's ES.
-      // Backward: predecessor LS <= successor LS - lag.
-      // predecessor LS = B's LS - 0 = Jan 26.
-      // predecessor LF = addWorkingDays(LS, duration) = addWorkingDays(Jan 26, 3) = Jan 28.
+      // A (SS): SS constrains predecessor LS <= successor LS - lag.
+      // constrainedLS = B's LS - 0 = Jan 26.
+      // candidateLF = addWorkingDays(Jan 26, 3) = Jan 28 → capped at projectEnd Jan 27.
+      // A: LF = Jan 27, LS = subtractWorkingDays(Jan 27, 3) = Jan 25.
       const taskA = result.find(t => t.id === 'A')
-      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-26')
-      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-28')
+      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-25')
+      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-27')
     })
 
     it('FF backward pass: predecessor LF equals successor LF minus lag', () => {
@@ -1072,13 +1072,13 @@ describe('SchedulingService', () => {
       const result = service.backwardPass(tasks, deps, projectEnd, workDays, [])
 
       // B: LF = projectEnd = Jan 27, LS = subtractWorkingDays(Jan 27, 2) = Jan 26
-      // A (SF): SF constrains successor's finish based on predecessor's start.
-      // Backward: predecessor LS <= successor LF - lag.
-      // predecessor LS = B's LF - 0 = Jan 27.
-      // predecessor LF = addWorkingDays(Jan 27, 3) = Jan 29.
+      // A (SF): SF constrains predecessor LS <= successor LF - lag.
+      // constrainedLS = B's LF - 0 = Jan 27.
+      // candidateLF = addWorkingDays(Jan 27, 3) = Jan 29 → capped at projectEnd Jan 27.
+      // A: LF = Jan 27, LS = subtractWorkingDays(Jan 27, 3) = Jan 25.
       const taskA = result.find(t => t.id === 'A')
-      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-27')
-      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-29')
+      expect(taskA?.ls?.toISOString().split('T')[0]).toBe('2026-01-25')
+      expect(taskA?.lf?.toISOString().split('T')[0]).toBe('2026-01-27')
     })
   })
 
@@ -1159,6 +1159,92 @@ describe('SchedulingService', () => {
 
       // Project end should be Feb 1 (C's EF)
       expect(result.projectEndDate?.toISOString().split('T')[0]).toBe('2026-02-01')
+    })
+  })
+
+  // ==========================================
+  // Full CPM with SF Dependency
+  // ==========================================
+
+  describe('Full calculateCriticalPath with SF dependency', () => {
+    it('SF dependency: predecessor is critical, successor has slack', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      // A --SF--> B: B cannot finish until A starts
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SF' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // Forward pass:
+      //   A: ES=Jan 25, EF=Jan 27 (3 days)
+      //   B (SF): candidateEF=Jan 25 (A's ES), candidateES=Jan 22 → clamped to Jan 25
+      //           ES=Jan 25, EF=Jan 26 (2 days)
+      // ProjectEnd = max(Jan 27, Jan 26) = Jan 27
+      //
+      // Backward pass:
+      //   B: LF=Jan 27, LS=Jan 26 (no successors)
+      //   A: candidateLF from SF = addWorkingDays(B's LF, 3) = Jan 29 → capped at Jan 27
+      //      LF=Jan 27, LS=Jan 25
+      //
+      // Slack:
+      //   A: slack = 0 → CRITICAL
+      //   B: slack = 1 → not critical
+
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      const taskB = result.tasks.find(t => t.id === 'B')!
+
+      expect(taskA.is_critical).toBe(true)
+      expect(taskA.slack).toBe(0)
+      expect(taskB.is_critical).toBe(false)
+      expect(taskB.slack).toBe(1)
+
+      expect(result.criticalPath).toContain('A')
+      expect(result.criticalPath).not.toContain('B')
+      expect(result.projectEndDate?.toISOString().split('T')[0]).toBe('2026-01-27')
+    })
+
+    it('SF in chain: X --FS--> A --SF--> B — entire driving chain is critical', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'X', duration: 3 }),
+        createMockTask({ id: 'A', duration: 5 }),
+        createMockTask({ id: 'B', duration: 2 }),
+      ]
+      const deps = [
+        createMockDependency('X', 'A', { type: 'FS' }),
+        createMockDependency('A', 'B', { type: 'SF' }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // Forward pass:
+      //   X: ES=Jan 25, EF=Jan 27
+      //   A (FS from X): ES=Jan 28, EF=Feb 3 (5 working days: Wed-Thu, skip Fri/Sat, Sun-Tue)
+      //   B (SF from A): candidateEF=Jan 28 (A's ES), candidateES=Jan 27
+      //                  ES=Jan 27, EF=Jan 28
+      // ProjectEnd = Feb 3
+      //
+      // X and A should be critical (driving the project end)
+      // B should not be critical (finishes well before project end)
+
+      const taskX = result.tasks.find(t => t.id === 'X')!
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      const taskB = result.tasks.find(t => t.id === 'B')!
+
+      expect(taskX.is_critical).toBe(true)
+      expect(taskA.is_critical).toBe(true)
+      expect(taskB.is_critical).toBe(false)
+
+      expect(result.criticalPath).toContain('X')
+      expect(result.criticalPath).toContain('A')
+      expect(result.criticalPath).not.toContain('B')
     })
   })
 
@@ -1472,6 +1558,116 @@ describe('SchedulingService', () => {
       // A: ES=Jan 25, EF=Jan 29. FNLT=Jan 26. Jan 29 > Jan 26 -> VIOLATION.
       const taskA = result[0] as unknown as Record<string, unknown>
       expect(taskA._fnltViolation).toBe(true)
+    })
+
+    // --- FNLT Backward Pass ---
+
+    it('FNLT constraint -- backward pass caps LF at FNLT date', () => {
+      // Full CPM: single task with FNLT. Backward pass should use FNLT as LF.
+      const fnltDate = new Date('2026-01-28') // Wednesday
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          constraint_type: 'FNLT',
+          constraint_date: fnltDate,
+        }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // Forward: A: ES=Jan 25, EF=Jan 27. FNLT=Jan 28 (no violation).
+      // ProjectEnd = Jan 27.
+      // Backward: Without FNLT, LF=projectEnd=Jan 27, LS=Jan 25, slack=0.
+      // With FNLT=Jan 28 > projectEnd=Jan 27, projectEnd cap wins. LF=Jan 27.
+      // So in this case FNLT doesn't change anything (projectEnd is tighter).
+      const taskA = result.tasks[0]
+      expect(taskA.lf?.toISOString().split('T')[0]).toBe('2026-01-27')
+      expect(taskA.slack).toBe(0)
+      expect(taskA.is_critical).toBe(true)
+    })
+
+    it('FNLT constraint -- reduces slack when FNLT is before natural LF', () => {
+      // Two parallel tasks: A (short) and B (long).
+      // A has FNLT that limits its slack.
+      const fnltDate = new Date('2026-01-27') // Tuesday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 2, constraint_type: 'FNLT', constraint_date: fnltDate }),
+        createMockTask({ id: 'B', duration: 5 }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // Forward: A: ES=Jan 25, EF=Jan 26. B: ES=Jan 25, EF=Jan 29.
+      // ProjectEnd = Jan 29.
+      // Backward without FNLT: A: LF=Jan 29, LS=Jan 28, slack=3.
+      // Backward with FNLT=Jan 27: A: LF=min(Jan 29, Jan 27)=Jan 27, LS=Jan 26, slack=1.
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      expect(taskA.lf?.toISOString().split('T')[0]).toBe('2026-01-27')
+      expect(taskA.slack).toBe(1)
+      expect(taskA.is_critical).toBe(false)
+    })
+
+    it('FNLT constraint -- negative slack when deadline is impossible', () => {
+      // Task with FNLT that is BEFORE the task's EF → negative slack
+      const fnltDate = new Date('2026-01-26') // Monday
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 5, // ES=Jan 25, EF=Jan 29
+          constraint_type: 'FNLT',
+          constraint_date: fnltDate,
+        }),
+      ]
+      const deps: Dependency[] = []
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // Forward: A: ES=Jan 25, EF=Jan 29. FNLT=Jan 26 → violation.
+      // ProjectEnd = Jan 29.
+      // Backward: LF = min(Jan 29, Jan 26) = Jan 26.
+      // LS = subtractWorkingDays(Jan 26, 5) = Jan 20 (Thu: Jan 26→Mon(4)→Sun(3)→skip Fri/Sat→Thu(2)→Wed(1)=Jan 20? Let me check)
+      // Actually: subtractWorkingDays(Jan 26, 5): Jan 26 (Mon) is day 1.
+      //   Go back 4: Jan 25 (Sun, working) = 2, Jan 24 (Sat, skip), Jan 23 (Fri, skip),
+      //   Jan 22 (Thu, working) = 3, Jan 21 (Wed, working) = 4.
+      //   Result = Jan 21.
+      // Slack = workingDaysBetween(Jan 25, Jan 21) = negative!
+      const taskA = result.tasks[0]
+      expect(taskA.lf?.toISOString().split('T')[0]).toBe('2026-01-26')
+      expect(taskA.slack).toBeLessThan(0)
+      expect(taskA.is_critical).toBe(true) // negative slack = critical
+    })
+
+    it('FNLT constraint -- propagates to predecessors through backward pass', () => {
+      // A --FS--> B(FNLT). FNLT on B should tighten A's LF too.
+      const fnltDate = new Date('2026-01-28') // Wednesday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 2 }),
+        createMockTask({ id: 'B', duration: 2, constraint_type: 'FNLT', constraint_date: fnltDate }),
+        createMockTask({ id: 'C', duration: 5 }), // parallel long task
+      ]
+      const deps = [
+        createMockDependency('A', 'B'), // FS
+      ]
+
+      const result = service.calculateCriticalPath(tasks, deps, projectStart, workDays, [])
+
+      // Forward: A: ES=Jan 25, EF=Jan 26. B: ES=Jan 27, EF=Jan 28. C: ES=Jan 25, EF=Jan 29.
+      // ProjectEnd = Jan 29.
+      // Backward:
+      //   C: LF=Jan 29, LS=Jan 25, slack=0 (critical — drives project end)
+      //   B: LF=min(Jan 29, FNLT Jan 28)=Jan 28, LS=Jan 27, slack=0 → critical
+      //   A: LF=B's LS-1=Jan 26, LS=Jan 25, slack=0 → critical
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      const taskB = result.tasks.find(t => t.id === 'B')!
+
+      expect(taskB.lf?.toISOString().split('T')[0]).toBe('2026-01-28')
+      expect(taskB.slack).toBe(0)
+      // A's LF should be tightened because B's LF was tightened by FNLT
+      expect(taskA.lf?.toISOString().split('T')[0]).toBe('2026-01-26')
+      expect(taskA.slack).toBe(0)
     })
 
     // --- ASAP Constraint ---

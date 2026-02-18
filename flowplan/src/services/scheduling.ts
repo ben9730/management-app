@@ -545,6 +545,23 @@ export class SchedulingService {
         task.lf = minDate || new Date(projectEnd)
       }
 
+      // Cap LF at project end — SS/SF dependencies can compute candidateLF
+      // exceeding projectEnd when predecessor duration > successor duration,
+      // creating phantom slack. No task's LF should exceed projectEnd.
+      if (task.lf instanceof Date && task.lf > projectEnd) {
+        task.lf = new Date(projectEnd)
+      }
+
+      // Apply FNLT constraint — "Finish No Later Than" caps LF at the constraint date.
+      // This makes the task (and its predecessors) more critical when a deadline exists.
+      // If LF < EF after this cap, slack becomes negative → deadline is unachievable.
+      if (task.constraint_type === 'FNLT') {
+        const fnltDate = this.toDate(task.constraint_date)
+        if (fnltDate && task.lf instanceof Date && task.lf > fnltDate) {
+          task.lf = new Date(fnltDate)
+        }
+      }
+
       // Calculate LS
       task.ls = this.subtractWorkingDays(task.lf!, task.duration, workDays, holidays)
     }
