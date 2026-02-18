@@ -205,7 +205,8 @@ function DashboardContent() {
   const updatePhaseMutation = useUpdatePhase()
 
   // Scheduling: CPM recalculation on task/dependency mutations
-  const { recalculate, dependencies } = useScheduling(projectId, project?.start_date ?? null)
+  // Pass team members for resource-aware scheduling (per-member work days)
+  const { recalculate, dependencies } = useScheduling(projectId, project?.start_date ?? null, teamMembers)
 
   // UI State
   const [viewMode, setViewMode] = useState<ViewMode>('phases')

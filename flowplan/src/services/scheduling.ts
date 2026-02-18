@@ -769,12 +769,10 @@ export class SchedulingService {
       userTimeOff.set(to.team_member_id, [...existing, ...dates])
     }
 
-    // Create user work days map
-    const userWorkDays = new Map<string, number[]>()
+    // Create member work days map (keyed by member.id, matching task.assignee_id)
+    const memberWorkDaysMap = new Map<string, number[]>()
     for (const member of teamMembers) {
-      if (member.user_id) {
-        userWorkDays.set(member.user_id, member.work_days || [0, 1, 2, 3, 4])
-      }
+      memberWorkDaysMap.set(member.id, member.work_days || [0, 1, 2, 3, 4])
     }
 
     // Process tasks with resource constraints
@@ -798,10 +796,10 @@ export class SchedulingService {
     for (const task of resultTasks) {
       const predecessors = predecessorMap.get(task.id) || []
 
-      // Get user-specific constraints
-      const userId = task.assignee_id
-      const memberWorkDays = userId ? (userWorkDays.get(userId) || workDays) : workDays
-      const memberTimeOff = userId ? (userTimeOff.get(userId) || []) : []
+      // Get member-specific constraints (assignee_id = team_members.id)
+      const assigneeId = task.assignee_id
+      const memberWorkDays = assigneeId ? (memberWorkDaysMap.get(assigneeId) || workDays) : workDays
+      const memberTimeOff = assigneeId ? (userTimeOff.get(assigneeId) || []) : []
 
       // Combine project holidays with user time off
       const allHolidays = [...holidays, ...memberTimeOff]
@@ -848,11 +846,88 @@ export class SchedulingService {
       }
     }
 
-    // Backward pass (simplified - using project work days)
-    const backwardTasks = this.backwardPass(resultTasks, dependencies, projectEnd, workDays, holidays)
+    // Backward pass with resource constraints (per-member work days + time off)
+    const reverseTasks = [...resultTasks].reverse()
+    const backwardTaskMap = new Map<string, Task>()
+    for (const task of reverseTasks) {
+      backwardTaskMap.set(task.id, task)
+    }
 
-    // Calculate slack
-    const finalTasks = this.calculateSlack(backwardTasks, workDays, holidays)
+    // Get successors for each task
+    const successorMap = new Map<string, Dependency[]>()
+    for (const dep of dependencies) {
+      const deps = successorMap.get(dep.predecessor_id) || []
+      deps.push(dep)
+      successorMap.set(dep.predecessor_id, deps)
+    }
+
+    for (const task of reverseTasks) {
+      const successors = successorMap.get(task.id) || []
+
+      // Get member-specific calendar for this task's assignee
+      const assigneeId = task.assignee_id
+      const memberWorkDays = assigneeId ? (memberWorkDaysMap.get(assigneeId) || workDays) : workDays
+      const memberTimeOff = assigneeId ? (userTimeOff.get(assigneeId) || []) : []
+      const allHolidays = [...holidays, ...memberTimeOff]
+
+      if (successors.length === 0) {
+        task.lf = new Date(projectEnd)
+      } else {
+        // LF = min(candidateLF from all successors)
+        let minDate: Date | null = null
+
+        for (const dep of successors) {
+          const succTask = backwardTaskMap.get(dep.successor_id)
+          if (succTask && succTask.ls) {
+            const candidateLF = this.computeCandidateLF(
+              dep, succTask, task.duration, memberWorkDays, allHolidays
+            )
+
+            if (!minDate || candidateLF < minDate) {
+              minDate = candidateLF
+            }
+          }
+        }
+
+        task.lf = minDate || new Date(projectEnd)
+      }
+
+      // Cap LF at project end
+      if (task.lf instanceof Date && task.lf > projectEnd) {
+        task.lf = new Date(projectEnd)
+      }
+
+      // Apply FNLT constraint
+      if (task.constraint_type === 'FNLT') {
+        const fnltDate = this.toDate(task.constraint_date)
+        if (fnltDate && task.lf instanceof Date && task.lf > fnltDate) {
+          task.lf = new Date(fnltDate)
+        }
+      }
+
+      // Calculate LS using member-specific calendar
+      task.ls = this.subtractWorkingDays(task.lf!, task.duration, memberWorkDays, allHolidays)
+    }
+
+    // Restore original order
+    const backwardTasks = reverseTasks.reverse()
+
+    // Calculate slack with per-member work days
+    const finalTasks = backwardTasks.map(task => {
+      const newTask = { ...task }
+
+      if (task.es && task.ls) {
+        const assigneeId = task.assignee_id
+        const memberWorkDays = assigneeId ? (memberWorkDaysMap.get(assigneeId) || workDays) : workDays
+        const memberTimeOff = assigneeId ? (userTimeOff.get(assigneeId) || []) : []
+        const allHolidays = [...holidays, ...memberTimeOff]
+
+        newTask.slack = this.workingDaysBetween(task.es, task.ls, memberWorkDays, allHolidays)
+        newTask.is_critical = newTask.slack <= 0
+      }
+
+      return newTask
+    })
 
     const criticalPath = finalTasks
       .filter(t => t.is_critical)

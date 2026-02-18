@@ -23,7 +23,7 @@ import { useDependencies } from '@/hooks/use-dependencies'
 import { useCalendarExceptions } from '@/hooks/use-calendar-exceptions'
 import { schedulingService } from '@/services/scheduling'
 import { batchUpdateTaskCPMFields } from '@/services/tasks'
-import type { Task, Dependency, CalendarException } from '@/types/entities'
+import type { Task, Dependency, CalendarException, TeamMember, EmployeeTimeOff } from '@/types/entities'
 
 /**
  * Expand CalendarException date ranges into individual Date objects.
@@ -51,7 +51,12 @@ function expandCalendarExceptions(exceptions: CalendarException[]): Date[] {
 // Stable reference: Israeli work week Sun-Thu
 const WORK_DAYS = [0, 1, 2, 3, 4] as const
 
-export function useScheduling(projectId: string, projectStartDate: Date | string | null) {
+export function useScheduling(
+  projectId: string,
+  projectStartDate: Date | string | null,
+  teamMembers: TeamMember[] = [],
+  timeOff: EmployeeTimeOff[] = []
+) {
   const queryClient = useQueryClient()
   const { data: tasks = [] } = useTasks(projectId)
   const { data: dependencies = [] } = useDependencies(projectId)
@@ -74,13 +79,25 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
       : new Date(projectStartDate)
 
     // 1. Compute synchronously (fast, deterministic)
-    const result = schedulingService.calculateCriticalPath(
-      currentTasks,
-      currentDeps,
-      projectStart,
-      [...WORK_DAYS],
-      holidays
-    )
+    // Use resource-aware scheduling when team members are available and tasks have assignees
+    const hasAssignees = teamMembers.length > 0 && currentTasks.some(t => t.assignee_id)
+    const result = hasAssignees
+      ? schedulingService.calculateWithResources(
+          currentTasks,
+          currentDeps,
+          projectStart,
+          [...WORK_DAYS],
+          holidays,
+          teamMembers,
+          timeOff
+        )
+      : schedulingService.calculateCriticalPath(
+          currentTasks,
+          currentDeps,
+          projectStart,
+          [...WORK_DAYS],
+          holidays
+        )
 
     // 2. Cancel any in-flight refetches to prevent race condition.
     // The abort signal is set synchronously; we intentionally don't await cleanup.
@@ -152,7 +169,7 @@ export function useScheduling(projectId: string, projectStartDate: Date | string
         console.error('Failed to persist CPM fields:', err)
       }
     })()
-  }, [tasks, dependencies, projectStartDate, projectId, queryClient, holidays])
+  }, [tasks, dependencies, projectStartDate, projectId, queryClient, holidays, teamMembers, timeOff])
 
   return {
     recalculate,

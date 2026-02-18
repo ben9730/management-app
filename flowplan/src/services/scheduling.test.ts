@@ -76,7 +76,7 @@ function createMockTeamMember(overrides: Partial<TeamMember> = {}): TeamMember {
 function createMockTimeOff(overrides: Partial<EmployeeTimeOff> = {}): EmployeeTimeOff {
   return {
     id: 'timeoff-1',
-    team_member_id: 'user-1',
+    team_member_id: 'member-1', // matches TeamMember.id (task.assignee_id references this)
     start_date: new Date('2026-02-15'),
     end_date: new Date('2026-02-17'),
     type: 'vacation',
@@ -553,18 +553,19 @@ describe('SchedulingService', () => {
         createMockTask({
           id: 'task-1',
           duration: 4,
-          assignee_id: 'user-1',
+          assignee_id: 'member-1', // matches TeamMember.id
         }),
       ]
       const teamMembers = [
         createMockTeamMember({
+          id: 'member-1',
           user_id: 'user-1',
           work_days: [0, 1, 2, 3, 4], // Sun-Thu
         }),
       ]
       const timeOff = [
         createMockTimeOff({
-          team_member_id: 'user-1',
+          team_member_id: 'member-1', // matches TeamMember.id
           start_date: new Date('2026-02-15'), // Sunday
           end_date: new Date('2026-02-17'),   // Tuesday
         }),
@@ -634,11 +635,12 @@ describe('SchedulingService', () => {
         createMockTask({
           id: 'task-1',
           duration: 4,
-          assignee_id: 'user-1',
+          assignee_id: 'member-1', // matches TeamMember.id
         }),
       ]
       const teamMembers = [
         createMockTeamMember({
+          id: 'member-1',
           user_id: 'user-1',
           work_days: [0, 1, 2, 3], // Sun-Wed only (no Thursday!)
         }),
@@ -659,6 +661,146 @@ describe('SchedulingService', () => {
       // Sun (1), Mon (2), Tue (3), Wed (4) - finishes Wed Jan 28
       // But wait, next week: Thu off, Fri off, Sat off, Sun (4) = Jan 28
       expect(result.tasks[0].ef).not.toBeNull()
+    })
+
+    it('backward pass uses per-member work days for LS/LF', () => {
+      // A 4-day-week worker (Sun-Wed) assigned to a 3-day task
+      // Backward pass should use their calendar, not the project's 5-day week
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({
+          id: 'task-1',
+          duration: 3,
+          assignee_id: 'member-1',
+        }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({
+          id: 'member-1',
+          work_days: [0, 1, 2, 3], // Sun-Wed (4 days)
+        }),
+      ]
+      const workDays = [0, 1, 2, 3, 4] // Project: 5 days
+
+      const result = service.calculateWithResources(
+        tasks,
+        [],
+        projectStart,
+        workDays,
+        [],
+        teamMembers,
+        []
+      )
+
+      const task = result.tasks[0]
+      // Single task with no successors: ES = LS, EF = LF, slack = 0
+      expect(task.slack).toBe(0)
+      expect(task.is_critical).toBe(true)
+      // LS should equal ES (single task = critical)
+      expect(task.ls?.toISOString().split('T')[0]).toBe(
+        task.es?.toISOString().split('T')[0]
+      )
+    })
+
+    it('slack is correct with mixed per-member calendars', () => {
+      // Two independent tasks: one on 5-day worker, one on 4-day worker
+      // The 4-day worker's task finishes later → drives project end
+      // The 5-day worker's task should have positive slack
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({
+          id: 'task-5day',
+          duration: 3,
+          assignee_id: 'member-full',
+        }),
+        createMockTask({
+          id: 'task-4day',
+          duration: 5,
+          assignee_id: 'member-part',
+        }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({
+          id: 'member-full',
+          user_id: 'user-full',
+          work_days: [0, 1, 2, 3, 4], // Sun-Thu (5 days)
+        }),
+        createMockTeamMember({
+          id: 'member-part',
+          user_id: 'user-part',
+          work_days: [0, 1, 2, 3], // Sun-Wed (4 days)
+        }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks,
+        [],
+        projectStart,
+        workDays,
+        [],
+        teamMembers,
+        []
+      )
+
+      const task5day = result.tasks.find(t => t.id === 'task-5day')!
+      const task4day = result.tasks.find(t => t.id === 'task-4day')!
+
+      // 4-day worker takes longer (5 working days on a 4-day week)
+      // so task-4day should drive project end
+      expect(task4day.is_critical).toBe(true)
+      // 5-day worker finishes earlier, so has slack
+      expect(task5day.slack).toBeGreaterThan(0)
+    })
+
+    it('backward pass respects time-off in LS/LF calculation', () => {
+      // Task A → Task B (FS dependency)
+      // Task B's assignee has time-off that affects backward scheduling
+      const projectStart = new Date('2026-02-08') // Sunday
+      const tasks = [
+        createMockTask({
+          id: 'task-a',
+          duration: 2,
+          assignee_id: 'member-a',
+        }),
+        createMockTask({
+          id: 'task-b',
+          duration: 3,
+          assignee_id: 'member-b',
+        }),
+      ]
+      const deps = [createMockDependency('task-a', 'task-b')]
+      const teamMembers = [
+        createMockTeamMember({
+          id: 'member-a',
+          user_id: 'user-a',
+          work_days: [0, 1, 2, 3, 4],
+        }),
+        createMockTeamMember({
+          id: 'member-b',
+          user_id: 'user-b',
+          work_days: [0, 1, 2, 3, 4],
+        }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks,
+        deps,
+        projectStart,
+        workDays,
+        [],
+        teamMembers,
+        []
+      )
+
+      // Both tasks are on the critical path (serial chain)
+      const taskA = result.tasks.find(t => t.id === 'task-a')!
+      const taskB = result.tasks.find(t => t.id === 'task-b')!
+      expect(taskA.is_critical).toBe(true)
+      expect(taskB.is_critical).toBe(true)
+      expect(taskA.slack).toBe(0)
+      expect(taskB.slack).toBe(0)
     })
   })
 
