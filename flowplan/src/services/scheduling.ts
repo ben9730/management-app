@@ -794,15 +794,32 @@ export class SchedulingService {
 
     // Forward pass with resource constraints (supports all 4 dependency types)
     for (const task of resultTasks) {
-      const predecessors = predecessorMap.get(task.id) || []
-
       // Get member-specific constraints (assignee_id = team_members.id)
       const assigneeId = task.assignee_id
       const memberWorkDays = assigneeId ? (memberWorkDaysMap.get(assigneeId) || workDays) : workDays
       const memberTimeOff = assigneeId ? (userTimeOff.get(assigneeId) || []) : []
-
-      // Combine project holidays with user time off
       const allHolidays = [...holidays, ...memberTimeOff]
+
+      // Step A: Manual task skip -- preserve user start date, compute EF from start + duration
+      if (task.scheduling_mode === 'manual') {
+        task.es = this.toDate(task.start_date) || task.es
+        const esDate = this.toDate(task.es)
+        if (esDate) {
+          task.ef = this.addWorkingDays(esDate, task.duration, memberWorkDays, allHolidays)
+        } else {
+          task.ef = this.toDate(task.end_date) || task.ef
+        }
+        continue
+      }
+
+      // Step B: Completed task freeze -- frozen tasks use actual dates, never recompute
+      if (task.percent_complete === 100 && task.actual_start_date && task.actual_finish_date) {
+        task.es = this.toDate(task.actual_start_date)
+        task.ef = this.toDate(task.actual_finish_date)
+        continue
+      }
+
+      const predecessors = predecessorMap.get(task.id) || []
 
       if (predecessors.length === 0) {
         task.es = this.findNextWorkingDay(projectStart, memberWorkDays, allHolidays)
@@ -826,7 +843,34 @@ export class SchedulingService {
         task.es = maxDate || this.findNextWorkingDay(projectStart, memberWorkDays, allHolidays)
       }
 
+      // Step C: In-progress floor clamp -- cannot move backward past actual start
+      if (task.percent_complete > 0 && task.actual_start_date) {
+        const actualStart = this.toDate(task.actual_start_date)
+        if (actualStart && task.es instanceof Date && task.es < actualStart) {
+          task.es = actualStart
+        }
+      }
+
+      // Step D: Apply constraint logic (MSO, SNET)
+      const constraintDate = this.toDate(task.constraint_date)
+
+      if (constraintDate && (task.constraint_type === 'MSO' || task.constraint_type === 'SNET')) {
+        const depES = task.es as Date
+        const constraintWorking = this.findNextWorkingDay(constraintDate, memberWorkDays, allHolidays)
+        // Dependencies win: take the later date
+        if (constraintWorking > depES) {
+          task.es = constraintWorking
+        }
+        ;(task as unknown as Record<string, unknown>)._constraintOverridden = depES > constraintWorking
+      }
+
+      // Calculate EF (after any constraint adjustment)
       task.ef = this.addWorkingDays(task.es!, task.duration, memberWorkDays, allHolidays)
+
+      // FNLT check (after EF is known)
+      if (task.constraint_type === 'FNLT' && constraintDate) {
+        ;(task as unknown as Record<string, unknown>)._fnltViolation = (task.ef as Date) > constraintDate
+      }
     }
 
     // Find project end date
@@ -862,13 +906,27 @@ export class SchedulingService {
     }
 
     for (const task of reverseTasks) {
-      const successors = successorMap.get(task.id) || []
-
       // Get member-specific calendar for this task's assignee
       const assigneeId = task.assignee_id
       const memberWorkDays = assigneeId ? (memberWorkDaysMap.get(assigneeId) || workDays) : workDays
       const memberTimeOff = assigneeId ? (userTimeOff.get(assigneeId) || []) : []
       const allHolidays = [...holidays, ...memberTimeOff]
+
+      // Manual task: use ES/EF (already set in forward pass) as LS/LF
+      if (task.scheduling_mode === 'manual') {
+        task.ls = task.es || this.toDate(task.start_date) || task.ls
+        task.lf = task.ef || this.toDate(task.end_date) || task.lf
+        continue
+      }
+
+      // Completed task freeze: LS=ES, LF=EF
+      if (task.percent_complete === 100) {
+        task.ls = task.es
+        task.lf = task.ef
+        continue
+      }
+
+      const successors = successorMap.get(task.id) || []
 
       if (successors.length === 0) {
         task.lf = new Date(projectEnd)

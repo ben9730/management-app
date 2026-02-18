@@ -37,6 +37,9 @@ function createMockTask(overrides: Partial<Task> = {}): Task {
     lf: null,
     slack: 0,
     is_critical: false,
+    percent_complete: 0,
+    actual_start_date: null,
+    actual_finish_date: null,
     constraint_type: null,
     constraint_date: null,
     scheduling_mode: 'auto',
@@ -801,6 +804,306 @@ describe('SchedulingService', () => {
       expect(taskB.is_critical).toBe(true)
       expect(taskA.slack).toBe(0)
       expect(taskB.slack).toBe(0)
+    })
+  })
+
+  // ==========================================
+  // Resource-Aware: SS Dependencies (regression)
+  // ==========================================
+
+  describe('calculateWithResources - SS dependencies', () => {
+    it('SS dependency: successor ES equals predecessor ES (resource-aware path)', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3, assignee_id: 'member-1' }),
+        createMockTask({ id: 'B', duration: 2, assignee_id: 'member-1' }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS' }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, deps, projectStart, workDays, [], teamMembers, []
+      )
+
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      const taskB = result.tasks.find(t => t.id === 'B')!
+
+      // SS: B starts same day as A
+      expect(taskA.es?.toISOString().split('T')[0]).toBe('2026-01-25')
+      expect(taskB.es?.toISOString().split('T')[0]).toBe('2026-01-25')
+    })
+
+    it('SS with lag in resource-aware: successor ES = predecessor ES + lag', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5, assignee_id: 'member-1' }),
+        createMockTask({ id: 'B', duration: 2, assignee_id: 'member-1' }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'SS', lag_days: 2 }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, deps, projectStart, workDays, [], teamMembers, []
+      )
+
+      const taskB = result.tasks.find(t => t.id === 'B')!
+      // A: ES=Jan 25. SS+2: B ES = Jan 27
+      expect(taskB.es?.toISOString().split('T')[0]).toBe('2026-01-27')
+    })
+
+    it('SS full CPM in resource-aware: correct critical path with FS+SS chain', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const tasks = [
+        createMockTask({ id: 'A', duration: 3, assignee_id: 'member-1' }),
+        createMockTask({ id: 'B', duration: 2, assignee_id: 'member-1' }),
+        createMockTask({ id: 'C', duration: 3, assignee_id: 'member-1' }),
+      ]
+      const deps = [
+        createMockDependency('A', 'B', { type: 'FS' }),
+        createMockDependency('B', 'C', { type: 'SS' }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, deps, projectStart, workDays, [], teamMembers, []
+      )
+
+      // All three should be critical
+      expect(result.criticalPath).toContain('A')
+      expect(result.criticalPath).toContain('B')
+      expect(result.criticalPath).toContain('C')
+    })
+  })
+
+  // ==========================================
+  // Resource-Aware: MSO Constraint (regression)
+  // ==========================================
+
+  describe('calculateWithResources - MSO constraint', () => {
+    it('MSO constraint applied in resource-aware forward pass', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const msoDate = new Date('2026-02-04') // Wednesday
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 3,
+          assignee_id: 'member-1',
+          constraint_type: 'MSO',
+          constraint_date: msoDate,
+        }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, [], projectStart, workDays, [], teamMembers, []
+      )
+
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      // MSO should push ES to Feb 4 (not project start Jan 25)
+      expect(taskA.es?.toISOString().split('T')[0]).toBe('2026-02-04')
+    })
+
+    it('MSO constraint: dependency wins when later than MSO (resource-aware)', () => {
+      const projectStart = new Date('2026-01-25')
+      const msoDate = new Date('2026-01-27') // Tuesday (early)
+      const tasks = [
+        createMockTask({ id: 'A', duration: 5, assignee_id: 'member-1' }),
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          assignee_id: 'member-1',
+          constraint_type: 'MSO',
+          constraint_date: msoDate,
+        }),
+      ]
+      const deps = [createMockDependency('A', 'B')]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, deps, projectStart, workDays, [], teamMembers, []
+      )
+
+      const taskB = result.tasks.find(t => t.id === 'B')!
+      // A: EF=Jan 29. B dependency ES=Feb 1 (skip weekend). MSO=Jan 27.
+      // Dependencies win: B ES = Feb 1
+      expect(taskB.es?.toISOString().split('T')[0]).toBe('2026-02-01')
+    })
+
+    it('MSO constraint: MSO wins when later than dependency (resource-aware)', () => {
+      const projectStart = new Date('2026-01-25')
+      const msoDate = new Date('2026-02-04') // Wednesday (late)
+      const tasks = [
+        createMockTask({ id: 'A', duration: 2, assignee_id: 'member-1' }),
+        createMockTask({
+          id: 'B',
+          duration: 2,
+          assignee_id: 'member-1',
+          constraint_type: 'MSO',
+          constraint_date: msoDate,
+        }),
+      ]
+      const deps = [createMockDependency('A', 'B')]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, deps, projectStart, workDays, [], teamMembers, []
+      )
+
+      const taskB = result.tasks.find(t => t.id === 'B')!
+      // A: EF=Jan 26. B dependency ES=Jan 27. MSO=Feb 4.
+      // Constraint wins: B ES = Feb 4
+      expect(taskB.es?.toISOString().split('T')[0]).toBe('2026-02-04')
+    })
+  })
+
+  // ==========================================
+  // Resource-Aware: FNLT Constraint (regression)
+  // ==========================================
+
+  describe('calculateWithResources - FNLT constraint', () => {
+    it('FNLT tightens LF in resource-aware backward pass', () => {
+      const projectStart = new Date('2026-01-25') // Sunday
+      const fnltDate = new Date('2026-01-27') // Tuesday
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 2,
+          assignee_id: 'member-1',
+          constraint_type: 'FNLT',
+          constraint_date: fnltDate,
+        }),
+        createMockTask({ id: 'B', duration: 5, assignee_id: 'member-1' }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, [], projectStart, workDays, [], teamMembers, []
+      )
+
+      // A: ES=Jan 25, EF=Jan 26. B: ES=Jan 25, EF=Jan 29.
+      // ProjectEnd = Jan 29.
+      // Backward without FNLT: A: LF=Jan 29, slack=3.
+      // Backward with FNLT=Jan 27: A: LF=Jan 27, slack=1.
+      const taskA = result.tasks.find(t => t.id === 'A')!
+      expect(taskA.lf?.toISOString().split('T')[0]).toBe('2026-01-27')
+      expect(taskA.slack).toBe(1)
+    })
+
+    it('FNLT negative slack in resource-aware path', () => {
+      const projectStart = new Date('2026-01-25')
+      const fnltDate = new Date('2026-01-26') // Monday (impossible for 5-day task)
+      const tasks = [
+        createMockTask({
+          id: 'A',
+          duration: 5,
+          assignee_id: 'member-1',
+          constraint_type: 'FNLT',
+          constraint_date: fnltDate,
+        }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, [], projectStart, workDays, [], teamMembers, []
+      )
+
+      const taskA = result.tasks[0]
+      expect(taskA.lf?.toISOString().split('T')[0]).toBe('2026-01-26')
+      expect(taskA.slack).toBeLessThan(0)
+      expect(taskA.is_critical).toBe(true)
+    })
+  })
+
+  // ==========================================
+  // Resource-Aware: Manual + Freeze (regression)
+  // ==========================================
+
+  describe('calculateWithResources - manual and freeze handling', () => {
+    it('manual task preserves user dates in resource-aware path', () => {
+      const projectStart = new Date('2026-01-25')
+      const tasks = [
+        createMockTask({
+          id: 'manual',
+          duration: 3,
+          assignee_id: 'member-1',
+          scheduling_mode: 'manual',
+          start_date: new Date('2026-02-10'),
+          end_date: new Date('2026-02-12'),
+        }),
+      ]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, [], projectStart, workDays, [], teamMembers, []
+      )
+
+      const task = result.tasks[0]
+      expect(task.es?.toISOString().split('T')[0]).toBe('2026-02-10')
+      // LS/LF should match ES/EF for manual tasks
+      expect(task.ls?.toISOString().split('T')[0]).toBe('2026-02-10')
+    })
+
+    it('completed task freeze in resource-aware path', () => {
+      const projectStart = new Date('2026-01-25')
+      const tasks = [
+        createMockTask({
+          id: 'done',
+          duration: 3,
+          assignee_id: 'member-1',
+          percent_complete: 100,
+          actual_start_date: new Date('2026-01-26'),
+          actual_finish_date: new Date('2026-01-28'),
+        }),
+        createMockTask({ id: 'next', duration: 2, assignee_id: 'member-1' }),
+      ]
+      const deps = [createMockDependency('done', 'next')]
+      const teamMembers = [
+        createMockTeamMember({ id: 'member-1', work_days: [0, 1, 2, 3, 4] }),
+      ]
+      const workDays = [0, 1, 2, 3, 4]
+
+      const result = service.calculateWithResources(
+        tasks, deps, projectStart, workDays, [], teamMembers, []
+      )
+
+      const done = result.tasks.find(t => t.id === 'done')!
+      // Frozen task uses actual dates
+      expect(done.es?.toISOString().split('T')[0]).toBe('2026-01-26')
+      expect(done.ef?.toISOString().split('T')[0]).toBe('2026-01-28')
+      // LS=ES, LF=EF for completed
+      expect(done.ls?.toISOString().split('T')[0]).toBe('2026-01-26')
+      expect(done.lf?.toISOString().split('T')[0]).toBe('2026-01-28')
     })
   })
 
